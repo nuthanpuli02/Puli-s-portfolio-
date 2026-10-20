@@ -23,6 +23,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: hummingbird haze 6%
+- Puli asked to turn the bird's haze down from 8% to 6%: `BIRD_HAZE` 0.06. Preview artifact updated to match.
+
 ### 2026-10-20: a little haze on the hummingbird
 - Puli asked for just a little haze on the bird.
 - The plumage keeps `fog:false` and gets its own haze instead: the final colour is mixed `BIRD_HAZE` 0.08 toward the scene's fog colour (`BIRD_HAZE_U`, updated each frame).
