@@ -253,10 +253,11 @@ const SW={body:0,joints:[],fins:{},tail:null,tailV:0,grid:null,chain:null};
 const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=13,TAIL_SEGS=14;
 // tail-fin motion: flag-like waves (height at the base and extra toward the edge, phase step per joint outward and per
 // ray across), twist about each ray, how much of a turn's curl the tail adds to continue the body's curve
-const TAIL_WAVE=[0.08,0.2],TAIL_STEP=1.55,TAIL_SLANT=0.35,TAIL_TWIST=0.26,TAIL_CURL=0.03,TAIL_HZ=1.6;
+// TAIL_EDGE: how steeply the waviness grows from the base to the end of the tail (wave height ∝ distance^TAIL_EDGE)
+const TAIL_WAVE=[0.02,0.36],TAIL_EDGE=1.8,TAIL_STEP=1.55,TAIL_SLANT=0.35,TAIL_TWIST=0.4,TAIL_CURL=0.03,TAIL_HZ=1.6;
 // fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
 // two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
-const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.6,FW={uFinPh:{value:0},uFinAmp:{value:0}};
+const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.2,FW={uFinPh:{value:0},uFinAmp:{value:0}};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
@@ -330,7 +331,7 @@ function finMembranes(o,core){
       const e=[0,1,2].map(ax=>at(n,i,b.clone().setComponent(ax,b.getComponent(ax)+1)).sub(p));
       J.set(e[0].x,e[1].x,e[2].x,e[0].y,e[1].y,e[2].y,e[0].z,e[1].z,e[2].z);Ji.copy(J).invert();
       const side=new THREE.Vector3(0,0,1).applyMatrix3(Ji),outM=out.clone().applyMatrix3(Ji);
-      fd[i*3]=finW*THREE.MathUtils.smoothstep(s,0,0.06)*(kind==='caudal'?CAUDAL_WAVE:1);fd[i*3+1]=s;fd[i*3+2]=SEED[kind]+(kind==='caudal'?Math.atan2(out.y,out.x)*1.5:p.x*8);
+      fd[i*3]=finW*THREE.MathUtils.smoothstep(s,0,0.06)*(kind==='caudal'?CAUDAL_WAVE*(0.2+1.1*Math.pow(Math.min(1,s/0.45),1.5)):1); // the tail ripples far more at its endfd[i*3+1]=s;fd[i*3+2]=SEED[kind]+(kind==='caudal'?Math.atan2(out.y,out.x)*1.5:p.x*8);
       fn.set([side.x,side.y,side.z],i*3);fo.set([outM.x,outM.y,outM.z],i*3)}
     g.setAttribute('finData',new THREE.BufferAttribute(fd,3));g.setAttribute('finN',new THREE.BufferAttribute(fn,3));g.setAttribute('finO',new THREE.BufferAttribute(fo,3))});
 }
@@ -460,7 +461,7 @@ function swimFish(dt,sp,yaw){
     for(let k=0;k<BODY_JOINTS;k++)Ch.bones[k].quaternion.copy(Ch.rest[k]).multiply(_q.setFromAxisAngle(Ch.axis,wave[k]+curl*Ch.bend[k]))}
   if(SW.grid){const G=SW.grid,calm=1-0.6*Math.min(1,Math.abs(curl)),flap=calm*(0.7+0.6*sp),mid=(TAIL_RAYS-1)/2;
     G.ph+=dt*Math.PI*2*(TAIL_HZ+1.0*sp);
-    for(let r=0;r<TAIL_RAYS;r++)for(let k=0;k<TAIL_SEGS;k++){const b=G.rays[r][k],f=k/(TAIL_SEGS-1),ph=G.ph-TAIL_STEP*k-TAIL_SLANT*r;
+    for(let r=0;r<TAIL_RAYS;r++)for(let k=0;k<TAIL_SEGS;k++){const b=G.rays[r][k],f=Math.pow(k/(TAIL_SEGS-1),TAIL_EDGE),ph=G.ph-TAIL_STEP*k-TAIL_SLANT*r;
       // flag ripple, plus the body's own wave carried on into the tail, plus a share of the turn's curl so body and tail bend as one
       const side=flap*(TAIL_WAVE[0]+TAIL_WAVE[1]*f)*(Math.sin(ph)+0.35*Math.sin(1.7*G.ph-1.3*k+0.9*r))
         +A*0.08*Math.sin(SW.body-Math.PI*2*(SW.chain.L+k*G.seg)/BODY_WAVELEN)+curl*TAIL_CURL;
