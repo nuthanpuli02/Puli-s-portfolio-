@@ -23,6 +23,19 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: hummingbird without the pale film
+- Puli: the bird still looked like it had a pale white filter on it; saturate more.
+- Tested each likely cause by switching it off. The biggest was the bright photo's reflections (environment); sheen and iridescence added a milky layer, and fog a little.
+- Plumage now:
+  - no sheen
+  - iridescence 0.15 (was 0.35)
+  - `envMapIntensity` 0.35
+  - `fog:false`
+  - saturation `BIRD_SAT` 1.75, mid-tone contrast `BIRD_CONTRAST` 1.15 (pow), lift `BIRD_BRIGHT` 1.3
+  - forest-colour glow `BIRD_GLOW` 0.6
+- Checked headless at three spots: vivid greens, deep red throat, golden tones, no milky look.
+- Preview artifact updated to match.
+
 ### 2026-10-20: hummingbird colours match the forest
 - Puli: the hummingbird's colours don't match the background; make it brighter to match the forest's colour gradient.
 - Before: flat, greyish feathers under cool light, looking pasted onto the warm green and golden photo.
