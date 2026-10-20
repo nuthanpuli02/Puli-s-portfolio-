@@ -249,7 +249,7 @@ const SPINE_BEND=[0.24,0.44,0.6,0.72],TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
 const SW={body:0,joints:[],fins:{},tail:null,tailV:0};
 // fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
 // two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
-const FIN_WAVELEN=0.11,FIN_WAVE=0.04,FW={uFinPh:{value:0},uFinAmp:{value:0}};
+const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.6,FW={uFinPh:{value:0},uFinAmp:{value:0}};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
@@ -321,7 +321,7 @@ function finMembranes(o,core){
       const e=[0,1,2].map(ax=>at(n,i,b.clone().setComponent(ax,b.getComponent(ax)+1)).sub(p));
       J.set(e[0].x,e[1].x,e[2].x,e[0].y,e[1].y,e[2].y,e[0].z,e[1].z,e[2].z);Ji.copy(J).invert();
       const side=new THREE.Vector3(0,0,1).applyMatrix3(Ji),outM=out.clone().applyMatrix3(Ji);
-      fd[i*3]=finW*THREE.MathUtils.smoothstep(s,0,0.06);fd[i*3+1]=s;fd[i*3+2]=SEED[kind]+(kind==='caudal'?Math.atan2(out.y,out.x)*1.5:p.x*8);
+      fd[i*3]=finW*THREE.MathUtils.smoothstep(s,0,0.06)*(kind==='caudal'?CAUDAL_WAVE:1);fd[i*3+1]=s;fd[i*3+2]=SEED[kind]+(kind==='caudal'?Math.atan2(out.y,out.x)*1.5:p.x*8);
       fn.set([side.x,side.y,side.z],i*3);fo.set([outM.x,outM.y,outM.z],i*3)}
     g.setAttribute('finData',new THREE.BufferAttribute(fd,3));g.setAttribute('finN',new THREE.BufferAttribute(fn,3));g.setAttribute('finO',new THREE.BufferAttribute(fo,3))});
 }
@@ -344,7 +344,7 @@ function swimFish(dt,sp,yaw){
     else{
       // the fin's own ripple: a wave running out along each ray and across the rays, with a slower second wave so it never repeats exactly
       const F=SW.fins[j.fin],rip=flow*FIN_RIP[j.d]*(Math.sin(F.ph-1.2*j.d-0.8*j.i)+0.35*Math.sin(1.61*F.ph+0.9*j.i-0.7*j.d+F.s2));
-      if(j.kind==='caudal'){l=A*(0.12+0.06*j.d)*Math.sin(w)+curl*0.08+rip;u=0.08*(j.d?1:0.5)*Math.sin(0.55*F.ph-0.9*j.i)} // u: the fan opens and closes
+      if(j.kind==='caudal'){l=A*(0.18+0.1*j.d)*Math.sin(w)+curl*0.2+1.5*rip;u=0.08*(j.d?1:0.5)*Math.sin(0.55*F.ph-0.9*j.i)} // u: the fan opens and closes
       else if(j.kind==='dorsal'||j.kind==='anal'){l=A*(0.05+0.03*j.d)*Math.sin(w)+rip;bk=0.18*sp*(j.d?0.5:1)+0.08*Math.sin(0.7*F.ph-1.0*j.i-0.6*j.d)}
       else if(j.kind==='ventral'){l=(0.03+0.02*j.d)*(0.5+A)*Math.sin(SW.body*0.5-0.7*j.d)+0.8*rip;bk=0.25*sp*(j.d?0.4:1)}
       else{const v=F.ph-0.9*j.d-0.6*j.i;bk=(0.32-0.12*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp);u=0.08*j.d*Math.sin(v-1.2)} // pectorals fan and row
@@ -416,7 +416,7 @@ function steer(dt,t,isFish){
 // The fish keeps its head locked on the cursor: small corrections are near-instant, while a big turn speeds up gently,
 // glides at a capped rate and eases out without overshooting. Once it faces the cursor it swims forward along its
 // heading and brakes so that the tip of its mouth stops on the cursor.
-const FISH_SPEED=1.0,FISH_TURN=2.2,TURN_ACC=5,TURN_SNAP=10,FISH_PITCH=1.4,BRAKE=1.4;
+const FISH_SPEED=1.0,FISH_TURN=2.2,TURN_ACC=5,TURN_SNAP=10,FISH_PITCH=1.4,BRAKE=1.4,TURN_KEEP=0.4;
 // angular rate that closes the error e: fast for small errors, capped and braking-limited for big ones
 const turnRate=(rate,e,dt,hold)=>{const want=Math.sign(e)*Math.min(FISH_TURN,Math.sqrt(2*TURN_ACC*Math.abs(e)),TURN_SNAP*Math.abs(e))*hold;
   return rate+THREE.MathUtils.clamp(want-rate,-TURN_ACC*4*dt,TURN_ACC*dt*(Math.abs(want)>Math.abs(rate)?1:4))};
@@ -438,11 +438,15 @@ function steerFish(dt,t,idle){
   C.pitch=-C.el/0.6; // the frame draws the fish's pitch as rotateZ(pitch*0.6), where positive tips the snout down
   const fwd=new THREE.Vector3(Math.cos(C.yaw)*Math.cos(C.el),Math.sin(C.el),-Math.sin(C.yaw)*Math.cos(C.el));
   // swim once it faces the cursor; braking distance sets the speed so the mouth comes to rest on the cursor
-  // rem: how far the mouth still is from the cursor, measured along the heading, so it can't be passed
-  const rem=fwd.dot(d)-snout,aim=dist>snout*0.6?Math.max(0,fwd.dot(d)/dist):0;
-  const go=Math.min(FISH_SPEED,Math.sqrt(2*BRAKE*Math.max(0,rem)))*aim*aim*aim;
-  C.spd=go<C.spd?go:C.spd+(go-C.spd)*Math.min(1,dt*3); // speeds up gently, brakes on the stopping curve without lag
-  C.v.copy(fwd).multiplyScalar(C.spd);C.v.z*=0.4;C.p.addScaledVector(C.v,dt);C.p.z+=(Z-C.p.z)*Math.min(1,dt*0.8);
+  // rem: how far the mouth still is from the cursor; measured along the heading once it faces the cursor, so it can't
+  // be passed, and as a straight distance while it is still turning
+  const aim=dist>snout*0.6?Math.max(0,fwd.dot(d)/dist):0;
+  const rem=THREE.MathUtils.lerp(dist-snout,fwd.dot(d)-snout,THREE.MathUtils.smoothstep(aim,0.6,0.95));
+  // it keeps swimming while it turns (TURN_KEEP of its speed), so a turn-around is a smooth arc rather than a stop
+  const stop=Math.min(FISH_SPEED,Math.sqrt(2*BRAKE*Math.max(0,rem))),go=stop*(TURN_KEEP+(1-TURN_KEEP)*aim*aim);
+  C.spd=C.spd>stop?stop:C.spd+(go-C.spd)*Math.min(1,dt*(go>C.spd?3:1.5)); // brakes on the stopping curve without lag, otherwise eases
+  // the body glides a little before its path follows the new heading
+  C.v.lerp(fwd.multiplyScalar(C.spd),Math.min(1,dt*4));C.v.z*=0.4;C.p.addScaledVector(C.v,dt);C.p.z+=(Z-C.p.z)*Math.min(1,dt*0.8);
   C.roll+=(0-C.roll)*Math.min(1,dt*3);
 }
 

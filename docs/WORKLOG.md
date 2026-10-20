@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); fin membranes now ripple with several waves after his sixth review (he approved the body bend); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
+- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); tail fin bent more and turns made a continuous arc after his seventh review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
@@ -22,6 +22,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: tail fin bends more; turns are a continuous arc
+- Puli: the top and bottom fins look perfect. The tail fin should bend more. When the cursor jumps to the other side mid-swim, the fish stopped dead, turned its head, then its body, which looked unnatural; it should keep moving so the turn is clean and smooth.
+- Tail fin: bone sway `A*(0.18+0.1*d)` (was 0.12+0.06*d), curl share 0.2 (was 0.08), bone ripple ×1.5, and membrane waves ×`CAUDAL_WAVE` 1.6.
+- Turns: speed used to be multiplied by aim³ and braked instantly, so it dropped to zero as soon as the fish faced away. Now it keeps `TURN_KEEP` 0.4 of its speed plus 0.6×aim², and eases speed changes, braking instantly only on the stopping curve. While turning the stopping distance is the straight mouth-to-cursor distance; once it faces the cursor it is measured along the heading, so it still can't overshoot. Velocity glides toward the heading (rate 4/s) instead of snapping.
+- Measured at phone size with the cursor flipped mid-swim at full speed: speed stays at 0.55 or more through the turn, the fish swims a U-shaped arc, speeds up again and stops with its mouth on the cursor.
+- Preview artifact updated to match.
 
 ### 2026-10-20: fin membranes ripple with several waves
 - Puli: the fins weren't wavy enough; they should bend far more than the body, with several waves visible on the tail fin while swimming.
