@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
+- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (up/down bending: `PITCH_BODY`, `PITCH_CURL`; tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
@@ -22,6 +22,18 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: fish bends up and down; everything wavier
+- Puli: moving the cursor up or down rotated the whole fish rigidly; it should bend up or down (in fact in any direction). He also wanted the body, tail and fins much wavier.
+- Up/down: only `PITCH_BODY` 0.5 of the tilt now turns the whole fish. The rest (`lift`) is bent in by the spine: Spine0 lifts the head and the remaining joints bring the tail back toward level, so the head still points at the cursor. A second lag spring (`SW.tailEl`, same `TAIL_K`/`TAIL_DAMP` as turns) makes the tail trail behind changes in tilt, curling the body up or down (`PITCH_CURL` 0.6 × the turn curl spread). Combined with the sideways curl, the body bends in any direction. `swimFish` now also takes `el`. Mouth stop measured at 2-4 px.
+- Wavier:
+  - body: `BODY_AMP` [0.09, 0.24], `BODY_WAVELEN` 0.5
+  - tail: `TAIL_WAVE` [0.03, 0.46], `TAIL_TWIST` 0.5
+  - top, bottom and belly fins: bone ripple `FIN_RIP` up about 35%
+  - fin skin ripple: `FIN_WAVE` 0.055 (applies to all fins with skin ripple)
+  - pectoral fanning: 0.42
+- Checked headless: aiming up and down bends the body; swimming, top-down and turn views intact.
+- Preview artifact updated to match.
 
 ### 2026-10-20: tail fin far wavier at its end than near the body
 - Puli: the end of the tail must be much wavier than the part near the body.

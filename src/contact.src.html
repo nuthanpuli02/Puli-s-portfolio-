@@ -239,25 +239,29 @@ const RIG={ // bone names by fin; "|" separates the joints from the fin's base o
   pec:'Bone.010 Bone.011|Bone.012 Bone.013|Bone.014 Bone.015 Bone.016 Bone.017'};
 // every fin has its own rhythm (beats per second, and a little different on the left and right), so no two fins move in step;
 // along a fin, each ray and each joint out toward the tip lags the one before it, so ripples run through the fin
-const FIN_HZ={dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.06,0.13,0.22,0.26];
+const FIN_HZ={dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.08,0.18,0.3,0.36];
 // The body swims as a whole: a wave runs from just behind the head to the base of the tail along BODY_JOINTS new spine
 // joints (see buildBodyRig), swinging a little near the head and more toward the tail (BODY_AMP: radians per joint at
 // the front and back), one full wave every BODY_WAVELEN of length (fish-size units).
-const BODY_JOINTS=12,BODY_AMP=[0.07,0.18],BODY_WAVELEN=0.55,BALANCE=0.6; // BALANCE: how much the front swings against the tail
+const BODY_JOINTS=12,BODY_AMP=[0.09,0.24],BODY_WAVELEN=0.5,BALANCE=0.6; // BALANCE: how much the front swings against the tail
 // a turn: the head turns first and the tail follows on a springy lag, so the body curls into a C (BODY_CURL: the curl
 // spread over the spine, more toward the tail), then the tail swings through and flicks the fish onto its new heading
 const BODY_CURL=2.0,TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
-const SW={body:0,joints:[],fins:{},tail:null,tailV:0,grid:null,chain:null};
+// up and down: only PITCH_BODY of the tilt toward the cursor turns the whole fish; the rest is the body bending, so the head
+// lifts or dips while the tail stays nearer level; and as the tilt changes the tail lags on the same spring as in turns,
+// curling the body up or down (PITCH_CURL: its share of BODY_CURL)
+const PITCH_BODY=0.5,PITCH_CURL=0.6;
+const SW={body:0,joints:[],fins:{},tail:null,tailV:0,tailEl:0,tailElV:0,grid:null,chain:null};
 // The model's tail fin has only 10 bones, too few for it to ripple, so it is re-rigged at load with a fan of TAIL_RAYS
 // rays of TAIL_SEGS joints each (see buildTailRig). OLD_TAIL: the model's own tail-fin bones it replaces.
 const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=13,TAIL_SEGS=14;
 // tail-fin motion: flag-like waves (height at the base and extra toward the edge, phase step per joint outward and per
 // ray across), twist about each ray, how much of a turn's curl the tail adds to continue the body's curve
 // TAIL_EDGE: how steeply the waviness grows from the base to the end of the tail (wave height ∝ distance^TAIL_EDGE)
-const TAIL_WAVE=[0.02,0.36],TAIL_EDGE=1.8,TAIL_STEP=1.55,TAIL_SLANT=0.35,TAIL_TWIST=0.4,TAIL_CURL=0.03,TAIL_HZ=1.6;
+const TAIL_WAVE=[0.03,0.46],TAIL_EDGE=1.8,TAIL_STEP=1.55,TAIL_SLANT=0.35,TAIL_TWIST=0.5,TAIL_CURL=0.03,TAIL_HZ=1.6;
 // fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
 // two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
-const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.2,FW={uFinPh:{value:0},uFinAmp:{value:0}};
+const FIN_WAVELEN=0.11,FIN_WAVE=0.055,CAUDAL_WAVE=1.2,FW={uFinPh:{value:0},uFinAmp:{value:0}};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
@@ -383,7 +387,7 @@ function buildBodyRig(o,M){
   o.updateMatrixWorld(true);
   const tot=bones.reduce((a,_,k)=>a+k,0);
   SW.chain={bones,rest,s,L:s[BODY_JOINTS-1],bend:bones.map((_,k)=>BODY_CURL*k/tot),axis:new THREE.Vector3(0,-1,0), // turning about -y swings the tail toward +z
-    s0,seg,pos0:bones[0].position.clone(),side:new THREE.Vector3(0,0,1).applyMatrix3(new THREE.Matrix3().setFromMatrix4(bones[0].parent.matrixWorld).invert())};
+    up:new THREE.Vector3(0,0,1),s0,seg,pos0:bones[0].position.clone(),side:new THREE.Vector3(0,0,1).applyMatrix3(new THREE.Matrix3().setFromMatrix4(bones[0].parent.matrixWorld).invert())};
 }
 // Re-rig the tail fin: a fan of new bones hangs from the base of the tail (the last spine joint), every tail-fin vertex is moved onto
 // them (two neighbouring rays × two neighbouring joints), and the old tail-fin bones are left with no vertices.
@@ -426,11 +430,14 @@ function buildTailRig(o,root){
   o.updateMatrixWorld(true); // the re-bound mesh needs its current bind inverse before anything reads its vertices
 }
 // sp: 0 when drifting, 1 at full speed; yaw: the heading the head is turning to
-function swimFish(dt,sp,yaw){
-  if(SW.tail===null)SW.tail=yaw;
+function swimFish(dt,sp,yaw,el){
+  if(SW.tail===null){SW.tail=yaw;SW.tailEl=el*PITCH_BODY}
   const wrap=a=>((a+Math.PI*3)%(Math.PI*2))-Math.PI;
   SW.tailV+=(TAIL_K*wrap(yaw-SW.tail)-2*TAIL_DAMP*Math.sqrt(TAIL_K)*SW.tailV)*dt;SW.tail+=SW.tailV*dt;
   const curl=THREE.MathUtils.clamp(wrap(yaw-SW.tail),-MAX_CURL,MAX_CURL);
+  const tilt=el*PITCH_BODY,lift=el-tilt; // tilt: the whole fish; lift: the head's extra, bent in by the spine
+  SW.tailElV+=(TAIL_K*(tilt-SW.tailEl)-2*TAIL_DAMP*Math.sqrt(TAIL_K)*SW.tailElV)*dt;SW.tailEl+=SW.tailElV*dt;
+  const vcurl=THREE.MathUtils.clamp(tilt-SW.tailEl,-MAX_CURL,MAX_CURL);
   SW.body+=dt*Math.PI*2*(0.65+0.9*sp);FW.uFinPh.value+=dt*Math.PI*2*(1.6+1.2*sp);FW.uFinAmp.value=FIN_WAVE*(0.8+0.6*sp);
   for(const k in SW.fins){const F=SW.fins[k];F.ph+=dt*Math.PI*2*F.hz*(F.kind==='pec'?1-0.23*sp:0.8+0.5*sp)}
   // the mixer only writes a bone when its clip value changes, so put back the clip pose it last wrote before adding the swim
@@ -445,7 +452,7 @@ function swimFish(dt,sp,yaw){
       const F=SW.fins[j.fin],rip=flow*FIN_RIP[j.d]*(Math.sin(F.ph-1.2*j.d-0.8*j.i)+0.35*Math.sin(1.61*F.ph+0.9*j.i-0.7*j.d+F.s2));
       if(j.kind==='dorsal'||j.kind==='anal'){l=A*(0.05+0.03*j.d)*Math.sin(w)+rip;bk=0.18*sp*(j.d?0.5:1)+0.08*Math.sin(0.7*F.ph-1.0*j.i-0.6*j.d)}
       else if(j.kind==='ventral'){l=(0.03+0.02*j.d)*(0.5+A)*Math.sin(SW.body*0.5-0.7*j.d)+0.8*rip;bk=0.25*sp*(j.d?0.4:1)}
-      else{const v=F.ph-0.9*j.d-0.6*j.i;bk=(0.32-0.12*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp);u=0.08*j.d*Math.sin(v-1.2)} // pectorals fan and row
+      else{const v=F.ph-0.9*j.d-0.6*j.i;bk=(0.42-0.14*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp);u=0.08*j.d*Math.sin(v-1.2)} // pectorals fan and row
     }
     if(l&&j.aL)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aL,l));
     if(bk&&j.aB)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aB,bk));
@@ -458,7 +465,10 @@ function swimFish(dt,sp,yaw){
     for(let k=0;k<BODY_JOINTS;k++){ang+=wave[k];sumA+=ang;if(k)pts.push([k*Ch.seg,z]);z+=Ch.seg*Math.sin(ang)}pts.push([BODY_JOINTS*Ch.seg,z]);
     const turnBack=-BALANCE*sumA/BODY_JOINTS;for(const [x,zz] of pts){sumZ+=zz+turnBack*x;sumX++}
     wave[0]+=turnBack;Ch.bones[0].position.copy(Ch.pos0).addScaledVector(Ch.side,-BALANCE*sumZ/sumX);
-    for(let k=0;k<BODY_JOINTS;k++)Ch.bones[k].quaternion.copy(Ch.rest[k]).multiply(_q.setFromAxisAngle(Ch.axis,wave[k]+curl*Ch.bend[k]))}
+    // up/down bending about each joint's sideways axis: the first joint lifts the head, the rest bring the tail back toward
+    // level, plus the lagging tail's curl (turning about +z raises the tail end)
+    for(let k=0;k<BODY_JOINTS;k++)Ch.bones[k].quaternion.copy(Ch.rest[k]).multiply(_q.setFromAxisAngle(Ch.axis,wave[k]+curl*Ch.bend[k]))
+      .multiply(_q.setFromAxisAngle(Ch.up,(k?lift/(BODY_JOINTS-1):-lift)+PITCH_CURL*vcurl*Ch.bend[k]))}
   if(SW.grid){const G=SW.grid,calm=1-0.6*Math.min(1,Math.abs(curl)),flap=calm*(0.7+0.6*sp),mid=(TAIL_RAYS-1)/2;
     G.ph+=dt*Math.PI*2*(TAIL_HZ+1.0*sp);
     for(let r=0;r<TAIL_RAYS;r++)for(let k=0;k<TAIL_SEGS;k++){const b=G.rays[r][k],f=Math.pow(k/(TAIL_SEGS-1),TAIL_EDGE),ph=G.ph-TAIL_STEP*k-TAIL_SLANT*r;
@@ -550,7 +560,7 @@ function steerFish(dt,t,idle){
   const eP=THREE.MathUtils.clamp(Math.atan2(d.y,flat),-FISH_PITCH,FISH_PITCH)-C.el;
   C.yawRate=turnRate(C.yawRate,e,dt,hold);C.yaw+=C.yawRate*dt;
   C.elV=turnRate(C.elV,eP,dt,hold);C.el+=C.elV*dt;
-  C.pitch=-C.el/0.6; // the frame draws the fish's pitch as rotateZ(pitch*0.6), where positive tips the snout down
+  C.pitch=-C.el*PITCH_BODY/0.6; // the frame draws the fish's pitch as rotateZ(pitch*0.6), positive tips the snout down; the spine bends in the rest
   const fwd=new THREE.Vector3(Math.cos(C.yaw)*Math.cos(C.el),Math.sin(C.el),-Math.sin(C.yaw)*Math.cos(C.el));
   // swim once it faces the cursor; braking distance sets the speed so the mouth comes to rest on the cursor
   // rem: how far the mouth still is from the cursor; measured along the heading once it faces the cursor, so it can't
@@ -586,7 +596,7 @@ bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
       bird.mx.update(reduce?0:dt)}}
   if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
       fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
-      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,Math.max(C.spd/FISH_SPEED,Math.abs(C.yawRate)*0.45)),C.yaw);
+      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,Math.max(C.spd/FISH_SPEED,Math.abs(C.yawRate)*0.45)),C.yaw,C.el);
       glowLight.position.copy(C.p).add(new THREE.Vector3(0,0.35,0.8));glowLight.intensity=0.7*mixT;BG.uGlow.value.set(C.p.x,C.p.y,mixT)}else{glowLight.intensity=0;BG.uGlow.value.z=0}}
   // letters move out of the creature's way
   const cs=toScreen(C.p),R=Math.min(W,H)*0.2;
