@@ -13,7 +13,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 ## Open items
 
 - **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (up/down bending: `PITCH_BODY`, `PITCH_CURL`; tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
-- **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
+- **Hummingbird (contact page, day):** colours brightened and tinted from the forest photo behind it (2026-10-20); now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
@@ -22,6 +22,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: hummingbird colours match the forest
+- Puli: the hummingbird's colours don't match the background; make it brighter to match the forest's colour gradient.
+- Before: flat, greyish feathers under cool light, looking pasted onto the warm green and golden photo.
+- Feathers: the plumage texture is pushed away from grey (`BIRD_SAT` 1.35) and lifted (`BIRD_BRIGHT` 1.2) in the shader.
+- Local forest colour: the day photo is shrunk to a 48×27 grid at load (`forestGrid`). Each frame the colour behind the bird is sampled (`forestAt`, 5×5 average, using the background's crop and 1.22× overfill) and eased onto the feathers as emissive light (`BIRD_GLOW` 0.9, emissive map = feather texture). It glows golden in the sun shafts and greener by the ferns, and fades out toward night.
+- Checked headless at three spots: warmer, brighter, more saturated, with olive-gold tones that sit in the photo.
+- Preview artifact updated to match.
 
 ### 2026-10-20: fish bends up and down; everything wavier
 - Puli: moving the cursor up or down rotated the whole fish rigidly; it should bend up or down (in fact in any direction). He also wanted the body, tail and fins much wavier.

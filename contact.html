@@ -208,14 +208,30 @@ scene.add(motes);
 const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
 let bird=null;
 // professionally animated hummingbird: hover and forward-flight clips blended by speed
+// The bird takes on the forest's colour where it flies: the day photo, shrunk to a small grid, is sampled behind the bird
+// every frame, and that colour lights its feathers softly (as light bouncing off the leaves around it would), so it glows
+// golden in the sun shafts and greener by the ferns. BIRD_GLOW: how strongly; BIRD_SAT/BIRD_BRIGHT: feather saturation and lift.
+const BIRD_GLOW=0.9,BIRD_SAT=1.35,BIRD_BRIGHT=1.2,FOREST={w:48,h:27,px:null};
+function forestGrid(img){const c=document.createElement('canvas');c.width=FOREST.w;c.height=FOREST.h;const x=c.getContext('2d');x.drawImage(img,0,0,FOREST.w,FOREST.h);
+  try{FOREST.px=x.getImageData(0,0,FOREST.w,FOREST.h).data}catch(e){FOREST.px=null}}
+// colour of the day photo behind screen point (sx, sy) in 0..1, averaged over a small neighbourhood; out: a THREE.Color (linear)
+function forestAt(sx,sy,out){const cr=BG.uCrop.value,u=cr.x+(0.5+(sx-0.5)/1.22)*cr.z,v=cr.y+(0.5+(0.5-sy)/1.22)*cr.w;
+  const cx=Math.round(u*(FOREST.w-1)),cy=Math.round((1-v)*(FOREST.h-1));let r=0,g=0,b=0,n=0;
+  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=THREE.MathUtils.clamp(cx+dx,0,FOREST.w-1),y=THREE.MathUtils.clamp(cy+dy,0,FOREST.h-1),i=(y*FOREST.w+x)*4;
+    r+=FOREST.px[i];g+=FOREST.px[i+1];b+=FOREST.px[i+2];n++}
+  return out.setRGB(r/n/255,g/n/255,b/n/255,THREE.SRGBColorSpace)}
 async function loadBird(){
-  const gl=await new GLTFLoader().loadAsync('assets/hb2-gltf.json');const o=gl.scene;
+  const gl=await new GLTFLoader().loadAsync('assets/hb2-gltf.json');const o=gl.scene,mats=[];
   o.traverse(n=>{if(!n.isMesh)return;const mn=n.material&&n.material.name||'';
     if(/Bark|Petal|Stem/i.test(mn)){n.visible=false;return}   // the perch and flower that ship with the model
     n.frustumCulled=false;n.castShadow=false;
     if(/Plumage/i.test(mn)){const sm=n.material;const m=new THREE.MeshPhysicalMaterial({map:sm.map,normalMap:sm.normalMap,roughnessMap:sm.roughnessMap,metalnessMap:sm.metalnessMap,
-      roughness:1,metalness:0,side:THREE.DoubleSide,iridescence:0.35,iridescenceIOR:1.5,iridescenceThicknessRange:[200,480],sheen:0.25,sheenRoughness:0.7,sheenColor:new THREE.Color(0x9fdcae)});
-      m.normalScale.set(1,1);n.material=m}});
+      roughness:1,metalness:0,side:THREE.DoubleSide,iridescence:0.35,iridescenceIOR:1.5,iridescenceThicknessRange:[200,480],sheen:0.25,sheenRoughness:0.7,sheenColor:new THREE.Color(0x9fdcae),
+      emissive:new THREE.Color(0),emissiveMap:sm.map});
+      // richer, brighter feathers: push the texture's colour away from grey and lift it
+      m.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        diffuseColor.rgb=mix(vec3(dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722))),diffuseColor.rgb,${BIRD_SAT.toFixed(2)})*${BIRD_BRIGHT.toFixed(2)};`)};
+      m.normalScale.set(1,1);n.material=m;mats.push(m)}});
   // measure only the visible bird
   const box=new THREE.Box3();o.updateMatrixWorld(true);o.traverse(n=>{if(n.isMesh&&n.visible)box.expandByObject(n)});
   const sz=box.getSize(new THREE.Vector3()),cn=box.getCenter(new THREE.Vector3());
@@ -223,7 +239,7 @@ async function loadBird(){
   inner.rotation.y=BIRD_YAW;group.add(inner);scene.add(group);
   const mx=new THREE.AnimationMixer(o),clip=n=>gl.animations.find(a=>a.name.includes(n));
   const hover=mx.clipAction(clip('Hover')),fwd=mx.clipAction(clip('Forward'));hover.play();fwd.play();fwd.setEffectiveWeight(0);
-  bird={group,inner,mx,hover,fwd};
+  bird={group,inner,mx,hover,fwd,mats,tint:new THREE.Color(0),glow:new THREE.Color()};
 }
 let BIRD_YAW=0;
 
@@ -593,7 +609,9 @@ bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
   if(bird){bird.group.visible=mixT<0.5;if(bird.group.visible){const sc=(W<H?0.72:0.95);bird.group.scale.setScalar(sc);bird.group.position.copy(C.p);
       bird.group.rotation.set(0,0,0);bird.group.rotateY(C.yaw);bird.group.rotateZ(C.pitch*0.8);bird.group.rotateX(C.roll);
       const fw=THREE.MathUtils.smoothstep(C.spd,0.5,1.6);bird.hover.setEffectiveWeight(1-fw);bird.fwd.setEffectiveWeight(fw);
-      bird.mx.update(reduce?0:dt)}}
+      bird.mx.update(reduce?0:dt);
+      if(FOREST.px){const sp=toScreen(C.p);forestAt(sp.x/W,sp.y/H,bird.glow);bird.tint.lerp(bird.glow,Math.min(1,dt*3)); // eases as the bird moves
+        for(const m of bird.mats)m.emissive.copy(bird.tint).multiplyScalar(BIRD_GLOW*Math.max(0,1-mixT*2))}}}
   if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
       fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
       if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,Math.max(C.spd/FISH_SPEED,Math.abs(C.yawRate)*0.45)),C.yaw,C.el);
@@ -617,7 +635,7 @@ window.__dbg={frame:()=>frame(),C,ptr,setTheme,get bird(){return bird},get fish(
   BG.uDay.value=d;BG.uNight.value=n;BG.uDD.value=dd;BG.uDN.value=dn;
   // light the creatures with the photo itself, so their colour and highlights match the forest
   const envOf=tx=>{const c=tx.clone();c.mapping=THREE.EquirectangularReflectionMapping;c.needsUpdate=true;return pmrem.fromEquirectangular(c).texture};
-  envDay=envOf(d);envNight=envOf(n);
+  envDay=envOf(d);envNight=envOf(n);forestGrid(d.image);
   resize();
   await Promise.all([loadBird().catch(e=>console.error('bird',e)),loadFish().catch(e=>console.error('fish',e))]);
   const h=document.getElementById('hint');h.textContent=touch?'Touch the forest':'Move your cursor';h.style.opacity='1';setTimeout(()=>h.style.opacity='0',3200);
