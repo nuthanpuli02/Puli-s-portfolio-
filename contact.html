@@ -332,31 +332,52 @@ const C={p:new THREE.Vector3(0.6,0,0.7),v:new THREE.Vector3(),yaw:-0.55,pitch:0,
 const Z=0.75;
 function steer(dt,t,isFish){
   const idle=!ptr.active||performance.now()-ptr.last>(touch?2500:6000);
+  if(isFish)return steerFish(dt,t,idle);
   let tgt;
-  if(isFish){
-    // a fish never parks: it cruises in a slow, wide loop around the cursor (or the middle of the scene when idle)
-    const c=idle?new THREE.Vector3(0.3,0.05,Z):toWorld(ptr.x,ptr.y,Z),a=t*0.35;
-    tgt=c.add(new THREE.Vector3(Math.cos(a)*0.75,Math.sin(a*2.0)*0.12,Math.sin(a)*0.18));
-  }else{
-    if(idle){const a=t*0.32;tgt=new THREE.Vector3(Math.sin(a)*camera.aspect*0.55+0.25,Math.sin(a*1.7)*0.45+0.05,Z+Math.sin(a*0.9)*0.25)}
-    else tgt=toWorld(ptr.x,ptr.y,Z);
-    // keep the beak beside the cursor; the offset follows the facing side slowly so it can't feed back
-    C.off+=(-0.20*C.face-C.off)*Math.min(1,dt*1.5);tgt.x+=C.off;tgt.y-=0.03;
-  }
+  if(idle){const a=t*0.32;tgt=new THREE.Vector3(Math.sin(a)*camera.aspect*0.55+0.25,Math.sin(a*1.7)*0.45+0.05,Z+Math.sin(a*0.9)*0.25)}
+  else tgt=toWorld(ptr.x,ptr.y,Z);
+  // keep the beak beside the cursor; the offset follows the facing side slowly so it can't feed back
+  C.off+=(-0.20*C.face-C.off)*Math.min(1,dt*1.5);tgt.x+=C.off;tgt.y-=0.03;
   // critically damped spring: arrives without overshooting
-  const k=isFish?1.6:8.0,dmp=2*Math.sqrt(k),max=isFish?0.6:2.6;
+  const k=8.0,dmp=2*Math.sqrt(k),max=2.6;
   const acc=tgt.sub(C.p).multiplyScalar(k).addScaledVector(C.v,-dmp);C.v.addScaledVector(acc,dt);if(C.v.length()>max)C.v.setLength(max);
   C.p.addScaledVector(C.v,dt);
   C.spd+=(C.v.length()-C.spd)*Math.min(1,dt*3);
   // change side only after moving the other way for a moment (hysteresis), never from a small wobble
-  const vx=C.v.x,need=isFish?0.12:0.45,hold=isFish?0.25:0.2;
+  const vx=C.v.x,need=0.45,hold=0.2;
   if(Math.sign(vx)!==C.face&&Math.abs(vx)>need){C.flipT+=dt;if(C.flipT>hold){C.face=-C.face;C.flipT=0}}else C.flipT=Math.max(0,C.flipT-dt*2);
-  const side=isFish?0.0:THREE.MathUtils.smoothstep(C.spd,0.25,1.4),turn=isFish?0.62:0.55;
+  const side=THREE.MathUtils.smoothstep(C.spd,0.25,1.4),turn=0.55;
   const wantYaw=C.face>0?-(1-side)*turn:Math.PI+(1-side)*turn;
-  const dy=((wantYaw-C.yaw+Math.PI*3)%(Math.PI*2))-Math.PI,maxTurn=isFish?2.8:7;
-  const step=THREE.MathUtils.clamp(dy*Math.min(1,dt*(isFish?2.5:6)),-maxTurn*dt,maxTurn*dt);C.yaw+=step;C.yawRate+=(step/Math.max(dt,1e-3)-C.yawRate)*Math.min(1,dt*6);
-  C.pitch+=(THREE.MathUtils.clamp(C.v.y*(isFish?0.7:0.35),-0.5,0.5)-C.pitch)*Math.min(1,dt*3);
+  const dy=((wantYaw-C.yaw+Math.PI*3)%(Math.PI*2))-Math.PI,maxTurn=7;
+  const step=THREE.MathUtils.clamp(dy*Math.min(1,dt*6),-maxTurn*dt,maxTurn*dt);C.yaw+=step;C.yawRate+=(step/Math.max(dt,1e-3)-C.yawRate)*Math.min(1,dt*6);
+  C.pitch+=(THREE.MathUtils.clamp(C.v.y*0.35,-0.5,0.5)-C.pitch)*Math.min(1,dt*3);
   C.roll+=(THREE.MathUtils.clamp(-C.v.x*0.12,-0.3,0.3)-C.roll)*Math.min(1,dt*3);
+}
+// The fish points its head at the cursor, turns smoothly toward it, and only then swims forward along its heading,
+// slowing as it arrives. Close to the cursor it stops and only turns gently, so a cursor resting on it can't make it spin.
+const FISH_SPEED=0.6,FISH_TURN=2.0,ARRIVE=0.14,FISH_PITCH=1.1;
+function steerFish(dt,t,idle){
+  const tgt=idle?new THREE.Vector3(0.3+Math.cos(t*0.3)*0.75,0.05+Math.sin(t*0.6)*0.12,Z):toWorld(ptr.x,ptr.y,Z);
+  // depth counts for less than left/right and up/down, so the fish stays near its swimming plane instead of heading into the screen
+  const d=tgt.sub(C.p);d.z*=0.3;const dist=d.length(),flat=Math.hypot(d.x,d.z);
+  let want=0;
+  if(dist>0.05){
+    // heading: yaw 0 faces +x, -π/2 faces the viewer
+    // a cursor almost straight above or below is reached by tilting, not by swinging left and right
+    if(flat>0.05&&Math.abs(d.x)>0.25*Math.abs(d.y)){let e=((Math.atan2(-d.z,d.x)-C.yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
+      // turning right round goes through facing the viewer, never showing the fish's back
+      if(Math.abs(e)>2.2){const alt=e-Math.sign(e)*Math.PI*2;if(-Math.sin(C.yaw+alt/2)>-Math.sin(C.yaw+e/2))e=alt}
+      want=THREE.MathUtils.clamp(e*2.0,-FISH_TURN,FISH_TURN)*THREE.MathUtils.smoothstep(dist,0.05,ARRIVE)}
+    C.pitch+=(-THREE.MathUtils.clamp(Math.atan2(d.y,flat),-FISH_PITCH,FISH_PITCH)/0.6-C.pitch)*Math.min(1,dt*1.5);
+  }else C.pitch*=Math.max(0,1-dt);
+  C.yawRate+=(want-C.yawRate)*Math.min(1,dt*2.5);C.yaw+=C.yawRate*dt;
+  // the frame draws the fish's pitch as rotateZ(pitch*0.6), where positive tips the snout down
+  const el=-C.pitch*0.6,fwd=new THREE.Vector3(Math.cos(C.yaw)*Math.cos(el),Math.sin(el),-Math.sin(C.yaw)*Math.cos(el));
+  // swim only once it faces the cursor, easing in and easing to a stop on arrival
+  const aim=dist>ARRIVE?Math.max(0,fwd.dot(d)/dist):0,ramp=THREE.MathUtils.clamp((dist-ARRIVE)/0.5,0,1),go=FISH_SPEED*ramp*(2-ramp)*aim*aim;
+  C.spd+=(go-C.spd)*Math.min(1,dt*(go>C.spd?0.8:1.5));
+  C.v.copy(fwd).multiplyScalar(C.spd);C.v.z*=0.4;C.p.addScaledVector(C.v,dt);C.p.z+=(Z-C.p.z)*Math.min(1,dt*0.8);
+  C.roll+=(0-C.roll)*Math.min(1,dt*3);
 }
 
 // ---------- loop ----------
@@ -380,7 +401,7 @@ bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
       bird.mx.update(reduce?0:dt)}}
   if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
       fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
-      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,C.spd/0.6),C.yaw);
+      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,Math.max(C.spd/FISH_SPEED,Math.abs(C.yawRate)*0.4)),C.yaw);
       glowLight.position.copy(C.p).add(new THREE.Vector3(0,0.35,0.8));glowLight.intensity=0.7*mixT;BG.uGlow.value.set(C.p.x,C.p.y,mixT)}else{glowLight.intensity=0;BG.uGlow.value.z=0}}
   // letters move out of the creature's way
   const cs=toScreen(C.p),R=Math.min(W,H)*0.2;
