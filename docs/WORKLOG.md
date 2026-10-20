@@ -23,6 +23,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: a little haze on the hummingbird
+- Puli asked for just a little haze on the bird.
+- The plumage keeps `fog:false` and gets its own haze instead: the final colour is mixed `BIRD_HAZE` 0.08 toward the scene's fog colour (`BIRD_HAZE_U`, updated each frame).
+- The mix is done in display brightness (gamma 2.2), not linear light. Mixing in linear light lifts dark colours a lot to the eye, which is why three's own fog looked milky even when weak.
+- Same-frame comparison at 0 / 8% / 15%: 8% is a subtle softening; 15% is already clearly paler.
+- Testing note: screenshots taken before the loading overlay finishes fading look pale; hide `#loading` in headless tests before comparing colours.
+- Preview artifact updated to match.
+
 ### 2026-10-20: hummingbird sheen, shimmer and reflections back
 - Puli asked to add back the rest of the removed effects except the fog. Restored: sheen 0.25 (pale green), iridescence 0.35, full environment reflections, `BIRD_GLOW` 0.9. Kept: `fog:false`, `BIRD_SAT` 1.6, contrast 1.15, lift 1.3.
 - Checked headless: colours stay rich, with the sheen and shimmer on top.

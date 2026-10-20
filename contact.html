@@ -211,7 +211,8 @@ let bird=null;
 // The bird takes on the forest's colour where it flies: the day photo, shrunk to a small grid, is sampled behind the bird
 // every frame, and that colour lights its feathers softly (as light bouncing off the leaves around it would), so it glows
 // golden in the sun shafts and greener by the ferns. BIRD_GLOW: how strongly; BIRD_SAT/BIRD_CONTRAST/BIRD_BRIGHT: feather saturation, contrast (deepens mid-tones) and lift.
-const BIRD_GLOW=0.9,BIRD_SAT=1.6,BIRD_CONTRAST=1.15,BIRD_BRIGHT=1.3,FOREST={w:48,h:27,px:null};
+// BIRD_HAZE: how far the feathers are mixed toward the forest's haze colour
+const BIRD_HAZE=0.08,BIRD_HAZE_U={value:new THREE.Vector4(0,0,0,0)},BIRD_GLOW=0.9,BIRD_SAT=1.6,BIRD_CONTRAST=1.15,BIRD_BRIGHT=1.3,FOREST={w:48,h:27,px:null};
 function forestGrid(img){const c=document.createElement('canvas');c.width=FOREST.w;c.height=FOREST.h;const x=c.getContext('2d');x.drawImage(img,0,0,FOREST.w,FOREST.h);
   try{FOREST.px=x.getImageData(0,0,FOREST.w,FOREST.h).data}catch(e){FOREST.px=null}}
 // colour of the day photo behind screen point (sx, sy) in 0..1, averaged over a small neighbourhood; out: a THREE.Color (linear)
@@ -226,11 +227,15 @@ async function loadBird(){
     if(/Bark|Petal|Stem/i.test(mn)){n.visible=false;return}   // the perch and flower that ship with the model
     n.frustumCulled=false;n.castShadow=false;
     if(/Plumage/i.test(mn)){const sm=n.material;const m=new THREE.MeshPhysicalMaterial({map:sm.map,normalMap:sm.normalMap,roughnessMap:sm.roughnessMap,metalnessMap:sm.metalnessMap,
-      // kept out of the forest haze (fog), which laid a pale film over the colours
+      // kept out of the full forest haze (fog), which laid a pale film over the colours; a light haze of its own is added below
       roughness:1,metalness:0,side:THREE.DoubleSide,iridescence:0.35,iridescenceIOR:1.5,iridescenceThicknessRange:[200,480],sheen:0.25,sheenRoughness:0.7,sheenColor:new THREE.Color(0x9fdcae),fog:false,
       emissive:new THREE.Color(0),emissiveMap:sm.map});
       // richer, brighter feathers: push the texture's colour away from grey and lift it
-      m.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+      m.onBeforeCompile=s=>{s.uniforms.uHaze=BIRD_HAZE_U;s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 uHaze;')
+        .replace('#include <dithering_fragment>',`// mixed in display brightness (not linear light), so a little haze looks like a little
+        gl_FragColor.rgb=pow(mix(pow(max(gl_FragColor.rgb,0.0),vec3(1.0/2.2)),pow(uHaze.rgb,vec3(1.0/2.2)),uHaze.a),vec3(2.2));
+        #include <dithering_fragment>`)
+        .replace('#include <map_fragment>',`#include <map_fragment>
         diffuseColor.rgb=pow(max(mix(vec3(dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722))),diffuseColor.rgb,${BIRD_SAT.toFixed(2)}),0.0),vec3(${BIRD_CONTRAST.toFixed(2)}))*${BIRD_BRIGHT.toFixed(2)};`)};
       m.normalScale.set(1,1);n.material=m;mats.push(m)}});
   // measure only the visible bird
@@ -612,7 +617,8 @@ bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
       const fw=THREE.MathUtils.smoothstep(C.spd,0.5,1.6);bird.hover.setEffectiveWeight(1-fw);bird.fwd.setEffectiveWeight(fw);
       bird.mx.update(reduce?0:dt);
       if(FOREST.px){const sp=toScreen(C.p);forestAt(sp.x/W,sp.y/H,bird.glow);bird.tint.lerp(bird.glow,Math.min(1,dt*3)); // eases as the bird moves
-        for(const m of bird.mats)m.emissive.copy(bird.tint).multiplyScalar(BIRD_GLOW*Math.max(0,1-mixT*2))}}}
+        for(const m of bird.mats)m.emissive.copy(bird.tint).multiplyScalar(BIRD_GLOW*Math.max(0,1-mixT*2))}
+      const fc=scene.fog.color;BIRD_HAZE_U.value.set(fc.r,fc.g,fc.b,BIRD_HAZE)}}
   if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
       fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
       if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,Math.max(C.spd/FISH_SPEED,Math.abs(C.yawRate)*0.45)),C.yaw,C.el);
