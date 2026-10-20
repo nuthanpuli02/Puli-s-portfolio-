@@ -238,10 +238,10 @@ const RIG={ // bone names by fin; "|" separates the joints from the fin's base o
   fin:'Bone.018 Bone.019 Bone.033 Bone.034|Bone.021 Bone.023 Bone.035 Bone.036|Bone.022 Bone.024 Bone.037 Bone.038', // dorsal and anal
   ventral:'Bone.009|Bone.027 Bone.028|Bone.029 Bone.030|Bone.031 Bone.032',
   pec:'Bone.010 Bone.011|Bone.012 Bone.013|Bone.014 Bone.015 Bone.016 Bone.017'};
-const SPINE_AMP=[0.11,0.19,0.27,0.35],RECOIL=0.045;
+const SPINE_AMP=[0.14,0.25,0.35,0.45],RECOIL=0.05;
 // how a turn spreads down the spine: the head turns first and the tail follows on a springy lag,
 // so the body curls into a C, then the tail swings through and flicks the fish onto its new heading
-const SPINE_BEND=[0.12,0.22,0.3,0.36],TAIL_K=25,TAIL_DAMP=0.5,MAX_CURL=1.4;
+const SPINE_BEND=[0.17,0.31,0.42,0.5],TAIL_K=8,TAIL_DAMP=0.45,MAX_CURL=1.8;
 const SW={body:0,pec:0,joints:[],tail:null,tailV:0};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
@@ -277,7 +277,7 @@ function swimFish(dt,sp,yaw){
   const wrap=a=>((a+Math.PI*3)%(Math.PI*2))-Math.PI;
   SW.tailV+=(TAIL_K*wrap(yaw-SW.tail)-2*TAIL_DAMP*Math.sqrt(TAIL_K)*SW.tailV)*dt;SW.tail+=SW.tailV*dt;
   const curl=THREE.MathUtils.clamp(wrap(yaw-SW.tail),-MAX_CURL,MAX_CURL);
-  SW.body+=dt*Math.PI*2*(1.0+1.4*sp);SW.pec+=dt*Math.PI*2*(3.4-0.9*sp);
+  SW.body+=dt*Math.PI*2*(0.65+0.9*sp);SW.pec+=dt*Math.PI*2*(2.6-0.6*sp);
   // the mixer only writes a bone when its clip value changes, so put back the clip pose it last wrote before adding the swim
   for(const j of SW.joints)j.b.quaternion.copy(j.clip);
   mixer.update(dt*(0.8+0.6*sp));
@@ -335,7 +335,7 @@ function steer(dt,t,isFish){
   let tgt;
   if(isFish){
     // a fish never parks: it cruises in a slow, wide loop around the cursor (or the middle of the scene when idle)
-    const c=idle?new THREE.Vector3(0.3,0.05,Z):toWorld(ptr.x,ptr.y,Z),a=t*0.55;
+    const c=idle?new THREE.Vector3(0.3,0.05,Z):toWorld(ptr.x,ptr.y,Z),a=t*0.35;
     tgt=c.add(new THREE.Vector3(Math.cos(a)*0.75,Math.sin(a*2.0)*0.12,Math.sin(a)*0.18));
   }else{
     if(idle){const a=t*0.32;tgt=new THREE.Vector3(Math.sin(a)*camera.aspect*0.55+0.25,Math.sin(a*1.7)*0.45+0.05,Z+Math.sin(a*0.9)*0.25)}
@@ -344,7 +344,7 @@ function steer(dt,t,isFish){
     C.off+=(-0.20*C.face-C.off)*Math.min(1,dt*1.5);tgt.x+=C.off;tgt.y-=0.03;
   }
   // critically damped spring: arrives without overshooting
-  const k=isFish?2.6:8.0,dmp=2*Math.sqrt(k),max=isFish?0.95:2.6;
+  const k=isFish?1.6:8.0,dmp=2*Math.sqrt(k),max=isFish?0.6:2.6;
   const acc=tgt.sub(C.p).multiplyScalar(k).addScaledVector(C.v,-dmp);C.v.addScaledVector(acc,dt);if(C.v.length()>max)C.v.setLength(max);
   C.p.addScaledVector(C.v,dt);
   C.spd+=(C.v.length()-C.spd)*Math.min(1,dt*3);
@@ -353,8 +353,8 @@ function steer(dt,t,isFish){
   if(Math.sign(vx)!==C.face&&Math.abs(vx)>need){C.flipT+=dt;if(C.flipT>hold){C.face=-C.face;C.flipT=0}}else C.flipT=Math.max(0,C.flipT-dt*2);
   const side=isFish?0.0:THREE.MathUtils.smoothstep(C.spd,0.25,1.4),turn=isFish?0.62:0.55;
   const wantYaw=C.face>0?-(1-side)*turn:Math.PI+(1-side)*turn;
-  const dy=((wantYaw-C.yaw+Math.PI*3)%(Math.PI*2))-Math.PI,maxTurn=isFish?5:7;
-  const step=THREE.MathUtils.clamp(dy*Math.min(1,dt*(isFish?4.5:6)),-maxTurn*dt,maxTurn*dt);C.yaw+=step;C.yawRate+=(step/Math.max(dt,1e-3)-C.yawRate)*Math.min(1,dt*6);
+  const dy=((wantYaw-C.yaw+Math.PI*3)%(Math.PI*2))-Math.PI,maxTurn=isFish?2.8:7;
+  const step=THREE.MathUtils.clamp(dy*Math.min(1,dt*(isFish?2.5:6)),-maxTurn*dt,maxTurn*dt);C.yaw+=step;C.yawRate+=(step/Math.max(dt,1e-3)-C.yawRate)*Math.min(1,dt*6);
   C.pitch+=(THREE.MathUtils.clamp(C.v.y*(isFish?0.7:0.35),-0.5,0.5)-C.pitch)*Math.min(1,dt*3);
   C.roll+=(THREE.MathUtils.clamp(-C.v.x*0.12,-0.3,0.3)-C.roll)*Math.min(1,dt*3);
 }
@@ -380,7 +380,7 @@ bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
       bird.mx.update(reduce?0:dt)}}
   if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
       fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
-      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,C.spd/0.9),C.yaw);
+      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,C.spd/0.6),C.yaw);
       glowLight.position.copy(C.p).add(new THREE.Vector3(0,0.35,0.8));glowLight.intensity=0.7*mixT;BG.uGlow.value.set(C.p.x,C.p.y,mixT)}else{glowLight.intensity=0;BG.uGlow.value.z=0}}
   // letters move out of the creature's way
   const cs=toScreen(C.p),R=Math.min(W,H)*0.2;
