@@ -241,18 +241,31 @@ const RIG={ // bone names by fin; "|" separates the joints from the fin's base o
   pec:'Bone.010 Bone.011|Bone.012 Bone.013|Bone.014 Bone.015 Bone.016 Bone.017'};
 // every fin has its own rhythm (beats per second, and a little different on the left and right), so no two fins move in step;
 // along a fin, each ray and each joint out toward the tip lags the one before it, so ripples run through the fin
-const FIN_HZ={caudal:1.25,dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.04,0.09,0.15,0.18];
+const FIN_HZ={caudal:1.25,dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.06,0.13,0.22,0.26];
 const SPINE_AMP=[0.19,0.34,0.47,0.6],RECOIL=0.06;
 // how a turn spreads down the spine: the head turns first and the tail follows on a springy lag,
 // so the body curls into a C, then the tail swings through and flicks the fish onto its new heading
 const SPINE_BEND=[0.24,0.44,0.6,0.72],TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
 const SW={body:0,joints:[],fins:{},tail:null,tailV:0};
+// fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
+// two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
+const FIN_WAVELEN=0.11,FIN_WAVE=0.04,FW={uFinPh:{value:0},uFinAmp:{value:0}};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
     const src=n.material;const m=new THREE.MeshStandardMaterial({map:src.map,normalMap:src.normalMap,emissive:new THREE.Color(0xffffff),emissiveMap:src.map,emissiveIntensity:0.75,
       roughness:0.35,metalness:0.0,transparent:true,opacity:0.72,depthWrite:false,side:THREE.DoubleSide});
-    m.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+    m.onBeforeCompile=s=>{Object.assign(s.uniforms,FW);
+      s.vertexShader=s.vertexShader.replace('#include <common>',`#include <common>
+      attribute vec3 finData,finN,finO;uniform float uFinPh,uFinAmp;
+      // fin membrane ripple: waves running outward from the body (finData: strength, distance from the body, phase offset)
+      vec3 finWave(){float k=6.2831853/FIN_WAVELEN,ph=k*finData.y-uFinPh+finData.z,a=uFinAmp*finData.x*smoothstep(0.0,0.22,finData.y);
+        return vec3(a*sin(ph),a*cos(ph),a*k*cos(ph));}`.replace('FIN_WAVELEN',FIN_WAVELEN.toFixed(3)))
+      .replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(finData.x>0.0){vec3 fw=finWave(),n=normalize(finN),ou=normalize(finO+1e-6);objectNormal=normalize(objectNormal-sign(dot(objectNormal,n))*fw.z*ou);}`)
+      .replace('#include <begin_vertex>',`#include <begin_vertex>
+      if(finData.x>0.0){vec3 fw=finWave();transformed+=finN*fw.x+finO*0.3*fw.y;}`);
+      s.fragmentShader=s.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
       float fr=pow(1.0-abs(dot(normalize(vViewPosition),normal)),2.2);totalEmissiveRadiance+=mix(vec3(0.2,1.0,0.9),vec3(0.65,0.45,1.0),fr)*fr*0.9;diffuseColor.a*=0.55+0.45*fr;`)};
     n.material=m;n.frustumCulled=false}});
   const box=new THREE.Box3().setFromObject(o),sz=box.getSize(new THREE.Vector3()),cn=box.getCenter(new THREE.Vector3());
@@ -267,6 +280,7 @@ async function loadFish(){
   {const ax=mouth().sub(tailBase());lvl.rotation.z=Math.atan2(ax.y,-ax.x)}
   const m0=mouth(),piv=m0.clone().lerp(tailBase(),0.4),snout=piv.x-m0.x;lvl.position.sub(piv);
   holder.updateMatrixWorld(true);
+  finMembranes(o,[mouth(),...['Bone','Bone.002','Bone.003','Bone.004','Bone.005'].map(nm=>o.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature')).getWorldPosition(new THREE.Vector3()))]);
   // measure the fish in the holder's frame: along the body (0 behind the head, 1 where the tail fin starts), sideways, and each bone's direction
   const bone=nm=>o.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature'));
   const wp=b=>b.getWorldPosition(new THREE.Vector3());
@@ -285,13 +299,39 @@ async function loadFish(){
   SW.fins.pec1&&(SW.fins.pec1.ph+=Math.PI); // the pectorals start out of step, like a betta fanning while it hovers
   fish={holder,inner,size:sz,snout};holder.updateMatrixWorld(true);
 }
+// For every fin vertex: how strongly it ripples (its skin weight on fin bones, fading in away from the body), how far
+// it is from the body, a phase offset (each fin its own, and varying across the fin), and the directions that are
+// "sideways" and "outward" for it in the mesh's own space, so the ripple rides along with the bones.
+// core: the body's centre line in the fish's frame (mouth, then the spine bones); the fish is unrotated here.
+function finMembranes(o,core){
+  const kindOf={},SEED={caudal:0,dorsal:1.7,anal:3.1,ventral:4.4};
+  for(const kind of ['caudal','dorsal','anal','ventral'])for(const nm of RIG[kind].split(/[| ]/))kindOf[THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature')]=kind;
+  const v=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),J=new THREE.Matrix3(),Ji=new THREE.Matrix3(),q=new THREE.Vector3(),seg=new THREE.Line3();
+  const at=(n,i,p)=>n.applyBoneTransform(i,p).applyMatrix4(n.matrixWorld);
+  o.traverse(n=>{if(!n.isSkinnedMesh)return;const g=n.geometry,P=g.attributes.position,SI=g.attributes.skinIndex,SWt=g.attributes.skinWeight,cnt=P.count;
+    const fd=new Float32Array(cnt*3),fn=new Float32Array(cnt*3),fo=new Float32Array(cnt*3);
+    for(let i=0;i<cnt&&n.visible;i++){const w={};let finW=0;
+      for(let k=0;k<4;k++){const kind=kindOf[n.skeleton.bones[SI.getComponent(i,k)].name],wt=SWt.getComponent(i,k);if(kind&&wt>0){w[kind]=(w[kind]||0)+wt;finW+=wt}}
+      if(finW<0.05)continue;
+      b.fromBufferAttribute(P,i);const p=at(n,i,b.clone());
+      let best=1e9;for(let s=0;s<core.length-1;s++){seg.set(core[s],core[s+1]);seg.closestPointToPoint(p,true,c);const d=c.distanceTo(p);if(d<best){best=d;q.copy(c)}}
+      const s=Math.max(0,best-0.04),out=p.clone().sub(q).setZ(0);if(out.lengthSq()<1e-8)out.set(1,0,0);out.normalize();
+      const kind=Object.keys(w).reduce((a,k)=>w[k]>w[a]?k:a);
+      // how the mesh's own axes map into the fish's frame at this vertex (skinning is affine per vertex)
+      const e=[0,1,2].map(ax=>at(n,i,b.clone().setComponent(ax,b.getComponent(ax)+1)).sub(p));
+      J.set(e[0].x,e[1].x,e[2].x,e[0].y,e[1].y,e[2].y,e[0].z,e[1].z,e[2].z);Ji.copy(J).invert();
+      const side=new THREE.Vector3(0,0,1).applyMatrix3(Ji),outM=out.clone().applyMatrix3(Ji);
+      fd[i*3]=finW*THREE.MathUtils.smoothstep(s,0,0.06);fd[i*3+1]=s;fd[i*3+2]=SEED[kind]+(kind==='caudal'?Math.atan2(out.y,out.x)*1.5:p.x*8);
+      fn.set([side.x,side.y,side.z],i*3);fo.set([outM.x,outM.y,outM.z],i*3)}
+    g.setAttribute('finData',new THREE.BufferAttribute(fd,3));g.setAttribute('finN',new THREE.BufferAttribute(fn,3));g.setAttribute('finO',new THREE.BufferAttribute(fo,3))});
+}
 // sp: 0 when drifting, 1 at full speed; yaw: the heading the head is turning to
 function swimFish(dt,sp,yaw){
   if(SW.tail===null)SW.tail=yaw;
   const wrap=a=>((a+Math.PI*3)%(Math.PI*2))-Math.PI;
   SW.tailV+=(TAIL_K*wrap(yaw-SW.tail)-2*TAIL_DAMP*Math.sqrt(TAIL_K)*SW.tailV)*dt;SW.tail+=SW.tailV*dt;
   const curl=THREE.MathUtils.clamp(wrap(yaw-SW.tail),-MAX_CURL,MAX_CURL);
-  SW.body+=dt*Math.PI*2*(0.65+0.9*sp);
+  SW.body+=dt*Math.PI*2*(0.65+0.9*sp);FW.uFinPh.value+=dt*Math.PI*2*(1.6+1.2*sp);FW.uFinAmp.value=FIN_WAVE*(0.8+0.6*sp);
   for(const k in SW.fins){const F=SW.fins[k];F.ph+=dt*Math.PI*2*F.hz*(F.kind==='pec'?1-0.23*sp:0.8+0.5*sp)}
   // the mixer only writes a bone when its clip value changes, so put back the clip pose it last wrote before adding the swim
   for(const j of SW.joints)j.b.quaternion.copy(j.clip);

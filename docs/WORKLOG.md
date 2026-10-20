@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); fins now ripple individually after his fifth review (he approved the body bend); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
+- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); fin membranes now ripple with several waves after his sixth review (he approved the body bend); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
@@ -22,6 +22,19 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: fin membranes ripple with several waves
+- Puli: the fins weren't wavy enough; they should bend far more than the body, with several waves visible on the tail fin while swimming.
+- Bones can't do that: each fin ray has only 2-3 bones, so at most one bend. The fin membranes now also ripple in the vertex shader, before skinning, so the ripple rides along with every bone bend and turn. `finMembranes()` computes per-vertex data once at load:
+  - strength: skin weight on caudal, dorsal, anal and ventral bones, fading in away from the body; pectorals are left to their bones
+  - distance from the body's centre line
+  - a phase offset per fin and across the fin
+  - the mesh-space "sideways" and "outward" directions, from the per-vertex skinning Jacobian
+- Waves (`FIN_WAVELEN` 0.11, about three across the tail fin; height `FIN_WAVE` 0.04 at the edge) travel outward at 1.6-2.8 per second and grow with speed. A smaller in-plane component makes the edges scallop. Normals tilt with the waves, so light bands show the ripples even side-on.
+- Bone ripple amplitudes (`FIN_RIP`) are also up by about 50%.
+- Note: the earlier rejected "morphing" was per-vertex lag on the whole fish driven by the guppy wave. This version leaves the body to the bones and only ripples the fin membranes; watch for his reaction.
+- Checked headless from the side and from above: several waves on the tail, dorsal and anal fins, no tearing.
+- Preview artifact updated to match.
 
 ### 2026-10-20: each fin ripples on its own
 - Puli liked the body bend ("bends like a real fish"). Next he wanted the fins to bend and move in small waves while swimming, each fin individually.
