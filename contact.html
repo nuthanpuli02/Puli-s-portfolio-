@@ -228,41 +228,65 @@ async function loadBird(){
 let BIRD_YAW=0;
 
 // ---------- betta (night): real model, glowing translucent material ----------
-let fish=null,mixer=null,SWPH=0;const SWIM=[];const WAVE={tex:null,dur:5};const _hi=new THREE.Matrix4();
+// The swim runs through the betta's own skeleton, so every fin stays attached and bends along its rays:
+// a slow wave travels down the spine and grows toward the tail, each fin ray trails the body a little more
+// joint by joint, the pectoral fins fan quickly and alternately, and the long fins stream back with speed.
+let fish=null,mixer=null;const _q=new THREE.Quaternion();
+const RIG={ // bone names by fin; "|" separates the joints from the fin's base outward
+  spine:'Bone.002|Bone.003|Bone.004|Bone.005',
+  tail:'Bone.020 Bone.039|Bone.025 Bone.040 Bone.042 Bone.044|Bone.026 Bone.041 Bone.043 Bone.045',
+  fin:'Bone.018 Bone.019 Bone.033 Bone.034|Bone.021 Bone.023 Bone.035 Bone.036|Bone.022 Bone.024 Bone.037 Bone.038', // dorsal and anal
+  ventral:'Bone.009|Bone.027 Bone.028|Bone.029 Bone.030|Bone.031 Bone.032',
+  pec:'Bone.010 Bone.011|Bone.012 Bone.013|Bone.014 Bone.015 Bone.016 Bone.017'};
+const SPINE_AMP=[0.07,0.12,0.17,0.22],RECOIL=0.03;
+const SW={body:0,pec:0,joints:[]};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
     const src=n.material;const m=new THREE.MeshStandardMaterial({map:src.map,normalMap:src.normalMap,emissive:new THREE.Color(0xffffff),emissiveMap:src.map,emissiveIntensity:0.75,
       roughness:0.35,metalness:0.0,transparent:true,opacity:0.72,depthWrite:false,side:THREE.DoubleSide});
-    const fu={uPh:{value:0},uAmp:{value:0.8},uBend:{value:0},uWave:{value:WAVE.tex},uXmin:{value:-0.5},uLen:{value:1},uYc:{value:new Array(16).fill(0)},uToH:{value:new THREE.Matrix4()},uFromH:{value:new THREE.Matrix4()}};SWIM.push({fu,n});
-    m.onBeforeCompile=s=>{Object.assign(s.uniforms,fu);
-      s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nuniform float uPh,uAmp,uXmin,uLen,uBend;uniform float uYc[16];uniform sampler2D uWave;uniform mat4 uToH,uFromH;').replace('#include <skinning_vertex>',`#include <skinning_vertex>
-      {vec4 hp=uToH*vec4(transformed,1.0);
-       float sb=clamp((hp.x-uXmin)/uLen,0.0,1.0);         // 0 at the snout, 1 at the tail tip
-       int bi=int(clamp(sb*15.99,0.0,15.0));float yc=uYc[bi];
-       float dy=abs(hp.y-yc)/uLen;                          // distance from the body's centre line
-       float fin=smoothstep(0.035,0.2,dy);                   // the long betta fins
-       // the guppy's recorded swim: lateral offset of the body centre line at (position along body, time)
-       // every point bends with the spine at its position along the body, so the fins ride the body rigidly
-       float w0=texture2D(uWave,vec2(0.02+sb*0.96,uPh)).r;
-       hp.z+=w0*uLen*uAmp+uBend*sb*sb*uLen;                 // the guppy's swim wave, plus a C-bend when turning
-       transformed=(uFromH*hp).xyz;}`);
-      s.fragmentShader=s.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+    m.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
       float fr=pow(1.0-abs(dot(normalize(vViewPosition),normal)),2.2);totalEmissiveRadiance+=mix(vec3(0.2,1.0,0.9),vec3(0.65,0.45,1.0),fr)*fr*0.9;diffuseColor.a*=0.55+0.45*fr;`)};
     n.material=m;n.frustumCulled=false}});
   const box=new THREE.Box3().setFromObject(o),sz=box.getSize(new THREE.Vector3()),cn=box.getCenter(new THREE.Vector3());
   const holder=new THREE.Group(),inner=new THREE.Group();inner.add(o);o.position.sub(cn);const k=1/Math.max(sz.x,sz.y,sz.z);inner.scale.setScalar(k);holder.add(inner);scene.add(holder);
   inner.rotation.y=-Math.PI/2; // the rig's rest pose points the snout along +z; turn it to -x like the steering expects
-  // hold the betta's own clip on its first frame (that sets the rig's orientation); the swim itself comes from the guppy
-  mixer=new THREE.AnimationMixer(o);if(gl.animations[0]){const a=mixer.clipAction(gl.animations[0]);a.play();mixer.update(0);a.paused=true}
-  holder.updateMatrixWorld(true);const hinv=holder.matrixWorld.clone().invert(),vv=new THREE.Vector3(),pts=[];
-  o.traverse(n=>{if(n.isSkinnedMesh&&n.visible){const c=n.geometry.attributes.position.count;for(let i=0;i<c;i+=2){n.getVertexPosition(i,vv);vv.applyMatrix4(n.matrixWorld).applyMatrix4(hinv);pts.push(vv.x,vv.y)}}});
-  let xmin=1e9,xmax=-1e9;for(let i=0;i<pts.length;i+=2){xmin=Math.min(xmin,pts[i]);xmax=Math.max(xmax,pts[i])}
-  const len=xmax-xmin,bins=Array.from({length:16},()=>[]);for(let i=0;i<pts.length;i+=2)bins[Math.min(15,Math.floor((pts[i]-xmin)/len*16))].push(pts[i+1]);
-  const yc=bins.map(b=>{if(!b.length)return 0;b.sort((a,c)=>a-c);return b[b.length>>1]});
-  for(let i=0;i<16;i++)if(!bins[i].length)yc[i]=yc[Math.max(0,i-1)];
-  for(const {fu} of SWIM){fu.uXmin.value=xmin;fu.uLen.value=len;fu.uYc.value=yc}
+  // the model's own clip stays on as a slow layer underneath: gills breathing, mouth, eyes and a gentle drift in the fins
+  mixer=new THREE.AnimationMixer(o);if(gl.animations[0]){mixer.clipAction(gl.animations[0]).play();mixer.update(0)}
+  holder.updateMatrixWorld(true);
+  // measure the fish in the holder's frame: along the body (0 behind the head, 1 where the tail fin starts), sideways, and each bone's direction
+  const bone=nm=>o.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature'));
+  const wp=b=>b.getWorldPosition(new THREE.Vector3());
+  const p0=wp(bone('Bone')),back=wp(bone('Bone.005')).sub(p0),span=back.length();back.normalize();
+  const lat=wp(bone('Bone.014')).sub(wp(bone('Bone.015'))).projectOnPlane(back).normalize();if(lat.z<0)lat.negate();
+  for(const kind in RIG)RIG[kind].split('|').forEach((lvl,d)=>{for(const nm of lvl.split(' ')){const b=bone(nm);if(!b)continue;
+    const p=wp(b),q=b.getWorldQuaternion(new THREE.Quaternion()),qi=q.clone().invert();
+    const r=(b.children[0]?wp(b.children[0]).sub(p):new THREE.Vector3(0,1,0).applyQuaternion(q)).normalize();
+    // turning a bone about (its direction × m) moves its tip toward m; store that axis in the bone's own frame
+    const ax=m=>{const a=r.clone().cross(m);return a.length()<0.3?null:a.normalize().applyQuaternion(qi)};
+    SW.joints.push({b,kind,d,clip:b.quaternion.clone(),a:p.clone().sub(p0).dot(back)/span,
+      side:Math.sign(p.clone().sub(p0).dot(lat))||1,aL:ax(lat),aB:ax(back)})}});
   fish={holder,inner,size:sz};holder.updateMatrixWorld(true);
+}
+// sp: 0 when drifting, 1 at full speed; turn: yaw rate (rad/s)
+function swimFish(dt,sp,turn){
+  SW.body+=dt*Math.PI*2*(1.0+1.4*sp);SW.pec+=dt*Math.PI*2*(3.4-0.9*sp);
+  // the mixer only writes a bone when its clip value changes, so put back the clip pose it last wrote before adding the swim
+  for(const j of SW.joints)j.b.quaternion.copy(j.clip);
+  mixer.update(dt*(0.8+0.6*sp));
+  for(const j of SW.joints)j.clip.copy(j.b.quaternion);
+  const A=0.45+0.55*sp,bend=THREE.MathUtils.clamp(0.05*turn,-0.13,0.13);
+  for(const j of SW.joints){
+    const w=SW.body-Math.PI*2*j.a/1.8-0.55*j.d;let l=0,bk=0;
+    if(j.kind==='spine')l=A*SPINE_AMP[j.d]*Math.sin(w)+bend;
+    else if(j.kind==='tail')l=A*(0.09+0.05*j.d)*Math.sin(w)+bend*0.6;
+    else if(j.kind==='fin'){l=A*(0.05+0.03*j.d)*Math.sin(w);bk=0.18*sp*(j.d?0.5:1)}
+    else if(j.kind==='ventral'){l=(0.03+0.02*j.d)*(0.5+A)*Math.sin(SW.body*0.5-0.7*j.d);bk=0.25*sp*(j.d?0.4:1)}
+    else{const v=SW.pec+(j.side>0?0:Math.PI)-0.9*j.d;bk=(0.32-0.12*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp)}
+    if(l&&j.aL)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aL,l));
+    if(bk&&j.aB)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aB,bk))}
+  // recoil: the head swings a little against the tail
+  fish.inner.rotation.y=-Math.PI/2+RECOIL*A*Math.sin(SW.body+0.6);
 }
 
 // ---------- letters of CONTACT, scattered and pushed aside by the creature ----------
@@ -349,10 +373,7 @@ bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
       bird.mx.update(reduce?0:dt)}}
   if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
       fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
-      const sp=Math.min(1,C.spd/0.9);SWPH=(SWPH+dt/WAVE.dur*(0.75+1.1*sp))%1;
-      fish.holder.updateMatrixWorld(true);_hi.copy(fish.holder.matrixWorld).invert();
-      for(const {fu,n} of SWIM){fu.uPh.value=SWPH;fu.uAmp.value=window.__noSwim?0:1.1+0.4*sp;fu.uBend.value=THREE.MathUtils.clamp(-C.yawRate*0.06,-0.12,0.12);
-        fu.uToH.value.multiplyMatrices(_hi,n.matrixWorld);fu.uFromH.value.copy(fu.uToH.value).invert()}
+      if(!reduce&&!window.__noSwim)swimFish(dt,Math.min(1,C.spd/0.9),C.yawRate);
       glowLight.position.copy(C.p).add(new THREE.Vector3(0,0.35,0.8));glowLight.intensity=0.7*mixT;BG.uGlow.value.set(C.p.x,C.p.y,mixT)}else{glowLight.intensity=0;BG.uGlow.value.z=0}}
   // letters move out of the creature's way
   const cs=toScreen(C.p),R=Math.min(W,H)*0.2;
@@ -375,10 +396,6 @@ window.__dbg={frame:()=>frame(),C,ptr,setTheme,get bird(){return bird},get fish(
   const envOf=tx=>{const c=tx.clone();c.mapping=THREE.EquirectangularReflectionMapping;c.needsUpdate=true;return pmrem.fromEquirectangular(c).texture};
   envDay=envOf(d);envNight=envOf(n);
   resize();
-  {const wj=await fetch('assets/swim-wave.json').then(r=>r.json());const S=wj.S,T=wj.T,data=new Uint16Array(S*T);
-    for(let ti=0;ti<T;ti++)for(let si=0;si<S;si++)data[ti*S+si]=THREE.DataUtils.toHalfFloat(wj.D[si][ti]);
-    const tx=new THREE.DataTexture(data,S,T,THREE.RedFormat,THREE.HalfFloatType);tx.wrapT=THREE.RepeatWrapping;tx.wrapS=THREE.ClampToEdgeWrapping;
-    tx.magFilter=tx.minFilter=THREE.LinearFilter;tx.needsUpdate=true;WAVE.tex=tx;WAVE.dur=wj.dur}
   await Promise.all([loadBird().catch(e=>console.error('bird',e)),loadFish().catch(e=>console.error('fish',e))]);
   const h=document.getElementById('hint');h.textContent=touch?'Touch the forest':'Move your cursor';h.style.opacity='1';setTimeout(()=>h.style.opacity='0',3200);
   frame();
