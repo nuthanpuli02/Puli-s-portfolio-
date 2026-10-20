@@ -23,6 +23,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: hummingbird sheen, shimmer and reflections back
+- Puli asked to add back the rest of the removed effects except the fog. Restored: sheen 0.25 (pale green), iridescence 0.35, full environment reflections, `BIRD_GLOW` 0.9. Kept: `fog:false`, `BIRD_SAT` 1.6, contrast 1.15, lift 1.3.
+- Checked headless: colours stay rich, with the sheen and shimmer on top.
+- Preview artifact updated to match.
+
 ### 2026-10-20: hummingbird saturation to 60%
 - Puli asked to turn the saturation down to 60%. Taken as +60% over the original texture (it was +75%): `BIRD_SAT` 1.75 → 1.6. If he meant 60% of the previous level, that would be about 1.05.
 - Preview artifact updated to match.
