@@ -23,8 +23,8 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
-### 2026-10-20: hummingbird haze 6%
-- Puli asked to turn the bird's haze down from 8% to 6%: `BIRD_HAZE` 0.06. Preview artifact updated to match.
+### 2026-10-20: hummingbird haze 4%
+- Puli turned the bird's haze down from 8% to 6%, then to 4%: `BIRD_HAZE` 0.04. Preview artifact updated to match.
 
 ### 2026-10-20: a little haze on the hummingbird
 - Puli asked for just a little haze on the bird.
