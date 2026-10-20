@@ -232,17 +232,21 @@ let BIRD_YAW=0;
 // a slow wave travels down the spine and grows toward the tail, each fin ray trails the body a little more
 // joint by joint, the pectoral fins fan quickly and alternately, and the long fins stream back with speed.
 let fish=null,mixer=null;const _q=new THREE.Quaternion();
-const RIG={ // bone names by fin; "|" separates the joints from the fin's base outward
+const RIG={ // bone names by fin; "|" separates the joints from the fin's base outward, " " the rays side by side
   spine:'Bone.002|Bone.003|Bone.004|Bone.005',
-  tail:'Bone.020 Bone.039|Bone.025 Bone.040 Bone.042 Bone.044|Bone.026 Bone.041 Bone.043 Bone.045',
-  fin:'Bone.018 Bone.019 Bone.033 Bone.034|Bone.021 Bone.023 Bone.035 Bone.036|Bone.022 Bone.024 Bone.037 Bone.038', // dorsal and anal
-  ventral:'Bone.009|Bone.027 Bone.028|Bone.029 Bone.030|Bone.031 Bone.032',
+  caudal:'Bone.020 Bone.039|Bone.025 Bone.040 Bone.042 Bone.044|Bone.026 Bone.041 Bone.043 Bone.045', // rays top to bottom
+  dorsal:'Bone.018 Bone.019|Bone.021 Bone.023|Bone.022 Bone.024', // rays front to back
+  anal:'Bone.033 Bone.034|Bone.035 Bone.036|Bone.037 Bone.038',
+  ventral:'Bone.009|Bone.027 Bone.028|Bone.029 Bone.030|Bone.031 Bone.032', // a left and a right fin
   pec:'Bone.010 Bone.011|Bone.012 Bone.013|Bone.014 Bone.015 Bone.016 Bone.017'};
+// every fin has its own rhythm (beats per second, and a little different on the left and right), so no two fins move in step;
+// along a fin, each ray and each joint out toward the tip lags the one before it, so ripples run through the fin
+const FIN_HZ={caudal:1.25,dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.04,0.09,0.15,0.18];
 const SPINE_AMP=[0.19,0.34,0.47,0.6],RECOIL=0.06;
 // how a turn spreads down the spine: the head turns first and the tail follows on a springy lag,
 // so the body curls into a C, then the tail swings through and flicks the fish onto its new heading
 const SPINE_BEND=[0.24,0.44,0.6,0.72],TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
-const SW={body:0,pec:0,joints:[],tail:null,tailV:0};
+const SW={body:0,joints:[],fins:{},tail:null,tailV:0};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
@@ -273,8 +277,12 @@ async function loadFish(){
     const r=(b.children[0]?wp(b.children[0]).sub(p):new THREE.Vector3(0,1,0).applyQuaternion(q)).normalize();
     // turning a bone about (its direction × m) moves its tip toward m; store that axis in the bone's own frame
     const ax=m=>{const a=r.clone().cross(m);return a.length()<0.3?null:a.normalize().applyQuaternion(qi)};
-    SW.joints.push({b,kind,d,clip:b.quaternion.clone(),a:p.clone().sub(p0).dot(back)/span,
-      side:Math.sign(p.clone().sub(p0).dot(lat))||1,aL:ax(lat),aB:ax(back)})}});
+    // left or right: judged by where the bone ends, since paired fins start on the body's centre line
+    const side=Math.sign((b.children[0]?wp(b.children[0]):p).sub(p0).dot(lat))||1,fin=kind==='ventral'||kind==='pec'?kind+side:kind;
+    if(kind!=='spine'&&!SW.fins[fin]){const n=Object.keys(SW.fins).length;SW.fins[fin]={kind,ph:n*2.39,s2:n*1.37,hz:FIN_HZ[kind]*(1+0.045*side*(fin===kind?0:1))}}
+    const i=SW.joints.filter(o=>o.fin===fin&&o.d===d).length; // which ray across the fin
+    SW.joints.push({b,kind,fin,d,i,clip:b.quaternion.clone(),a:p.clone().sub(p0).dot(back)/span,side,aL:ax(lat),aB:ax(back),aU:ax(new THREE.Vector3(0,1,0))})}});
+  SW.fins.pec1&&(SW.fins.pec1.ph+=Math.PI); // the pectorals start out of step, like a betta fanning while it hovers
   fish={holder,inner,size:sz,snout};holder.updateMatrixWorld(true);
 }
 // sp: 0 when drifting, 1 at full speed; yaw: the heading the head is turning to
@@ -283,21 +291,27 @@ function swimFish(dt,sp,yaw){
   const wrap=a=>((a+Math.PI*3)%(Math.PI*2))-Math.PI;
   SW.tailV+=(TAIL_K*wrap(yaw-SW.tail)-2*TAIL_DAMP*Math.sqrt(TAIL_K)*SW.tailV)*dt;SW.tail+=SW.tailV*dt;
   const curl=THREE.MathUtils.clamp(wrap(yaw-SW.tail),-MAX_CURL,MAX_CURL);
-  SW.body+=dt*Math.PI*2*(0.65+0.9*sp);SW.pec+=dt*Math.PI*2*(2.6-0.6*sp);
+  SW.body+=dt*Math.PI*2*(0.65+0.9*sp);
+  for(const k in SW.fins){const F=SW.fins[k];F.ph+=dt*Math.PI*2*F.hz*(F.kind==='pec'?1-0.23*sp:0.8+0.5*sp)}
   // the mixer only writes a bone when its clip value changes, so put back the clip pose it last wrote before adding the swim
   for(const j of SW.joints)j.b.quaternion.copy(j.clip);
   mixer.update(dt*(0.8+0.6*sp));
   for(const j of SW.joints)j.clip.copy(j.b.quaternion);
-  const A=0.55+0.45*sp;
+  const A=0.55+0.45*sp,flow=0.75+0.5*sp;
   for(const j of SW.joints){
-    const w=SW.body-Math.PI*2*j.a/1.8-0.55*j.d;let l=0,bk=0;
-    if(j.kind==='spine')l=A*SPINE_AMP[j.d]*Math.sin(w)+curl*SPINE_BEND[j.d];
-    else if(j.kind==='tail')l=A*(0.12+0.06*j.d)*Math.sin(w)+curl*0.08;
-    else if(j.kind==='fin'){l=A*(0.05+0.03*j.d)*Math.sin(w);bk=0.18*sp*(j.d?0.5:1)}
-    else if(j.kind==='ventral'){l=(0.03+0.02*j.d)*(0.5+A)*Math.sin(SW.body*0.5-0.7*j.d);bk=0.25*sp*(j.d?0.4:1)}
-    else{const v=SW.pec+(j.side>0?0:Math.PI)-0.9*j.d;bk=(0.32-0.12*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp)}
+    const w=SW.body-Math.PI*2*j.a/1.8-0.55*j.d;let l=0,bk=0,u=0;
+    if(j.kind==='spine'){l=A*SPINE_AMP[j.d]*Math.sin(w)+curl*SPINE_BEND[j.d]}
+    else{
+      // the fin's own ripple: a wave running out along each ray and across the rays, with a slower second wave so it never repeats exactly
+      const F=SW.fins[j.fin],rip=flow*FIN_RIP[j.d]*(Math.sin(F.ph-1.2*j.d-0.8*j.i)+0.35*Math.sin(1.61*F.ph+0.9*j.i-0.7*j.d+F.s2));
+      if(j.kind==='caudal'){l=A*(0.12+0.06*j.d)*Math.sin(w)+curl*0.08+rip;u=0.08*(j.d?1:0.5)*Math.sin(0.55*F.ph-0.9*j.i)} // u: the fan opens and closes
+      else if(j.kind==='dorsal'||j.kind==='anal'){l=A*(0.05+0.03*j.d)*Math.sin(w)+rip;bk=0.18*sp*(j.d?0.5:1)+0.08*Math.sin(0.7*F.ph-1.0*j.i-0.6*j.d)}
+      else if(j.kind==='ventral'){l=(0.03+0.02*j.d)*(0.5+A)*Math.sin(SW.body*0.5-0.7*j.d)+0.8*rip;bk=0.25*sp*(j.d?0.4:1)}
+      else{const v=F.ph-0.9*j.d-0.6*j.i;bk=(0.32-0.12*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp);u=0.08*j.d*Math.sin(v-1.2)} // pectorals fan and row
+    }
     if(l&&j.aL)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aL,l));
-    if(bk&&j.aB)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aB,bk))}
+    if(bk&&j.aB)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aB,bk));
+    if(u&&j.aU)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aU,u))}
   // recoil: the head swings a little against the tail
   fish.inner.rotation.y=-Math.PI/2+RECOIL*A*Math.sin(SW.body+0.6);
 }

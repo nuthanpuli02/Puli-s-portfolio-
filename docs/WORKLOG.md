@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); levelled, head locked on the cursor and mouth-to-cursor stopping after his fourth review; waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
+- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); fins now ripple individually after his fifth review (he approved the body bend); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
@@ -22,6 +22,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: each fin ripples on its own
+- Puli liked the body bend ("bends like a real fish"). Next he wanted the fins to bend and move in small waves while swimming, each fin individually.
+- `RIG` now lists each fin separately (caudal, dorsal, anal, left and right ventral, left and right pectoral), with rays side by side. Each fin has its own oscillator (`FIN_HZ`: caudal 1.25, dorsal 1.75, anal 1.55, ventral about 1.05, pectoral about 2.6 beats a second; left and right differ by about ±4.5% so paired fins drift in and out of step). Along a fin, each joint toward the tip and each ray across the fin lags the one before it, so ripples run through the fin. A slower second wave (×1.61) keeps it from repeating exactly. Amplitudes grow toward the tips (`FIN_RIP`), and the fins flow more when swimming faster.
+- Extra in-plane motion: the tail fan opens and closes, the dorsal and anal fins ripple backward and forward along their base, and the pectorals row up and down while fanning.
+- Paired fins start on the body's centre line, so left/right is judged from where each bone ends.
+- Checked headless from the side and from above: the fins move independently and nothing tears.
+- Preview artifact updated to match.
 
 ### 2026-10-20: betta levelled, head locked on the cursor, mouth stops on it
 - Puli: the fish pointed a bit up by default; it should always point at the cursor with no delay; the body should bend a lot more; turning should be slow and fluid; then it should swim quickly until the tip of its mouth touches the cursor, and stop.
