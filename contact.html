@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Contact Nuthan Puli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..600&family=Poppins:wght@500;600;700;800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{
+  --fg:#F6F8F2; --muted:rgba(240,246,232,.78); --line:rgba(255,255,255,.28); --accent:#D2481F; --accent-fg:#fff;
+  --bar:rgba(10,16,10,.62); --bg:#0d1a10;
+  --serif:"Bodoni Moda",Didot,Georgia,serif; --display:"Poppins","Figtree",Arial,sans-serif; --sans:"Figtree","Helvetica Neue",Arial,sans-serif;
+}
+:root[data-theme="night"]{ --fg:#EEF3FF; --muted:rgba(214,226,255,.75); --line:rgba(170,200,255,.24); --accent:#7C5CFF; --accent-fg:#fff; --bar:rgba(4,8,20,.66); --bg:#03060f }
+@media (prefers-color-scheme: dark){:root:not([data-theme="day"]){ --fg:#EEF3FF; --muted:rgba(214,226,255,.75); --line:rgba(170,200,255,.24); --accent:#7C5CFF; --bar:rgba(4,8,20,.66); --bg:#03060f }}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.vig{position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.5),rgba(0,0,0,.18) 34%,transparent 52%),radial-gradient(120% 90% at 55% 45%,transparent 45%,rgba(0,0,0,.55) 100%)}
+@media (max-width:760px){.vig{background:linear-gradient(0deg,rgba(0,0,0,.62),rgba(0,0,0,.2) 42%,transparent 60%),radial-gradient(120% 90% at 50% 40%,transparent 45%,rgba(0,0,0,.5) 100%)}}
+.grid{position:fixed;inset:0;pointer-events:none;display:grid;grid-template-columns:repeat(4,1fr)}
+.grid i{border-right:1px solid var(--line);opacity:.55}
+.grid i:last-child{border-right:0}
+.frame{position:fixed;inset:clamp(12px,2.4vw,28px);pointer-events:none}
+.frame::before,.frame::after{content:"";position:absolute;border:1px solid var(--line)}
+.frame::before{left:0;top:13%;width:clamp(28px,4vw,52px);height:24%;border-right:0;border-bottom:0}
+.frame::after{right:0;bottom:7%;width:clamp(28px,4vw,52px);height:24%;border-left:0;border-top:0}
+header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:clamp(14px,3vw,40px);padding:calc(18px + env(safe-area-inset-top,0px)) clamp(18px,4vw,56px) 0}
+.logo{font-family:var(--serif);font-size:21px;color:var(--fg);text-decoration:none;margin-right:auto;text-shadow:0 2px 14px rgba(0,0,0,.35)}
+nav{display:flex;gap:clamp(14px,3vw,36px)}
+nav a{color:var(--fg);opacity:.82;text-decoration:none;font:500 13px var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:8px 0;position:relative}
+nav a[aria-current]{opacity:1}
+nav a[aria-current]::after{content:"";position:absolute;left:0;right:30%;bottom:2px;height:2px;background:var(--accent);border-radius:2px}
+nav a:hover{opacity:1}
+.pill{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--fg);font:600 13px var(--sans);cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.pill:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.intro{position:fixed;z-index:4;left:clamp(18px,4vw,56px);top:clamp(120px,24vh,260px);width:min(400px,42vw)}
+.eyebrow{font:600 12px var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--fg);display:flex;align-items:center;gap:12px}
+.eyebrow::before{content:"";width:28px;height:1px;background:var(--fg);opacity:.7}
+.title{margin:14px 0 0;font:800 clamp(52px,6.6vw,108px)/0.95 var(--display);letter-spacing:-.01em;text-transform:uppercase;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.45)}
+:root[data-theme="night"] .title{color:#EEF4FF;text-shadow:0 0 26px rgba(120,160,255,.4),0 6px 30px rgba(0,0,0,.6)}
+.intro p{margin:16px 0 26px;font-size:clamp(15px,1.25vw,17px);line-height:1.65;color:var(--muted);text-shadow:0 1px 12px rgba(0,0,0,.45)}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:46px;padding:0 24px;background:var(--accent);color:var(--accent-fg);font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;border-radius:2px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.cta:hover{filter:brightness(1.08)}
+.details{list-style:none;margin:28px 0 0;padding:0;border-top:1px solid var(--line)}
+.details li{display:flex;align-items:baseline;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+.details b{flex:none;width:86px;font:600 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.details a,.details span{color:var(--fg);text-decoration:none;font:500 15px var(--sans);overflow-wrap:anywhere;text-shadow:0 1px 10px rgba(0,0,0,.4)}
+.details a:hover{text-decoration:underline;text-underline-offset:3px}
+@media (min-width:761px){.details{display:grid;grid-template-columns:1fr 1fr;column-gap:22px}.details li{flex-direction:column;gap:4px}}
+.letters{position:fixed;inset:0;z-index:3;pointer-events:none}
+.letters span{position:absolute;left:0;top:0;font:800 clamp(38px,6.4vw,104px)/1 var(--display);color:#fff;text-shadow:0 6px 28px rgba(0,0,0,.45);will-change:transform;user-select:none}
+:root[data-theme="night"] .letters span{color:#E9F1FF;text-shadow:0 0 22px rgba(120,160,255,.45),0 6px 28px rgba(0,0,0,.6)}
+.rail{position:fixed;z-index:4;right:clamp(16px,3vw,44px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:14px;font:500 15px var(--display);font-variant-numeric:tabular-nums}
+.rail b{width:3px;height:clamp(140px,30vh,260px);background:rgba(255,255,255,.18);border-radius:3px;position:relative;overflow:hidden}
+.rail b::after{content:"";position:absolute;left:0;right:0;bottom:0;height:100%;background:var(--accent);border-radius:3px}
+.bar{position:fixed;z-index:5;left:auto;right:clamp(12px,2.4vw,28px);bottom:calc(clamp(12px,2.4vw,28px) + env(safe-area-inset-bottom,0px));display:flex;align-items:stretch;min-height:58px;background:var(--bar);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.links{flex:1;display:flex;align-items:center;flex-wrap:wrap;gap:6px 28px;padding:12px clamp(16px,2.4vw,28px);min-width:0}
+.links a,.links span{color:var(--fg);text-decoration:none;font:500 14px var(--sans);white-space:nowrap}
+.links a b,.links span b{font:600 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-right:8px}
+.links a:hover{text-decoration:underline;text-underline-offset:3px}
+.back{display:flex;align-items:center;justify-content:center;gap:12px;padding:0 clamp(18px,3vw,40px);background:var(--accent);color:var(--accent-fg);font:700 13px var(--display);letter-spacing:.14em;text-transform:uppercase;text-decoration:none;white-space:nowrap}
+.back svg{width:18px;height:18px}
+.credits{position:fixed;z-index:4;right:clamp(12px,2.4vw,28px);bottom:calc(clamp(12px,2.4vw,28px) + 66px + env(safe-area-inset-bottom,0px));text-align:right;font:400 10.5px var(--sans);color:var(--muted);opacity:.75;text-align:right;max-width:min(560px,70vw);line-height:1.5}
+.credits a{color:inherit}
+.hint{position:fixed;z-index:4;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));font:500 12px var(--sans);letter-spacing:.08em;color:var(--muted);opacity:0;transition:opacity 1s;pointer-events:none}
+.loading{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:var(--bg);transition:opacity .8s;font:500 12px var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+.loading.off{opacity:0;pointer-events:none}
+@media (max-width:760px){
+  nav{display:none}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .intro{top:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:auto;right:clamp(18px,4vw,56px)}
+  .intro p{margin:12px 0 18px;font-size:15px}
+  .rail{display:none}
+  .bar{flex-direction:column}
+  .links{gap:6px 18px;padding:12px 14px}
+  .links a,.links span{font-size:13px}
+  .back{height:44px}
+  .credits{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px));left:18px;right:18px;text-align:left;max-width:none;font-size:9.5px;opacity:.6}
+  .intro{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  .bar{left:clamp(12px,2.4vw,28px)}
+  .details{margin-top:18px}.details li{padding:8px 0}.details a,.details span{font-size:14px}
+  .title{font-size:44px}
+}
+@media (prefers-reduced-motion:reduce){.loading{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="vig" aria-hidden="true"></div>
+<div class="grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+<div class="frame" aria-hidden="true"></div>
+
+<header>
+  <a class="logo" href="index.html" id="homeLink">Nuthan Puli</a>
+  <nav aria-label="Main"><a href="index.html" id="navHome">Home</a><a href="index.html#work" id="navWork">Work</a><a href="contact.html" aria-current="page">Contact</a></nav>
+  <button class="pill" id="theme" type="button" aria-label="Switch between day and night">Night</button>
+</header>
+
+<div class="letters" id="letters" hidden></div>
+
+<section class="intro" aria-labelledby="introTitle">
+  <div class="eyebrow">Get in touch</div>
+  <h1 class="title" id="introTitle">Contact</h1>
+  <p>Have a role, a research position or a project in mind? I'm open to graduate research, internships and freelance work in machine learning, security and web development.</p>
+  <a class="cta" href="mailto:bittupuli5@gmail.com">Email me</a>
+  <ul class="details">
+    <li><b>Email</b><a href="mailto:bittupuli5@gmail.com">bittupuli5@gmail.com</a></li>
+    <li><b>LinkedIn</b><a href="https://www.linkedin.com/in/nuthan-puli-237228247" target="_blank" rel="noopener">Nuthan Puli</a></li>
+    <li><b>GitHub</b><a href="https://github.com/nuthanpuli02" target="_blank" rel="noopener">nuthanpuli02</a></li>
+    <li><b>Based in</b><span>Messina, Italy</span></li>
+  </ul>
+</section>
+
+<div class="rail" aria-hidden="true"><span>04</span><b></b><span>04</span></div>
+
+<p class="credits">3D models: <a href="https://sketchfab.com/3d-models/hummingbird-rigged-6-animations-open-bill-d9b448ac1025485e843d54bebf35390a" target="_blank" rel="noopener">“Hummingbird – Rigged, 6 Animations” by Animal Animator</a>, <a href="https://sketchfab.com/3d-models/betta-splendens-f4eeb7f50ad24873842bd954ad27d23b" target="_blank" rel="noopener">“Betta Splendens” by BlueMesh</a>, swim motion from <a href="https://sketchfab.com/3d-models/guppie-animated-53abad43280a4b7ab26bd0e6b8dea62f" target="_blank" rel="noopener">“Guppie Animated” by Comitre</a>, all <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, adapted.</p>
+
+<footer class="bar">
+  <a class="back" href="index.html" id="backLink">Back to the sky <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></a>
+</footer>
+<div class="hint" id="hint"></div>
+<div class="loading" id="loading">Loading the forest</div>
+
+<script type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+
+const root=document.documentElement;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const touch=matchMedia('(pointer: coarse)').matches;
+// theme: ?theme=night|day from the main page, else the device setting
+const qs=new URLSearchParams(location.search);
+let night=qs.get('theme')?qs.get('theme')==='night':matchMedia('(prefers-color-scheme: dark)').matches;
+const themeBtn=document.getElementById('theme');
+const setTheme=n=>{night=n;root.dataset.theme=n?'night':'day';themeBtn.textContent=n?'Day':'Night';
+  for(const id of['homeLink','navHome','backLink'])document.getElementById(id).href='index.html?theme='+(n?'night':'day');
+  document.getElementById('navWork').href='index.html?theme='+(n?'night':'day')+'#work'};
+setTheme(night);themeBtn.addEventListener('click',()=>setTheme(!night));
+
+// ---------- renderer ----------
+const cv=document.getElementById('gl');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+const DPR=Math.min(window.devicePixelRatio||1,touch?1.6:2);renderer.setPixelRatio(DPR);
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(40,1,0.05,50);camera.position.set(0,0,5);
+const pmrem=new THREE.PMREMGenerator(renderer);let envDay=null,envNight=null;scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+scene.fog=new THREE.FogExp2(0xb8c8a4,0.05);
+const hemi=new THREE.HemisphereLight(0xd8eccb,0x2a3a1c,0.45);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff0cf,1.6);sun.position.set(-0.6,3.2,-2.4);scene.add(sun);
+const fill=new THREE.DirectionalLight(0xe8f2d8,0.9);fill.position.set(-1.5,1.2,4);scene.add(fill);
+const glowLight=new THREE.PointLight(0x58f0e0,0,3.5,1.6);scene.add(glowLight);
+
+const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(256,256),0.7,0.5,0.78);composer.addPass(bloom);composer.addPass(new OutputPass());
+
+// ---------- the photographic forest, pushed into 3D by its depth map ----------
+const tl=new THREE.TextureLoader();
+const loadTex=(u,srgb)=>new Promise((res,rej)=>tl.load(u,t=>{if(srgb)t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearMipmapLinearFilter;t.anisotropy=4;res(t)},undefined,rej));
+const BG={uDay:{value:null},uNight:{value:null},uDD:{value:null},uDN:{value:null},uMix:{value:night?1:0},uDepth:{value:0.95},uCrop:{value:new THREE.Vector4(0,0,1,1)},uT:{value:0},uGlow:{value:new THREE.Vector3(9,9,0)}};
+const bgMat=new THREE.ShaderMaterial({uniforms:BG,
+  vertexShader:`uniform sampler2D uDD,uDN;uniform float uMix,uDepth;uniform vec4 uCrop;varying vec2 vUv;varying float vD;varying vec3 vW;
+    void main(){vec2 uv=uCrop.xy+uv*uCrop.zw;vUv=uv;float d=mix(texture2D(uDD,uv).r,texture2D(uDN,uv).r,uMix);vD=d;
+      vec3 p=position;p.z+=pow(d,1.6)*uDepth;vec4 w=modelMatrix*vec4(p,1.0);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+  fragmentShader:`uniform sampler2D uDay,uNight;uniform float uMix,uT;uniform vec3 uGlow;varying vec2 vUv;varying float vD;varying vec3 vW;
+    float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.0),f.x),f.y);}
+    void main(){vec3 a=texture2D(uDay,vUv).rgb,b=texture2D(uNight,vUv).rgb;
+      // bioluminescence breathes: the bright cyan and violet parts of the night image pulse slowly
+      float lum=max(b.g,b.b)-b.r*0.6,bio=smoothstep(0.25,0.6,lum)*smoothstep(0.2,0.55,max(b.g,b.b));
+      float pulse=0.75+0.45*n2(vUv*9.0+vec2(uT*0.15,-uT*0.1))+0.15*sin(uT*1.7+vUv.x*20.0);
+      b=b*(1.0+bio*(pulse-0.6)*1.4);
+      // the glowing fish lights the forest around it
+      float g=uGlow.z*exp(-dot(vW.xy-uGlow.xy,vW.xy-uGlow.xy)*2.2)*(0.35+0.65*vD);
+      b+=vec3(0.18,0.75,0.70)*g*0.55;
+      vec3 c=mix(a,b,uMix);gl_FragColor=vec4(c,1.0);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`,toneMapped:false});
+// shader output already in display space: skip tone mapping for the photo
+bgMat.onBeforeCompile=()=>{};
+const bgMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1,touch?160:240,touch?120:150),bgMat);bgMesh.position.z=-1.6;bgMesh.renderOrder=-1;scene.add(bgMesh);
+
+// ---------- floating motes: sunlit dust by day, fireflies at night ----------
+const NM=touch?90:150;const mg=new THREE.BufferGeometry(),mp=new Float32Array(NM*3),ms=new Float32Array(NM);
+for(let i=0;i<NM;i++){mp[i*3]=(Math.random()-0.5)*5;mp[i*3+1]=(Math.random()-0.5)*3;mp[i*3+2]=-1.2+Math.random()*2.4;ms[i]=Math.random()}
+mg.setAttribute('position',new THREE.BufferAttribute(mp,3));mg.setAttribute('seed',new THREE.BufferAttribute(ms,1));
+const MU={uT:{value:0},uMix:{value:night?1:0},uPx:{value:1}};
+const motes=new THREE.Points(mg,new THREE.ShaderMaterial({uniforms:MU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  vertexShader:`attribute float seed;uniform float uT,uMix,uPx;varying float vA;varying float vS;
+    void main(){vec3 p=position;float t=uT*(0.15+seed*0.2);p+=vec3(sin(t+seed*31.0)*0.35,sin(t*1.3+seed*17.0)*0.25+mix(0.0,0.1*sin(uT*0.6+seed*9.0),uMix),cos(t*0.8+seed*11.0)*0.3);
+      vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;float tw=mix(0.55+0.45*sin(uT*2.0+seed*40.0),pow(0.5+0.5*sin(uT*(1.5+seed)+seed*60.0),3.0),uMix);
+      vA=tw;vS=seed;gl_PointSize=max(1.5,mix(0.010+seed*0.008,0.016+seed*0.022,uMix)*uPx/(-mv.z));}`,
+  fragmentShader:`uniform float uMix;varying float vA;varying float vS;void main(){float d=length(gl_PointCoord-0.5);float a=smoothstep(0.5,0.0,d)*vA;
+    vec3 day=vec3(1.0,0.92,0.7)*0.35,nt=mix(vec3(0.55,1.0,0.75),vec3(0.65,0.55,1.0),step(0.7,vS))*1.6;gl_FragColor=vec4(mix(day,nt,uMix)*a,a);}`}));
+scene.add(motes);
+
+// ---------- hummingbird (day) ----------
+const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
+let bird=null;
+// professionally animated hummingbird: hover and forward-flight clips blended by speed
+async function loadBird(){
+  const gl=await new GLTFLoader().loadAsync('assets/hb2-gltf.json');const o=gl.scene;
+  o.traverse(n=>{if(!n.isMesh)return;const mn=n.material&&n.material.name||'';
+    if(/Bark|Petal|Stem/i.test(mn)){n.visible=false;return}   // the perch and flower that ship with the model
+    n.frustumCulled=false;n.castShadow=false;
+    if(/Plumage/i.test(mn)){const sm=n.material;const m=new THREE.MeshPhysicalMaterial({map:sm.map,normalMap:sm.normalMap,roughnessMap:sm.roughnessMap,metalnessMap:sm.metalnessMap,
+      roughness:1,metalness:0,side:THREE.DoubleSide,iridescence:0.35,iridescenceIOR:1.5,iridescenceThicknessRange:[200,480],sheen:0.25,sheenRoughness:0.7,sheenColor:new THREE.Color(0x9fdcae)});
+      m.normalScale.set(1,1);n.material=m}});
+  // measure only the visible bird
+  const box=new THREE.Box3();o.updateMatrixWorld(true);o.traverse(n=>{if(n.isMesh&&n.visible)box.expandByObject(n)});
+  const sz=box.getSize(new THREE.Vector3()),cn=box.getCenter(new THREE.Vector3());
+  const group=new THREE.Group(),inner=new THREE.Group();inner.add(o);o.position.sub(cn);inner.scale.setScalar(1/Math.max(sz.x,sz.y,sz.z));
+  inner.rotation.y=BIRD_YAW;group.add(inner);scene.add(group);
+  const mx=new THREE.AnimationMixer(o),clip=n=>gl.animations.find(a=>a.name.includes(n));
+  const hover=mx.clipAction(clip('Hover')),fwd=mx.clipAction(clip('Forward'));hover.play();fwd.play();fwd.setEffectiveWeight(0);
+  bird={group,inner,mx,hover,fwd};
+}
+let BIRD_YAW=0;
+
+// ---------- betta (night): real model, glowing translucent material ----------
+let fish=null,mixer=null,SWPH=0;const SWIM=[];const WAVE={tex:null,dur:5};const _hi=new THREE.Matrix4();
+async function loadFish(){
+  const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
+  o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
+    const src=n.material;const m=new THREE.MeshStandardMaterial({map:src.map,normalMap:src.normalMap,emissive:new THREE.Color(0xffffff),emissiveMap:src.map,emissiveIntensity:0.75,
+      roughness:0.35,metalness:0.0,transparent:true,opacity:0.72,depthWrite:false,side:THREE.DoubleSide});
+    const fu={uPh:{value:0},uAmp:{value:0.8},uBend:{value:0},uWave:{value:WAVE.tex},uXmin:{value:-0.5},uLen:{value:1},uYc:{value:new Array(16).fill(0)},uToH:{value:new THREE.Matrix4()},uFromH:{value:new THREE.Matrix4()}};SWIM.push({fu,n});
+    m.onBeforeCompile=s=>{Object.assign(s.uniforms,fu);
+      s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nuniform float uPh,uAmp,uXmin,uLen,uBend;uniform float uYc[16];uniform sampler2D uWave;uniform mat4 uToH,uFromH;').replace('#include <skinning_vertex>',`#include <skinning_vertex>
+      {vec4 hp=uToH*vec4(transformed,1.0);
+       float sb=clamp((hp.x-uXmin)/uLen,0.0,1.0);         // 0 at the snout, 1 at the tail tip
+       int bi=int(clamp(sb*15.99,0.0,15.0));float yc=uYc[bi];
+       float dy=abs(hp.y-yc)/uLen;                          // distance from the body's centre line
+       float fin=smoothstep(0.035,0.2,dy);                   // the long betta fins
+       // the guppy's recorded swim: lateral offset of the body centre line at (position along body, time)
+       // every point bends with the spine at its position along the body, so the fins ride the body rigidly
+       float w0=texture2D(uWave,vec2(0.02+sb*0.96,uPh)).r;
+       hp.z+=w0*uLen*uAmp+uBend*sb*sb*uLen;                 // the guppy's swim wave, plus a C-bend when turning
+       transformed=(uFromH*hp).xyz;}`);
+      s.fragmentShader=s.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+      float fr=pow(1.0-abs(dot(normalize(vViewPosition),normal)),2.2);totalEmissiveRadiance+=mix(vec3(0.2,1.0,0.9),vec3(0.65,0.45,1.0),fr)*fr*0.9;diffuseColor.a*=0.55+0.45*fr;`)};
+    n.material=m;n.frustumCulled=false}});
+  const box=new THREE.Box3().setFromObject(o),sz=box.getSize(new THREE.Vector3()),cn=box.getCenter(new THREE.Vector3());
+  const holder=new THREE.Group(),inner=new THREE.Group();inner.add(o);o.position.sub(cn);const k=1/Math.max(sz.x,sz.y,sz.z);inner.scale.setScalar(k);holder.add(inner);scene.add(holder);
+  inner.rotation.y=-Math.PI/2; // the rig's rest pose points the snout along +z; turn it to -x like the steering expects
+  // hold the betta's own clip on its first frame (that sets the rig's orientation); the swim itself comes from the guppy
+  mixer=new THREE.AnimationMixer(o);if(gl.animations[0]){const a=mixer.clipAction(gl.animations[0]);a.play();mixer.update(0);a.paused=true}
+  holder.updateMatrixWorld(true);const hinv=holder.matrixWorld.clone().invert(),vv=new THREE.Vector3(),pts=[];
+  o.traverse(n=>{if(n.isSkinnedMesh&&n.visible){const c=n.geometry.attributes.position.count;for(let i=0;i<c;i+=2){n.getVertexPosition(i,vv);vv.applyMatrix4(n.matrixWorld).applyMatrix4(hinv);pts.push(vv.x,vv.y)}}});
+  let xmin=1e9,xmax=-1e9;for(let i=0;i<pts.length;i+=2){xmin=Math.min(xmin,pts[i]);xmax=Math.max(xmax,pts[i])}
+  const len=xmax-xmin,bins=Array.from({length:16},()=>[]);for(let i=0;i<pts.length;i+=2)bins[Math.min(15,Math.floor((pts[i]-xmin)/len*16))].push(pts[i+1]);
+  const yc=bins.map(b=>{if(!b.length)return 0;b.sort((a,c)=>a-c);return b[b.length>>1]});
+  for(let i=0;i<16;i++)if(!bins[i].length)yc[i]=yc[Math.max(0,i-1)];
+  for(const {fu} of SWIM){fu.uXmin.value=xmin;fu.uLen.value=len;fu.uYc.value=yc}
+  fish={holder,inner,size:sz};holder.updateMatrixWorld(true);
+}
+
+// ---------- letters of CONTACT, scattered and pushed aside by the creature ----------
+const L=document.getElementById('letters');const word='';
+const lets=[...word].map((ch,i)=>{const s=document.createElement('span');s.textContent=ch;s.setAttribute('aria-hidden','true');L.appendChild(s);return{el:s,hx:0,hy:0,ox:0,oy:0,vx:0,vy:0,rot:(Math.random()-0.5)*8}});
+function layoutLetters(){const W=innerWidth,H=innerHeight,mob=W<760,cx=W*(mob?0.5:0.6),cy=H*(mob?0.36:0.47),rx=Math.min(W*(mob?0.4:0.26),420),ry=Math.min(H*(mob?0.17:0.28),300);
+  // an open ring around the creature's home, like the reference
+  const ang=[200,232,262,300,338,22,140];
+  lets.forEach((l,i)=>{const a=ang[i]*Math.PI/180,j=(i%2?0.9:1.08);l.hx=cx+Math.cos(a)*rx*j;l.hy=cy+Math.sin(a)*ry*j})}
+layoutLetters();
+
+// ---------- pointer, touch and tilt ----------
+const ptr={x:innerWidth*0.62,y:innerHeight*0.45,active:false,last:0};let tilt={x:0,y:0},look={x:0,y:0};
+addEventListener('pointermove',e=>{ptr.x=e.clientX;ptr.y=e.clientY;ptr.last=performance.now();ptr.active=true},{passive:true});
+addEventListener('pointerdown',e=>{if(e.target.closest('a,button'))return;ptr.x=e.clientX;ptr.y=e.clientY;ptr.last=performance.now();ptr.active=true},{passive:true});
+addEventListener('deviceorientation',e=>{if(e.gamma==null)return;tilt.x=Math.max(-1,Math.min(1,e.gamma/30));tilt.y=Math.max(-1,Math.min(1,(e.beta-45)/30))},{passive:true});
+
+// ---------- sizing ----------
+let W=1,H=1;
+function resize(){W=innerWidth;H=innerHeight;renderer.setSize(W,H,false);composer.setSize(W,H);camera.aspect=W/H;
+  camera.fov=W<H?52:40;camera.updateProjectionMatrix();
+  // plane at z=-1.6 sized to overfill the view (room for the parallax), image cropped like object-fit: cover
+  const dist=camera.position.z-bgMesh.position.z,vh=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*dist*1.22,vw=vh*camera.aspect;
+  bgMesh.scale.set(vw,vh,1);const ia=1376/768,va=vw/vh;
+  if(va>ia){const s=ia/va;BG.uCrop.value.set(0,(1-s)/2,1,s)}else{const s=va/ia;BG.uCrop.value.set((1-s)*0.5+(touch?0.04:0),0,s,1)}
+  MU.uPx.value=H*DPR/2/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));bloom.resolution.set(W*0.5,H*0.5);layoutLetters()}
+addEventListener('resize',resize);
+
+// screen -> point on the plane z = Z
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,0,1),0),hit=new THREE.Vector3();
+function toWorld(x,y,z){ndc.set(x/W*2-1,-(y/H)*2+1);ray.setFromCamera(ndc,camera);plane.constant=-z;ray.ray.intersectPlane(plane,hit);return hit.clone()}
+const toScreen=v=>{const p=v.clone().project(camera);return{x:(p.x+1)/2*W,y:(1-p.y)/2*H}};
+
+// ---------- creature motion ----------
+const C={p:new THREE.Vector3(0.6,0,0.7),v:new THREE.Vector3(),yaw:-0.55,pitch:0,roll:0,face:1,flipT:0,off:-0.2,spd:0,yawRate:0};
+const Z=0.75;
+function steer(dt,t,isFish){
+  const idle=!ptr.active||performance.now()-ptr.last>(touch?2500:6000);
+  let tgt;
+  if(isFish){
+    // a fish never parks: it cruises in a slow, wide loop around the cursor (or the middle of the scene when idle)
+    const c=idle?new THREE.Vector3(0.3,0.05,Z):toWorld(ptr.x,ptr.y,Z),a=t*0.55;
+    tgt=c.add(new THREE.Vector3(Math.cos(a)*0.75,Math.sin(a*2.0)*0.12,Math.sin(a)*0.18));
+  }else{
+    if(idle){const a=t*0.32;tgt=new THREE.Vector3(Math.sin(a)*camera.aspect*0.55+0.25,Math.sin(a*1.7)*0.45+0.05,Z+Math.sin(a*0.9)*0.25)}
+    else tgt=toWorld(ptr.x,ptr.y,Z);
+    // keep the beak beside the cursor; the offset follows the facing side slowly so it can't feed back
+    C.off+=(-0.20*C.face-C.off)*Math.min(1,dt*1.5);tgt.x+=C.off;tgt.y-=0.03;
+  }
+  // critically damped spring: arrives without overshooting
+  const k=isFish?2.6:8.0,dmp=2*Math.sqrt(k),max=isFish?0.95:2.6;
+  const acc=tgt.sub(C.p).multiplyScalar(k).addScaledVector(C.v,-dmp);C.v.addScaledVector(acc,dt);if(C.v.length()>max)C.v.setLength(max);
+  C.p.addScaledVector(C.v,dt);
+  C.spd+=(C.v.length()-C.spd)*Math.min(1,dt*3);
+  // change side only after moving the other way for a moment (hysteresis), never from a small wobble
+  const vx=C.v.x,need=isFish?0.12:0.45,hold=isFish?0.25:0.2;
+  if(Math.sign(vx)!==C.face&&Math.abs(vx)>need){C.flipT+=dt;if(C.flipT>hold){C.face=-C.face;C.flipT=0}}else C.flipT=Math.max(0,C.flipT-dt*2);
+  const side=isFish?0.0:THREE.MathUtils.smoothstep(C.spd,0.25,1.4),turn=isFish?0.62:0.55;
+  const wantYaw=C.face>0?-(1-side)*turn:Math.PI+(1-side)*turn;
+  const dy=((wantYaw-C.yaw+Math.PI*3)%(Math.PI*2))-Math.PI,maxTurn=isFish?2.4:7;
+  const step=THREE.MathUtils.clamp(dy*Math.min(1,dt*(isFish?2.2:6)),-maxTurn*dt,maxTurn*dt);C.yaw+=step;C.yawRate+=(step/Math.max(dt,1e-3)-C.yawRate)*Math.min(1,dt*6);
+  C.pitch+=(THREE.MathUtils.clamp(C.v.y*(isFish?0.7:0.35),-0.5,0.5)-C.pitch)*Math.min(1,dt*3);
+  C.roll+=(THREE.MathUtils.clamp(-C.v.x*0.12,-0.3,0.3)-C.roll)*Math.min(1,dt*3);
+}
+
+// ---------- loop ----------
+const clock=new THREE.Clock();let t=0,mixT=night?1:0,started=false;
+function frame(){
+  const dt=window.__fixedDt||Math.min(0.05,clock.getDelta());t+=dt;
+  mixT+=((night?1:0)-mixT)*Math.min(1,dt*2.5);BG.uMix.value=mixT;MU.uMix.value=mixT;BG.uT.value=t;MU.uT.value=t;
+  // camera parallax from pointer / tilt
+  const px=touch?tilt.x:(ptr.x/W-0.5)*2,py=touch?tilt.y:(ptr.y/H-0.5)*2;look.x+=(px-look.x)*Math.min(1,dt*2.5);look.y+=(py-look.y)*Math.min(1,dt*2.5);
+  if(!reduce){camera.position.x=look.x*0.22;camera.position.y=-look.y*0.12}camera.lookAt(0,0,0);
+  // lighting
+  if(envDay){scene.environment=mixT<0.5?envDay:envNight;scene.environmentIntensity=THREE.MathUtils.lerp(2.2,0.9,mixT)}
+  scene.fog.color.setRGB(THREE.MathUtils.lerp(0.62,0.04,mixT),THREE.MathUtils.lerp(0.70,0.15,mixT),THREE.MathUtils.lerp(0.56,0.19,mixT));
+  hemi.intensity=THREE.MathUtils.lerp(0.45,0.12,mixT);sun.intensity=THREE.MathUtils.lerp(2.2,0.2,mixT);fill.intensity=THREE.MathUtils.lerp(1.0,0.15,mixT);sun.color.setRGB(1,THREE.MathUtils.lerp(0.95,0.85,mixT),THREE.MathUtils.lerp(0.84,1.0,mixT));
+bloom.strength=THREE.MathUtils.lerp(0.0,0.75,mixT);bloom.enabled=mixT>0.02;
+  const isFish=mixT>0.5;
+  if(!window.__dbg||!__dbg.noSteer)steer(dt,t,isFish);
+  if(bird){bird.group.visible=mixT<0.5;if(bird.group.visible){const sc=(W<H?0.72:0.95);bird.group.scale.setScalar(sc);bird.group.position.copy(C.p);
+      bird.group.rotation.set(0,0,0);bird.group.rotateY(C.yaw);bird.group.rotateZ(C.pitch*0.8);bird.group.rotateX(C.roll);
+      const fw=THREE.MathUtils.smoothstep(C.spd,0.5,1.6);bird.hover.setEffectiveWeight(1-fw);bird.fwd.setEffectiveWeight(fw);
+      bird.mx.update(reduce?0:dt)}}
+  if(fish){fish.holder.visible=mixT>=0.5;if(fish.holder.visible){const s=(W<H?0.72:0.92);fish.holder.scale.setScalar(s);fish.holder.position.copy(C.p);
+      fish.holder.rotation.set(0,0,0);fish.holder.rotateY(C.yaw+FISH_YAW);fish.holder.rotateZ(C.pitch*0.6);fish.holder.rotateX(C.roll);
+      const sp=Math.min(1,C.spd/0.9);SWPH=(SWPH+dt/WAVE.dur*(0.75+1.1*sp))%1;
+      fish.holder.updateMatrixWorld(true);_hi.copy(fish.holder.matrixWorld).invert();
+      for(const {fu,n} of SWIM){fu.uPh.value=SWPH;fu.uAmp.value=window.__noSwim?0:1.1+0.4*sp;fu.uBend.value=THREE.MathUtils.clamp(-C.yawRate*0.06,-0.12,0.12);
+        fu.uToH.value.multiplyMatrices(_hi,n.matrixWorld);fu.uFromH.value.copy(fu.uToH.value).invert()}
+      glowLight.position.copy(C.p).add(new THREE.Vector3(0,0.35,0.8));glowLight.intensity=0.7*mixT;BG.uGlow.value.set(C.p.x,C.p.y,mixT)}else{glowLight.intensity=0;BG.uGlow.value.z=0}}
+  // letters move out of the creature's way
+  const cs=toScreen(C.p),R=Math.min(W,H)*0.2;
+  for(const l of lets){const x=l.hx+l.ox,y=l.hy+l.oy,dx=x-cs.x,dy=y-cs.y,d=Math.hypot(dx,dy)||1;let fx=-l.ox*9,fy=-l.oy*9;
+    if(d<R&&!reduce){const push=(1-d/R)*900;fx+=dx/d*push;fy+=dy/d*push}
+    l.vx=(l.vx+fx*dt)*Math.pow(0.02,dt);l.vy=(l.vy+fy*dt)*Math.pow(0.02,dt);l.ox+=l.vx*dt;l.oy+=l.vy*dt;
+    l.el.style.transform=`translate(${(x-l.el.offsetWidth/2).toFixed(1)}px,${(y-l.el.offsetHeight/2).toFixed(1)}px) rotate(${(l.rot+l.ox*0.02).toFixed(2)}deg)`}
+  composer.render();
+  if(!started){started=true;document.getElementById('loading').classList.add('off')}
+  if(!window.__manual)requestAnimationFrame(frame);
+}
+let FISH_YAW=3.14159;
+window.__dbg={frame:()=>frame(),C,ptr,setTheme,get bird(){return bird},get fish(){return fish},camera,scene};
+(async()=>{
+  const [d,n,dd,dn]=await Promise.all([loadTex('assets/forest-day.jpg',true),loadTex('assets/forest-night.jpg',true),loadTex('assets/depth-day.png'),loadTex('assets/depth-night.png')]);
+  // the photo is already display-ready: decode sRGB, skip the filmic curve
+  for(const tx of[d,n])tx.colorSpace=THREE.SRGBColorSpace;
+  BG.uDay.value=d;BG.uNight.value=n;BG.uDD.value=dd;BG.uDN.value=dn;
+  // light the creatures with the photo itself, so their colour and highlights match the forest
+  const envOf=tx=>{const c=tx.clone();c.mapping=THREE.EquirectangularReflectionMapping;c.needsUpdate=true;return pmrem.fromEquirectangular(c).texture};
+  envDay=envOf(d);envNight=envOf(n);
+  resize();
+  {const wj=await fetch('assets/swim-wave.json').then(r=>r.json());const S=wj.S,T=wj.T,data=new Uint16Array(S*T);
+    for(let ti=0;ti<T;ti++)for(let si=0;si<S;si++)data[ti*S+si]=THREE.DataUtils.toHalfFloat(wj.D[si][ti]);
+    const tx=new THREE.DataTexture(data,S,T,THREE.RedFormat,THREE.HalfFloatType);tx.wrapT=THREE.RepeatWrapping;tx.wrapS=THREE.ClampToEdgeWrapping;
+    tx.magFilter=tx.minFilter=THREE.LinearFilter;tx.needsUpdate=true;WAVE.tex=tx;WAVE.dur=wj.dur}
+  await Promise.all([loadBird().catch(e=>console.error('bird',e)),loadFish().catch(e=>console.error('fish',e))]);
+  const h=document.getElementById('hint');h.textContent=touch?'Touch the forest':'Move your cursor';h.style.opacity='1';setTimeout(()=>h.style.opacity='0',3200);
+  frame();
+})().catch(e=>{console.error(e);document.getElementById('loading').textContent='The forest could not load'});
+</script>
+</body>
+</html>
