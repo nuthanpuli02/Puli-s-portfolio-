@@ -23,6 +23,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: hummingbird saturation to 60%
+- Puli asked to turn the saturation down to 60%. Taken as +60% over the original texture (it was +75%): `BIRD_SAT` 1.75 → 1.6. If he meant 60% of the previous level, that would be about 1.05.
+- Preview artifact updated to match.
+
 ### 2026-10-20: hummingbird without the pale film
 - Puli: the bird still looked like it had a pale white filter on it; saturate more.
 - Tested each likely cause by switching it off. The biggest was the bright photo's reflections (environment); sheen and iridescence added a milky layer, and fog a little.
