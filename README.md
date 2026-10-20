@@ -20,7 +20,7 @@ Then open http://localhost:8000. Opening the files directly from disk won't work
 |---|---|
 | `index.html` | The main page: ray-marched sky and clouds, voxel Puli, the fall, and the forest game (the `src/puli3d.js` module is inlined into it) |
 | `contact.html` | The contact page (built from `src/contact.src.html`) |
-| `assets/` | Contact-page assets: forest photos and depth maps, 3D models, textures, and the recorded swim wave |
+| `assets/` | Contact-page assets: forest photos and depth maps, 3D models and textures |
 | `src/puli3d.js` | Voxel character, birds, moss forest, fall choreography and the runner game |
 | `src/contact.src.html` | Source of the contact page, with placeholders for the import map |
 | `src/character-sheet.html` | The 2D character sheet the voxel model is built from |
@@ -32,11 +32,10 @@ Binary model buffers use a `.wasm` file name and glTF files use `.json`, only so
 
 ## Credits
 
-3D models, all licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) and adapted (reduced textures, new materials, motion blending):
+3D models, both licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) and adapted (reduced textures, new materials, motion blending):
 
 - "[Hummingbird – Rigged, 6 Animations (Open Bill)](https://sketchfab.com/3d-models/hummingbird-rigged-6-animations-open-bill-d9b448ac1025485e843d54bebf35390a)" by [Animal Animator](https://sketchfab.com/animalanimator)
 - "[Betta Splendens](https://sketchfab.com/3d-models/betta-splendens-f4eeb7f50ad24873842bd954ad27d23b)" by [BlueMesh](https://sketchfab.com/VapTor)
-- "[Guppie Animated](https://sketchfab.com/3d-models/guppie-animated-53abad43280a4b7ab26bd0e6b8dea62f)" by [Comitre](https://sketchfab.com/Comitre), whose swim motion drives the betta
 
 The contact-page forest images were generated with Gemini, and their depth maps were made with Depth Anything V2. Fonts are served from Google Fonts.
 

@@ -12,8 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (up/down bending: `PITCH_BODY`, `PITCH_CURL`; tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
-- **Hummingbird (contact page, day):** colours brightened and tinted from the forest photo behind it (2026-10-20); now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
+- **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
@@ -22,6 +21,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: merged the contact-page work into main; credits tidied
+- Puli confirmed the hummingbird colours and the betta's swim are fixed. The work from branch `claude/eager-lovelace-ub440d` was fast-forwarded into `main`.
+- The betta no longer uses the guppy's recorded swim (it now swims through its own rebuilt skeleton), so `assets/swim-wave.json` was deleted and the "Guppie Animated" credit removed from the contact page and README. Two models remain credited: the hummingbird (Animal Animator) and the betta (BlueMesh).
+- The shared preview https://claude.ai/artifact/4DbHHJTdXxiKAiBsiMisLW was updated to the same contact page. A second preview made by the other chat (https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs) may now be behind; use the first one.
 
 ### 2026-10-20: hummingbird haze 4%
 - Puli turned the bird's haze down from 8% to 6%, then to 4%: `BIRD_HAZE` 0.04. Preview artifact updated to match.
