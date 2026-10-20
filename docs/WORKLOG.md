@@ -23,6 +23,16 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: tail fin much wavier
+- Puli: the tail fin still looked like a static image flapping around; it should wave, bend and ripple a lot more while swimming.
+- Denser rig: `TAIL_RAYS` 9 × `TAIL_SEGS` 9 (82 new bones; the mesh now has 135).
+- Bigger, more frequent waves: `TAIL_WAVE` [0.12, 0.3] (was [0.06, 0.16]), `TAIL_STEP` 1.6 (about 2.3 waves along the fin), `TAIL_SLANT` 0.5, `TAIL_TWIST` 0.4, `TAIL_HZ` 1.6 + 1.0×speed.
+- New in-surface ripple: joints crowd and spread within the fin, `0.08*f` toward the edge.
+- `TAIL_CURL` scaled to 0.047 per joint, so the total turn curl is unchanged with the extra joints.
+- Membrane `CAUDAL_WAVE` back up to 1.6.
+- Checked headless: from the side the fan folds and catches the light; from above several S-waves run along it; turns still form one arc. Not checked: frame rate on his phone with 135 bones.
+- Preview artifact updated to match.
+
 ### 2026-10-20: tail fin re-rigged with 42 new bones
 - Puli: add more bones to the tail fin, let them twist in any direction (not just left/right), make body and tail bend as one in turns, and show real ripples while swimming, like a flag in the wind.
 - `buildTailRig()` runs at load, after levelling:

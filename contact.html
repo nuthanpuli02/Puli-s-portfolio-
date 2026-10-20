@@ -248,13 +248,13 @@ const SPINE_BEND=[0.24,0.44,0.6,0.72],TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
 const SW={body:0,joints:[],fins:{},tail:null,tailV:0,grid:null};
 // The model's tail fin has only 10 bones, too few for it to ripple, so it is re-rigged at load with a fan of TAIL_RAYS
 // rays of TAIL_SEGS joints each (see buildTailRig). OLD_TAIL: the model's own tail-fin bones it replaces.
-const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=7,TAIL_SEGS=6;
+const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=9,TAIL_SEGS=9;
 // tail-fin motion: flag-like waves (height at the base and extra toward the edge, phase step per joint outward and per
 // ray across), twist about each ray, how much of a turn's curl the tail adds to continue the body's curve
-const TAIL_WAVE=[0.06,0.16],TAIL_STEP=1.9,TAIL_SLANT=0.6,TAIL_TWIST=0.18,TAIL_CURL=0.07;
+const TAIL_WAVE=[0.12,0.3],TAIL_STEP=1.6,TAIL_SLANT=0.5,TAIL_TWIST=0.4,TAIL_CURL=0.047,TAIL_HZ=1.6;
 // fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
 // two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
-const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=0.8,FW={uFinPh:{value:0},uFinAmp:{value:0}};
+const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.6,FW={uFinPh:{value:0},uFinAmp:{value:0}};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
@@ -401,14 +401,15 @@ function swimFish(dt,sp,yaw){
     if(bk&&j.aB)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aB,bk));
     if(u&&j.aU)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aU,u))}
   if(SW.grid){const G=SW.grid,calm=1-0.6*Math.min(1,Math.abs(curl)),flap=calm*(0.7+0.6*sp),mid=(TAIL_RAYS-1)/2;
-    G.ph+=dt*Math.PI*2*(1.3+1.0*sp);
+    G.ph+=dt*Math.PI*2*(TAIL_HZ+1.0*sp);
     for(let r=0;r<TAIL_RAYS;r++)for(let k=0;k<TAIL_SEGS;k++){const b=G.rays[r][k],f=k/(TAIL_SEGS-1),ph=G.ph-TAIL_STEP*k-TAIL_SLANT*r;
       // flag ripple, plus the body's own wave carried on into the tail, plus a share of the turn's curl so body and tail bend as one
       const side=flap*(TAIL_WAVE[0]+TAIL_WAVE[1]*f)*(Math.sin(ph)+0.35*Math.sin(1.7*G.ph-1.3*k+0.9*r))
         +A*0.08*Math.sin(SW.body-Math.PI*2*(1+k*G.seg/SW.span)/1.8)+curl*TAIL_CURL;
       b.quaternion.copy(G.rest[r][k]).multiply(_q.setFromAxisAngle(G.side[r],side))
         .multiply(_q.setFromAxisAngle(G.dir[r],flap*TAIL_TWIST*f*Math.sin(ph+1.2)))
-        .multiply(_q.setFromAxisAngle(G.z,0.05*(r-mid)/mid*Math.sin(0.5*G.ph)))}} // the fan opens and closes
+        // the fan opens and closes, and ripples crowd and spread within the fin's own surface
+        .multiply(_q.setFromAxisAngle(G.z,0.05*(r-mid)/mid*Math.sin(0.5*G.ph)+flap*0.08*f*Math.sin(0.8*ph+r)))}}
   // recoil: the head swings a little against the tail
   fish.inner.rotation.y=-Math.PI/2+RECOIL*A*Math.sin(SW.body+0.6);
 }
