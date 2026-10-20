@@ -24,7 +24,9 @@ Then open http://localhost:8000. Opening the files directly from disk won't work
 | `src/puli3d.js` | Voxel character, birds, moss forest, fall choreography and the runner game |
 | `src/contact.src.html` | Source of the contact page, with placeholders for the import map |
 | `src/character-sheet.html` | The 2D character sheet the voxel model is built from |
-| `tools/build_contact.py` | Builds `contact.html` from the source (`python3 tools/build_contact.py cdn 3.14159 0`) |
+| `tools/build_contact.py` | Builds `contact.html` from the source: `python3 tools/build_contact.py` |
+| `tools/inline_puli3d.py` | Copies `src/puli3d.js` into `index.html` after edits: `python3 tools/inline_puli3d.py` |
+| `CLAUDE.md`, `docs/WORKLOG.md` | Working guide and shared change log for anyone (or any chat) picking the project up |
 
 Binary model buffers use a `.wasm` file name and glTF files use `.json`, only so that static hosts serve them with a known file type. They are ordinary glTF buffers and JSON.
 
