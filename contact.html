@@ -234,22 +234,27 @@ let BIRD_YAW=0;
 let fish=null,mixer=null;const _q=new THREE.Quaternion();
 const RIG={ // bone names by fin; "|" separates the joints from the fin's base outward, " " the rays side by side
   spine:'Bone.002|Bone.003|Bone.004|Bone.005',
-  caudal:'Bone.020 Bone.039|Bone.025 Bone.040 Bone.042 Bone.044|Bone.026 Bone.041 Bone.043 Bone.045', // rays top to bottom
   dorsal:'Bone.018 Bone.019|Bone.021 Bone.023|Bone.022 Bone.024', // rays front to back
   anal:'Bone.033 Bone.034|Bone.035 Bone.036|Bone.037 Bone.038',
   ventral:'Bone.009|Bone.027 Bone.028|Bone.029 Bone.030|Bone.031 Bone.032', // a left and a right fin
   pec:'Bone.010 Bone.011|Bone.012 Bone.013|Bone.014 Bone.015 Bone.016 Bone.017'};
 // every fin has its own rhythm (beats per second, and a little different on the left and right), so no two fins move in step;
 // along a fin, each ray and each joint out toward the tip lags the one before it, so ripples run through the fin
-const FIN_HZ={caudal:1.25,dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.06,0.13,0.22,0.26];
+const FIN_HZ={dorsal:1.75,anal:1.55,ventral:1.05,pec:2.6},FIN_RIP=[0.06,0.13,0.22,0.26];
 const SPINE_AMP=[0.19,0.34,0.47,0.6],RECOIL=0.06;
 // how a turn spreads down the spine: the head turns first and the tail follows on a springy lag,
 // so the body curls into a C, then the tail swings through and flicks the fish onto its new heading
 const SPINE_BEND=[0.24,0.44,0.6,0.72],TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
-const SW={body:0,joints:[],fins:{},tail:null,tailV:0};
+const SW={body:0,joints:[],fins:{},tail:null,tailV:0,grid:null};
+// The model's tail fin has only 10 bones, too few for it to ripple, so it is re-rigged at load with a fan of TAIL_RAYS
+// rays of TAIL_SEGS joints each (see buildTailRig). OLD_TAIL: the model's own tail-fin bones it replaces.
+const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=7,TAIL_SEGS=6;
+// tail-fin motion: flag-like waves (height at the base and extra toward the edge, phase step per joint outward and per
+// ray across), twist about each ray, how much of a turn's curl the tail adds to continue the body's curve
+const TAIL_WAVE=[0.06,0.16],TAIL_STEP=1.9,TAIL_SLANT=0.6,TAIL_TWIST=0.18,TAIL_CURL=0.07;
 // fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
 // two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
-const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.6,FW={uFinPh:{value:0},uFinAmp:{value:0}};
+const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=0.8,FW={uFinPh:{value:0},uFinAmp:{value:0}};
 async function loadFish(){
   const gl=await new GLTFLoader().loadAsync('assets/betta-gltf.json');const o=gl.scene;
   o.traverse(n=>{if(n.isMesh){if(/Cube/i.test(n.name)||n.geometry.attributes.position.count<30){n.visible=false;return}
@@ -280,6 +285,7 @@ async function loadFish(){
   {const ax=mouth().sub(tailBase());lvl.rotation.z=Math.atan2(ax.y,-ax.x)}
   const m0=mouth(),piv=m0.clone().lerp(tailBase(),0.4),snout=piv.x-m0.x;lvl.position.sub(piv);
   holder.updateMatrixWorld(true);
+  buildTailRig(o);
   finMembranes(o,[mouth(),...['Bone','Bone.002','Bone.003','Bone.004','Bone.005'].map(nm=>o.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature')).getWorldPosition(new THREE.Vector3()))]);
   // measure the fish in the holder's frame: along the body (0 behind the head, 1 where the tail fin starts), sideways, and each bone's direction
   const bone=nm=>o.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature'));
@@ -295,7 +301,7 @@ async function loadFish(){
     const side=Math.sign((b.children[0]?wp(b.children[0]):p).sub(p0).dot(lat))||1,fin=kind==='ventral'||kind==='pec'?kind+side:kind;
     if(kind!=='spine'&&!SW.fins[fin]){const n=Object.keys(SW.fins).length;SW.fins[fin]={kind,ph:n*2.39,s2:n*1.37,hz:FIN_HZ[kind]*(1+0.045*side*(fin===kind?0:1))}}
     const i=SW.joints.filter(o=>o.fin===fin&&o.d===d).length; // which ray across the fin
-    SW.joints.push({b,kind,fin,d,i,clip:b.quaternion.clone(),a:p.clone().sub(p0).dot(back)/span,side,aL:ax(lat),aB:ax(back),aU:ax(new THREE.Vector3(0,1,0))})}});
+    SW.span=span;SW.joints.push({b,kind,fin,d,i,clip:b.quaternion.clone(),a:p.clone().sub(p0).dot(back)/span,side,aL:ax(lat),aB:ax(back),aU:ax(new THREE.Vector3(0,1,0))})}});
   SW.fins.pec1&&(SW.fins.pec1.ph+=Math.PI); // the pectorals start out of step, like a betta fanning while it hovers
   fish={holder,inner,size:sz,snout};holder.updateMatrixWorld(true);
 }
@@ -305,7 +311,8 @@ async function loadFish(){
 // core: the body's centre line in the fish's frame (mouth, then the spine bones); the fish is unrotated here.
 function finMembranes(o,core){
   const kindOf={},SEED={caudal:0,dorsal:1.7,anal:3.1,ventral:4.4};
-  for(const kind of ['caudal','dorsal','anal','ventral'])for(const nm of RIG[kind].split(/[| ]/))kindOf[THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature')]=kind;
+  for(const kind of ['dorsal','anal','ventral'])for(const nm of RIG[kind].split(/[| ]/))kindOf[THREE.PropertyBinding.sanitizeNodeName(nm+'_Armature')]=kind;
+  if(SW.grid)for(const b of SW.grid.bones)kindOf[b.name]='caudal';
   const v=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),J=new THREE.Matrix3(),Ji=new THREE.Matrix3(),q=new THREE.Vector3(),seg=new THREE.Line3();
   const at=(n,i,p)=>n.applyBoneTransform(i,p).applyMatrix4(n.matrixWorld);
   o.traverse(n=>{if(!n.isSkinnedMesh)return;const g=n.geometry,P=g.attributes.position,SI=g.attributes.skinIndex,SWt=g.attributes.skinWeight,cnt=P.count;
@@ -324,6 +331,48 @@ function finMembranes(o,core){
       fd[i*3]=finW*THREE.MathUtils.smoothstep(s,0,0.06)*(kind==='caudal'?CAUDAL_WAVE:1);fd[i*3+1]=s;fd[i*3+2]=SEED[kind]+(kind==='caudal'?Math.atan2(out.y,out.x)*1.5:p.x*8);
       fn.set([side.x,side.y,side.z],i*3);fo.set([outM.x,outM.y,outM.z],i*3)}
     g.setAttribute('finData',new THREE.BufferAttribute(fd,3));g.setAttribute('finN',new THREE.BufferAttribute(fn,3));g.setAttribute('finO',new THREE.BufferAttribute(fo,3))});
+}
+// Re-rig the tail fin: a fan of new bones hangs from the base of the tail (Bone.005), every tail-fin vertex is moved onto
+// them (two neighbouring rays × two neighbouring joints), and the old tail-fin bones are left with no vertices.
+// The new bones rest in the fish's frame (the fish is unrotated here), and each re-rigged vertex is rewritten so that it
+// sits exactly where it was: the new bones' inverses cancel their rest pose, so position = bindMatrix × vertex.
+function buildTailRig(o){
+  const SN=THREE.PropertyBinding.sanitizeNodeName,old=new Set(OLD_TAIL.split(' ').map(nm=>SN(nm+'_Armature')));
+  const root=o.getObjectByName(SN('Bone.005_Armature'));o.updateMatrixWorld(true);const P=root.getWorldPosition(new THREE.Vector3());
+  o.traverse(n=>{if(!n.isSkinnedMesh||!n.visible)return;
+    const g=n.geometry,SI=g.attributes.skinIndex,SWt=g.attributes.skinWeight,POS=g.attributes.position,NOR=g.attributes.normal,bones=n.skeleton.bones;
+    const at=(i,v)=>n.applyBoneTransform(i,v).applyMatrix4(n.matrixWorld),picks=[];
+    for(let i=0;i<POS.count;i++){let c=0;for(let k=0;k<4;k++)if(old.has(bones[SI.getComponent(i,k)].name))c+=SWt.getComponent(i,k);
+      if(c<0.02)continue;
+      const b=new THREE.Vector3().fromBufferAttribute(POS,i),pw=at(i,b.clone());
+      const J=[0,1,2].map(ax=>at(i,b.clone().setComponent(ax,b.getComponent(ax)+1)).sub(pw)),nb=new THREE.Vector3().fromBufferAttribute(NOR,i);
+      const nw=J[0].clone().multiplyScalar(nb.x).addScaledVector(J[1],nb.y).addScaledVector(J[2],nb.z).normalize();
+      picks.push({i,pw,nw,th:Math.atan2(pw.y-P.y,pw.x-P.x),rho:Math.hypot(pw.x-P.x,pw.y-P.y)})}
+    if(!picks.length)return;
+    // the fan's spread and length, from the fin itself
+    const fan=picks.filter(q=>q.pw.x>P.x&&q.rho>0.03).map(q=>q.th).sort((a,b)=>a-b),rr=picks.map(q=>q.rho).sort((a,b)=>a-b);
+    const th0=fan[Math.floor(fan.length*0.01)],th1=fan[Math.floor(fan.length*0.99)],seg=rr[Math.floor(rr.length*0.99)]*1.02/TAIL_SEGS;
+    const place=(bone,parent,pos)=>{parent.add(bone);parent.updateMatrixWorld(true);
+      new THREE.Matrix4().copy(parent.matrixWorld).invert().multiply(new THREE.Matrix4().makeTranslation(pos.x,pos.y,pos.z)).decompose(bone.position,bone.quaternion,bone.scale);bone.updateMatrixWorld(true)};
+    const base=new THREE.Bone();base.name='TailBase';place(base,root,P);
+    const rays=[],dir=[],side=[],rest=[],all=[base];
+    for(let r=0;r<TAIL_RAYS;r++){const th=th0+(th1-th0)*r/(TAIL_RAYS-1),d=new THREE.Vector3(Math.cos(th),Math.sin(th),0);rays.push([]);rest.push([]);
+      dir.push(d);side.push(d.clone().cross(new THREE.Vector3(0,0,1))); // turning about (ray × z) swings the ray's tip toward +z, like the spine
+      for(let k=0;k<TAIL_SEGS;k++){const b=new THREE.Bone();b.name='Tail'+r+'_'+k;place(b,k?rays[r][k-1]:base,P.clone().addScaledVector(d,k*seg));
+        rays[r].push(b);rest[r].push(b.quaternion.clone());all.push(b)}}
+    const first=bones.length;n.bind(new THREE.Skeleton(bones.concat(all),n.skeleton.boneInverses.concat(all.map(b=>b.matrixWorld.clone().invert()))),n.bindMatrix);
+    const idx=b=>first+all.indexOf(b),Bi=n.bindMatrix.clone().invert(),Bn=new THREE.Matrix3().setFromMatrix4(Bi);
+    for(const q of picks){const w=new Map(),add=(b,x)=>{if(x>1e-4)w.set(b,(w.get(b)||0)+x)};
+      if(q.pw.x<P.x)add(base,1);
+      else{const fr=THREE.MathUtils.clamp((q.th-th0)/(th1-th0),0,1)*(TAIL_RAYS-1),ra=Math.min(TAIL_RAYS-2,Math.floor(fr)),tr=fr-ra;
+        const u=q.rho/seg-0.5,i0=Math.floor(u),t=u-i0,at2=(r,k)=>k<0?base:rays[r][Math.min(TAIL_SEGS-1,k)];
+        add(at2(ra,i0),(1-tr)*(1-t));add(at2(ra+1,i0),tr*(1-t));add(at2(ra,i0+1),(1-tr)*t);add(at2(ra+1,i0+1),tr*t)}
+      const top=[...w].sort((a,b)=>b[1]-a[1]).slice(0,4),sum=top.reduce((a,x)=>a+x[1],0);
+      for(let k=0;k<4;k++){SI.setComponent(q.i,k,top[k]?idx(top[k][0]):0);SWt.setComponent(q.i,k,top[k]?top[k][1]/sum:0)}
+      const pb=q.pw.clone().applyMatrix4(Bi),nb=q.nw.clone().applyMatrix3(Bn).normalize();POS.setXYZ(q.i,pb.x,pb.y,pb.z);NOR.setXYZ(q.i,nb.x,nb.y,nb.z)}
+    SI.needsUpdate=SWt.needsUpdate=POS.needsUpdate=NOR.needsUpdate=true;
+    SW.grid={bones:all,rays,rest,dir,side,z:new THREE.Vector3(0,0,1),seg,ph:0}});
+  o.updateMatrixWorld(true); // the re-bound mesh needs its current bind inverse before anything reads its vertices
 }
 // sp: 0 when drifting, 1 at full speed; yaw: the heading the head is turning to
 function swimFish(dt,sp,yaw){
@@ -344,14 +393,22 @@ function swimFish(dt,sp,yaw){
     else{
       // the fin's own ripple: a wave running out along each ray and across the rays, with a slower second wave so it never repeats exactly
       const F=SW.fins[j.fin],rip=flow*FIN_RIP[j.d]*(Math.sin(F.ph-1.2*j.d-0.8*j.i)+0.35*Math.sin(1.61*F.ph+0.9*j.i-0.7*j.d+F.s2));
-      if(j.kind==='caudal'){l=A*(0.18+0.1*j.d)*Math.sin(w)+curl*0.2+1.5*rip;u=0.08*(j.d?1:0.5)*Math.sin(0.55*F.ph-0.9*j.i)} // u: the fan opens and closes
-      else if(j.kind==='dorsal'||j.kind==='anal'){l=A*(0.05+0.03*j.d)*Math.sin(w)+rip;bk=0.18*sp*(j.d?0.5:1)+0.08*Math.sin(0.7*F.ph-1.0*j.i-0.6*j.d)}
+      if(j.kind==='dorsal'||j.kind==='anal'){l=A*(0.05+0.03*j.d)*Math.sin(w)+rip;bk=0.18*sp*(j.d?0.5:1)+0.08*Math.sin(0.7*F.ph-1.0*j.i-0.6*j.d)}
       else if(j.kind==='ventral'){l=(0.03+0.02*j.d)*(0.5+A)*Math.sin(SW.body*0.5-0.7*j.d)+0.8*rip;bk=0.25*sp*(j.d?0.4:1)}
       else{const v=F.ph-0.9*j.d-0.6*j.i;bk=(0.32-0.12*sp)*(j.d?0.7:1)*Math.sin(v)+(j.d?0:0.15*sp);u=0.08*j.d*Math.sin(v-1.2)} // pectorals fan and row
     }
     if(l&&j.aL)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aL,l));
     if(bk&&j.aB)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aB,bk));
     if(u&&j.aU)j.b.quaternion.multiply(_q.setFromAxisAngle(j.aU,u))}
+  if(SW.grid){const G=SW.grid,calm=1-0.6*Math.min(1,Math.abs(curl)),flap=calm*(0.7+0.6*sp),mid=(TAIL_RAYS-1)/2;
+    G.ph+=dt*Math.PI*2*(1.3+1.0*sp);
+    for(let r=0;r<TAIL_RAYS;r++)for(let k=0;k<TAIL_SEGS;k++){const b=G.rays[r][k],f=k/(TAIL_SEGS-1),ph=G.ph-TAIL_STEP*k-TAIL_SLANT*r;
+      // flag ripple, plus the body's own wave carried on into the tail, plus a share of the turn's curl so body and tail bend as one
+      const side=flap*(TAIL_WAVE[0]+TAIL_WAVE[1]*f)*(Math.sin(ph)+0.35*Math.sin(1.7*G.ph-1.3*k+0.9*r))
+        +A*0.08*Math.sin(SW.body-Math.PI*2*(1+k*G.seg/SW.span)/1.8)+curl*TAIL_CURL;
+      b.quaternion.copy(G.rest[r][k]).multiply(_q.setFromAxisAngle(G.side[r],side))
+        .multiply(_q.setFromAxisAngle(G.dir[r],flap*TAIL_TWIST*f*Math.sin(ph+1.2)))
+        .multiply(_q.setFromAxisAngle(G.z,0.05*(r-mid)/mid*Math.sin(0.5*G.ph)))}} // the fan opens and closes
   // recoil: the head swings a little against the tail
   fish.inner.rotation.y=-Math.PI/2+RECOIL*A*Math.sin(SW.body+0.6);
 }

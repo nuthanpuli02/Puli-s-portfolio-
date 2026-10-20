@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); tail fin bent more and turns made a continuous arc after his seventh review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
+- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); tail fin re-rigged with 42 bones and flag-like waves after his eighth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
@@ -22,6 +22,23 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: tail fin re-rigged with 42 new bones
+- Puli: add more bones to the tail fin, let them twist in any direction (not just left/right), make body and tail bend as one in turns, and show real ripples while swimming, like a flag in the wind.
+- `buildTailRig()` runs at load, after levelling:
+  - It adds a fan of `TAIL_RAYS` 7 × `TAIL_SEGS` 6 bones (plus a `TailBase`) under `Bone.005`, spread to match the fin's own angle range and length.
+  - Every vertex weighted to the old tail bones (`OLD_TAIL`, now unused) moves onto the two nearest rays × two nearest joints. Vertices in front of the tail base go to `TailBase`.
+  - The new bones' inverses cancel their rest pose, so each moved vertex's position and normal are rewritten as `bindMatrix⁻¹ ×` its current place; the mesh doesn't move at rest (checked).
+  - The mesh is re-bound to a new Skeleton (96 bones).
+- Each tail joint now:
+  - swings sideways with a flag wave (`TAIL_WAVE` 0.06 at the base + 0.16 toward the edge; `TAIL_STEP` 1.9 rad per joint outward and `TAIL_SLANT` 0.6 per ray across, so the waves run out and slant across the fan; plus a ×1.7 second wave)
+  - twists about its own ray (`TAIL_TWIST`)
+  - opens and closes the fan
+  - carries the body's own wave on into the tail
+- In turns the flapping calms down (up to 60%) and every tail joint adds `TAIL_CURL` 0.07 × the turn's curl, so body and tail curve as one arc. 0.12 folded the tail back on itself.
+- The tail's membrane shader ripple is reduced (`CAUDAL_WAVE` 0.8), since the bones now carry the big waves. The old caudal entry is gone from `RIG`, so no bone-ripple code drives the old tail bones any more.
+- Checked headless: rest pose unchanged; while swimming the tail shows travelling, slanted waves from above and changes shape strongly from the side; in turns body and tail form one smooth arc.
+- Preview artifact updated to match.
 
 ### 2026-10-20: tail fin bends more; turns are a continuous arc
 - Puli: the top and bottom fins look perfect. The tail fin should bend more. When the cursor jumps to the other side mid-swim, the fish stopped dead, turned its head, then its body, which looked unnatural; it should keep moving so the turn is clean and smooth.
