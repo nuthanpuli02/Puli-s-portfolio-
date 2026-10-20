@@ -250,10 +250,10 @@ const BODY_CURL=2.0,TAIL_K=6,TAIL_DAMP=0.45,MAX_CURL=1.8;
 const SW={body:0,joints:[],fins:{},tail:null,tailV:0,grid:null,chain:null};
 // The model's tail fin has only 10 bones, too few for it to ripple, so it is re-rigged at load with a fan of TAIL_RAYS
 // rays of TAIL_SEGS joints each (see buildTailRig). OLD_TAIL: the model's own tail-fin bones it replaces.
-const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=9,TAIL_SEGS=9;
+const OLD_TAIL='Bone.020 Bone.039 Bone.025 Bone.040 Bone.042 Bone.044 Bone.026 Bone.041 Bone.043 Bone.045',TAIL_RAYS=13,TAIL_SEGS=14;
 // tail-fin motion: flag-like waves (height at the base and extra toward the edge, phase step per joint outward and per
 // ray across), twist about each ray, how much of a turn's curl the tail adds to continue the body's curve
-const TAIL_WAVE=[0.12,0.3],TAIL_STEP=1.6,TAIL_SLANT=0.5,TAIL_TWIST=0.4,TAIL_CURL=0.047,TAIL_HZ=1.6;
+const TAIL_WAVE=[0.08,0.2],TAIL_STEP=1.55,TAIL_SLANT=0.35,TAIL_TWIST=0.26,TAIL_CURL=0.03,TAIL_HZ=1.6;
 // fin membranes ripple in the shader on top of the bones: several waves travel out across each fin (the bones alone,
 // two or three per ray, can only make one bend). FIN_WAVE is the wave height at the fin's edge, in fish-size units.
 const FIN_WAVELEN=0.11,FIN_WAVE=0.04,CAUDAL_WAVE=1.6,FW={uFinPh:{value:0},uFinAmp:{value:0}};
@@ -467,7 +467,7 @@ function swimFish(dt,sp,yaw){
       b.quaternion.copy(G.rest[r][k]).multiply(_q.setFromAxisAngle(G.side[r],side))
         .multiply(_q.setFromAxisAngle(G.dir[r],flap*TAIL_TWIST*f*Math.sin(ph+1.2)))
         // the fan opens and closes, and ripples crowd and spread within the fin's own surface
-        .multiply(_q.setFromAxisAngle(G.z,0.05*(r-mid)/mid*Math.sin(0.5*G.ph)+flap*0.08*f*Math.sin(0.8*ph+r)))}}
+        .multiply(_q.setFromAxisAngle(G.z,0.05*(r-mid)/mid*Math.sin(0.5*G.ph)+flap*0.05*f*Math.sin(0.8*ph+r)))}}
 }
 
 // ---------- letters of CONTACT, scattered and pushed aside by the creature ----------

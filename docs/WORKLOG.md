@@ -23,6 +23,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-20: tail fin fan 13 × 14
+- Puli: add a lot more bones to the tail fin so it moves wavy like the top and bottom fins.
+- `TAIL_RAYS` 13 × `TAIL_SEGS` 14 (182 bones plus `TailBase`).
+- Waves retuned for the shorter joints so they're smaller and more numerous, about 3-4 along the fin like the top and bottom fins: `TAIL_WAVE` [0.08, 0.2], `TAIL_STEP` 1.55, `TAIL_SLANT` 0.35, `TAIL_TWIST` 0.26, in-surface ripple 0.05. `TAIL_CURL` scaled to 0.03 per joint so turns are unchanged.
+- The BODY mesh now has about 248 bones. Checked headless: side, top and turn views intact. Phone frame rate still unchecked.
+- Preview artifact updated to match.
+
 ### 2026-10-20: whole-body swimming on a 12-joint spine
 - Puli: make the fish swim with its whole body, not just the tail; more bones are fine if they make it smoother.
 - `rebase()` (at load, after levelling) rewrites every vertex to its current rest position and sets every bone's inverse to cancel its current pose. The rest pose becomes the bind pose, so any vertex can move onto any bone without shifting. The rest pose was compared before and after: identical.
