@@ -41,7 +41,7 @@ The contact page loads three.js 0.169.0 from cdn.jsdelivr.net. The main page use
 - **Fall:** canopy from above, through the leaves, onto two sagging vines that stretch hard and snap, flips onto two thin branches, a final vine, then face-down. The jetpack breaks off in stages. The camera stays wide.
 - **Game:** endless 2.5D runner with rising difficulty and a best score stored as `puli-best` in localStorage. The camera is sized to the screen shape so Puli stays visible on portrait phones. During the game the landing scene's trees slide back off the running lane.
 - **Night mode:** darker forest with bioluminescent moss, ferns and mushrooms; obstacles get a glowing outline; birds become glowing moths; owls get amber eyes.
-- **Contact page:** depth-mapped photo parallax. The hummingbird follows the cursor or finger with a critically damped spring and only turns around after moving the other way for a moment (an earlier version flipped sides constantly and looked like a rendering glitch). The betta points its head at the cursor, turns smoothly toward it (curling its body), then swims forward along its heading; near the cursor it stops and only turns gently, so it never spins in place.
+- **Contact page:** depth-mapped photo parallax. The hummingbird follows the cursor or finger with a critically damped spring and only turns around after moving the other way for a moment (an earlier version flipped sides constantly and looked like a rendering glitch). The betta keeps its head locked on the cursor (small corrections are instant, big turns are slow and eased, curling its body), then swims forward along its heading and stops with the tip of its mouth on the cursor; a cursor on its own body makes it hold still rather than spin.
 
 ## Credits are required
 

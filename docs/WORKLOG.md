@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); given cursor-pointing steering after his third review; waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html`: `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
+- **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); levelled, head locked on the cursor and mouth-to-cursor stopping after his fourth review; waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
@@ -22,6 +22,15 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-20: betta levelled, head locked on the cursor, mouth stops on it
+- Puli: the fish pointed a bit up by default; it should always point at the cursor with no delay; the body should bend a lot more; turning should be slow and fluid; then it should swim quickly until the tip of its mouth touches the cursor, and stop.
+- Nose-up: the model's body is tilted about 17° nose-up. At load the fish is now levelled (mouth tip and base of the tail at the same height) inside a new `lvl` group. The pivot moved to the body axis, 40% back from the mouth; `fish.snout` is the pivot-to-mouth distance.
+- Pointing: `turnRate` replaces the spring. Small errors close almost instantly (`TURN_SNAP`); big turns speed up gently (`TURN_ACC`), glide at up to `FISH_TURN` 2.2 rad/s and ease out by a braking curve, with no overshoot. Measured: 0° heading error while swimming; a 180° turn-around takes about 1.5 s. The same controller drives the up/down tilt (up to 80°).
+- Swimming: up to 1.0 units/s once facing the cursor. Speed comes from a stopping curve (`BRAKE`) on how far the mouth still is from the cursor along the heading, so it can't overshoot; measured stop is 1-2 px from the cursor on phone and desktop sizes.
+- More bend: `SPINE_AMP` 0.19 to 0.6, `RECOIL` 0.06; turn curl `SPINE_BEND` sums to 2.0 with `TAIL_K` 6, so the body curls past 90° in a turn-around. Checked headless: no tearing.
+- The video Puli mentioned still hasn't arrived.
+- Preview artifact updated to match.
 
 ### 2026-10-20: betta points at the cursor and swims to it
 - Puli: the fish always faced a fixed direction and slid sideways toward the cursor before flipping round, which looked unnatural. He wants it to point at where the cursor really is, turn smoothly to that side, then swim slowly toward it.
