@@ -15,7 +15,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (up/down bending: `PITCH_BODY`, `PITCH_CURL`; tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** colours brightened and tinted from the forest photo behind it (2026-10-20); now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
-- **Photographic Kailash intro (main page):** day design concept at `docs/design/kailash-day/` and https://claude.ai/artifact/HNf4oEqMzF4a18cEHH4cA2, waiting for Puli's feedback; then implement in `index.html`, then design the night version.
+- **Photographic Kailash intro (main page):** day version built into `index.html` (2026-10-21) after Puli approved the concept (`docs/design/kailash-day/`). Waiting for his review on his phone; next, design the night version the same way (photo + mask + title, keeping the 3D clouds and the descent).
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
@@ -23,6 +23,31 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: photographic Kailash intro built into the main page (day)
+- Puli approved the day concept and asked that the 3D sea of clouds and the descent stay exactly as they were.
+- How it fits together (`index.html`):
+  - Pass 1 (low-res ray march) is unchanged except, by day (`uLook`):
+    - the clouds take the photo's measured colours (lit tops warm gold, shadows grey-blue, warm haze)
+    - the sun moves to the left as in the photo
+    - while the camera is high (`uFar`), 3D clouds fade between distances `FAR0` 6 and `FAR1` 12, so the near 3D sea of clouds runs into the photo's own distant sea
+    - the drawn backdrop is left out where the photo replaces it (`uPhoto`); alpha is then cloud transmittance
+  - Pass 2 (full res) draws the photo sharply behind the clouds. It lives on the picture plane (x across, y up, in screen heights; `uPhotoBox`), so it tilts with the camera pitch. It fills the screen at the opening tilt (`PITCH0` -0.17, spare 1.08); beyond its bottom edge it fades to haze, above its top the sky deepens.
+  - "BEYOND" (Six Caps, `buildTitle`) is drawn where the mask says sky (`uMaskTex`) and the clouds let it through, so it sits behind the summit with clouds in front. It rises from behind the peak as the intro ends and lifts away as the descent starts.
+  - Pointer parallax: photo 0.012, title 0.55 of that.
+- The photo fades as the camera sinks (`photoW` = smoothstep 1.0–2.0 of camY), so the existing cloud entry, the "Puli's Portfolio" card, Selected Work, the fall and the game are untouched.
+- Night keeps the drawn mountain and the old lockup (`look` = photo loaded × day).
+- The old ray-marched mountain is hidden by day (`uMount.w × (1-look)`).
+- When the backdrop switches, the frame-blending history is reset (it left a ghost of the old mountain).
+- Overlay `#dayhero` (day only, fades with the hero):
+  - kicker, coordinates, an altitude readout from camY, the summit marker, "the clouds" pinned to the photo
+  - the frosted card ("Descend into the work" scrolls to Selected Work; "Get in touch" opens the contact page)
+  - the 01–04 index
+  - on phones the corners, index, card text and summit label are hidden
+- Assets: `assets/kailash-day-{wide,tall}.jpg` (about 150 KB each) and `-mask.png` (about 7 KB each), cut with `tools/cutout_sky.py`.
+- Checked headless at 1280×800 and 412×860 at descent 0, 10%, 20% and 30%. Night is unchanged (compared before and after).
+- Private preview of the main page (a copy that opens in daylight): https://claude.ai/artifact/U6FKFjZZ26eHeDUHautPj6. The shared preview https://claude.ai/artifact/4DbHHJTdXxiKAiBsiMisLW was not updated and still shows the old intro.
+- Not done: the night version; phone frame rate with the extra full-res photo pass is unchecked.
 
 ### 2026-10-21: photographic Kailash intro, day design concept
 - Puli wants the main page's mountain upgraded to photorealistic, day version first (night after he approves the day one). His references: golden-hour SEPTEMBER poster (huge title behind the summit, small corner labels), WILDLIFE (frosted glass panel, title clipped by the mountain, 01/02/03 index), misty monochrome mockups, MOUNTAIN MAN poster. He chose a mix of golden-hour and frosted glass.

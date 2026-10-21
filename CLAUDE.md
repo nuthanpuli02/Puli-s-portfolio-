@@ -11,7 +11,7 @@ This is Nuthan Puli's interactive portfolio. Write his name as "Puli" in convers
 
 The main page is one continuous scroll that a single camera follows:
 
-1. Mt. Kailash intro above the clouds ("Beyond the clouds").
+1. Mt. Kailash intro above the clouds ("Beyond the clouds"). By day the sky and mountain are a photograph (`assets/kailash-day-{wide,tall}.jpg` plus a mountain mask) with a giant "BEYOND" behind the summit, live 3D clouds in front, and a frosted-glass card and labels; at night the drawn mountain and the old title lockup remain until the night version is designed.
 2. Into the clouds: "Puli's Portfolio" and the short intro.
 3. Below the clouds: the Selected Work section (HTML over the sky).
 4. Only after Selected Work has scrolled fully off-screen, the jetpack malfunctions.
@@ -24,7 +24,7 @@ The contact page (`contact.html`) is a separate page: a photographic jungle with
 
 | Path | What it is | How it's edited |
 |---|---|---|
-| `index.html` | Main page: WebGL1 ray-marched clouds and mountain, Selected Work, and an inlined copy of `src/puli3d.js` | Edit HTML/CSS/scene code directly. For the character, forest or game, edit `src/puli3d.js`, then run `python3 tools/inline_puli3d.py` |
+| `index.html` | Main page: WebGL1 ray-marched clouds (with a photographic Kailash backdrop by day, a drawn mountain at night), Selected Work, and an inlined copy of `src/puli3d.js` | Edit HTML/CSS/scene code directly. For the character, forest or game, edit `src/puli3d.js`, then run `python3 tools/inline_puli3d.py` |
 | `src/puli3d.js` | Voxel Puli (built from the pixel character sheet), birds and laser, moss forest, fall choreography, runner game | Source of truth for that code |
 | `contact.html` | Built contact page | Never edit by hand; build it from the source |
 | `src/contact.src.html` | Contact page source, with `__IMPORTMAP__`, `__FISH_YAW__` and `__BIRD_YAW__` placeholders | Edit this, then run `python3 tools/build_contact.py` (writes `contact.html`); `python3 tools/build_contact.py local` writes `contact.test.html` that loads three.js from `./node_modules` for offline tests |
