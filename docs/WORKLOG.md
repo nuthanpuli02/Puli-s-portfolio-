@@ -13,7 +13,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 ## Open items
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
-- Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). The voxel limbs are single rigid blocks, so elbows and knees can't bend; kneeling and running read from the limb directions only.
+- Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
@@ -21,6 +21,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: elbows and knees
+- Puli: the Mixamo animations looked weird on rigid limbs; add joints.
+- The voxel rig now has 11 groups: arms split at the elbow (sheet row 34: `armR/armL` above, `foreR/foreL` below) and legs at the knee (row 61: `legR/legL` thigh, `shinR/shinL` shin and shoe). Forearms and shins hang from their upper limb at the joint pivot (`PIV.foreR` etc.); the watch and laser origin now ride on `foreL`.
+- Re-baked the clips: upper limbs point shoulder to elbow and hip to knee; lower limbs are rotations relative to the upper limb (elbow to hand, knee to foot). Data per frame is now 10 quaternions + hip offset (43 values); `MIXA` is about 91 KB.
+- Hand-made poses (sky flight, vines, slide, game over) leave the lower limbs straight, exactly as before.
+- Checked headless: kneeling now sits on bent knees; the run shows real knee bends (24° to 146° in the clip).
+- Next: Mt. Kailash quality.
 
 ### 2026-10-21: Mixamo animations on voxel Puli; GitHub Pages on
 - Puli tested both pages on his laptop and phone: everything runs smoothly, including the fish and bird. What bothers him is the visual quality of the sky, fall and game.
