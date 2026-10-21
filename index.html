@@ -600,7 +600,7 @@ void main(){
     vec2 pu=vec2((q.x-uPhotoBox.x)/uPhotoBox.z,(uPhotoBox.y-q.y)/uPhotoBox.w);
     vec3 ph=texture2D(uPhotoTex,clamp(pu,0.0,1.0)).rgb;
     ph*=1.0-0.35*clamp(-pu.y*1.5,0.0,1.0); // above the photo the sky keeps deepening
-    ph=mix(ph,vec3(0.86,0.81,0.75),clamp((pu.y-1.0)*5.0,0.0,1.0)); // below it, cloud haze instead of a smeared last row
+    ph=mix(ph,vec3(0.86,0.81,0.75),smoothstep(0.93,1.02,pu.y)); // its bottom edge melts into cloud haze, never a smeared last row
     col+=c.a*ph*uPhoto;
     if(uTitleA>0.005){
       vec2 r=vec2(uv.x,uv.y+uPitch)-uPar*0.55;
@@ -1646,7 +1646,8 @@ window.PuliChar=function(gl,mainBuf){
              tall:{photo:'assets/kailash-day-tall.jpg',mask:'assets/kailash-day-tall-mask.png',ar:768/1376,
                    summit:[0.521,0.366],clouds:0.595,title:[0.215,0.185],tagSide:-1}};
   // the photo fills the screen (with a little spare) at the camera tilt the page opens on
-  const PITCH0=-0.17,PHOTO_SPARE=1.08;
+  // PHOTO_RISE: how far (in screen heights) the photo rises per unit the camera sinks, matched to the clouds' rise
+  const PITCH0=-0.17,PHOTO_SPARE=1.08,PHOTO_RISE=0.3;
   const photoTex=gl.createTexture(),maskTex=gl.createTexture(),titleTex=gl.createTexture();
   let dayKey='',dayReady=0,dayLoad=0;
   function texFrom(t,img,unit,lum){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
@@ -1761,7 +1762,7 @@ window.PuliChar=function(gl,mainBuf){
     const zM=8.5, hwM=0.5*asp*zM/1.25;
     // day look: the photograph replaces the drawn sky and mountain; it fades as the camera sinks into the cloud deck,
     // and the 3D clouds fade into the photo's own sea of clouds only while the camera is high above them
-    const look=dayReady*(1-night),photoW=look*sstep(1.0,2.0,camY),farW=look*sstep(1.4,2.6,camY);
+    const look=dayReady*(1-night),photoW=look*sstep(1.4,2.4,camY),farW=look*sstep(1.4,2.6,camY);
     gl.uniform4f(U.uMount, -hwM*(asp<1?0.36:0.60), zM, 2.8, sstep(0.5,1.1,camY)*(1-look));
     const zT=19, hw=0.5*asp*zT/1.25, tw=Math.min(12,2*hw*(asp<1?0.95:0.56)), th=tw*0.5;
     const TB=[3.85+(0.205-0.17)*zT/1.25, tw, th, zT]; gl.uniform4f(U.uTextBox, ...TB);
@@ -1770,7 +1771,8 @@ window.PuliChar=function(gl,mainBuf){
     // day title: rises from behind the peak as the intro ends, lifts away as the descent starts
     parX+=(parTX-parX)*0.06;parY+=(parTY-parY)*0.06;const par=[-parX*0.012,parY*0.008];
     const DL=dayKey?dayLayout():null,titleA=look*(1-sstep(0.08,0.2,u))*sstep(0,0.35,k2);
-    if(DL)DL.T.y-=(1-e2)*0.32*DL.T.h*(CAP.bot-CAP.top)-u*0.6;
+    // as the camera sinks, the photo and everything pinned to it rise at the rate the sea of clouds rises in view
+    if(DL){const rise=Math.max(0,3.85-camY)*PHOTO_RISE;DL.P.y+=rise;DL.T.y+=rise-(1-e2)*0.32*DL.T.h*(CAP.bot-CAP.top)}
     gl.uniform1f(U.uTextX, TX); gl.uniform1f(U.uTextA, TA);
     const heroA=(1-sstep(0.03,0.15,u))*sstep(0.75,1,k2);
     hero.style.opacity=heroA.toFixed(3); scrollnote.style.opacity=(1-look).toFixed(3);
@@ -1780,7 +1782,7 @@ window.PuliChar=function(gl,mainBuf){
       const [sx,sy]=toScreen(DL.D.summit[0],DL.D.summit[1]),side=DL.D.tagSide,L=Math.min(150,innerWidth*0.14),dx=L*0.86*side,dy=-L*0.5;
       dhPin.style.transform=`translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px)`;dhStem.style.width=L+'px';dhStem.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;
       dhTag.style.top=(dy-14)+'px';dhTag.style.textAlign=side>0?'left':'right';dhTag.style.left=side>0?(dx+10)+'px':'';dhTag.style.right=side>0?'':(-dx+10)+'px';
-      dhClouds.style.transform=`translateY(${(toScreen(0.5,DL.D.clouds)[1]-u*innerHeight*0.6).toFixed(1)}px)`;
+      dhClouds.style.transform=`translateY(${toScreen(0.5,DL.D.clouds)[1].toFixed(1)}px)`;
       dhAlt.textContent=Math.round(5200+2200*clamp((camY-0.95)/2.9)).toLocaleString('en-US')}
     gl.uniform1f(U.uLook,look); gl.uniform1f(U.uPhoto,photoW); gl.uniform1f(U.uFar,farW);
     gl.uniform2f(U.uRes,fbW,fbH); gl.uniform1f(U.uFrame,frames%997); gl.uniform1f(U.uTime,simT); gl.uniform1f(U.uCamY,camY); gl.uniform1f(U.uPitch,pitch); gl.uniform1f(U.uNight,night); gl.uniform1f(U.uInside,sstep(1.15,0.82,camY)*sstep(-0.35,0.25,camY));

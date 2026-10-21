@@ -24,6 +24,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-21: day photo rises with the clouds
+- Puli, on his phone: while descending through the clouds the mountain reappeared, and it rose more slowly than the text and the clouds.
+- Cause: the photo sat on the picture plane and moved only with the camera's tilt, while the 3D clouds rose with the camera's height. When the camera tilted back up (pitch -0.30 → 0), the not-yet-faded photo came back into view.
+- Fix: the photo, the title and every label pinned to the photo rise by `PHOTO_RISE` 0.3 screen heights per unit the camera sinks below 3.85 (the "the clouds" text no longer has its own scroll offset). The photo fades earlier (`photoW` smoothstep 1.4–2.4 of camY instead of 1.0–2.0). Its bottom 7% melts into haze (no smeared last row).
+- Checked headless at phone size every 4% from 0 to 24%, and on desktop at 6%, 12% and 20%: everything rises together and the mountain doesn't come back.
+
 ### 2026-10-21: photographic Kailash intro built into the main page (day)
 - Puli approved the day concept and asked that the 3D sea of clouds and the descent stay exactly as they were.
 - How it fits together (`index.html`):
