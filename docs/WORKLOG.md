@@ -15,6 +15,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (up/down bending: `PITCH_BODY`, `PITCH_CURL`; tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** colours brightened and tinted from the forest photo behind it (2026-10-20); now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
+- **Photographic Kailash intro (main page):** day design concept at `docs/design/kailash-day/` and https://claude.ai/artifact/HNf4oEqMzF4a18cEHH4cA2, waiting for Puli's feedback; then implement in `index.html`, then design the night version.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
@@ -22,6 +23,20 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: photographic Kailash intro, day design concept
+- Puli wants the main page's mountain upgraded to photorealistic, day version first (night after he approves the day one). His references: golden-hour SEPTEMBER poster (huge title behind the summit, small corner labels), WILDLIFE (frosted glass panel, title clipped by the mountain, 01/02/03 index), misty monochrome mockups, MOUNTAIN MAN poster. He chose a mix of golden-hour and frosted glass.
+- Free photo sites are blocked from the cloud session, so with his OK the images were made with Figma AI (gemini-3.1-flash-image), in his Figma file "Puli portfolio – mountain hero (day)" (https://www.figma.com/design/NYsWfPlBuvruMrFFLK9DL9, nodes 1:2 wide 1376×768 and 2:2 tall 768×1376). Figma's download URLs are blocked here too; the full-size images were taken with get_screenshot (base64).
+- `tools/cutout_sky.py` cuts the mountain out of the sky by region-growing the sky from the top edge (pip `scipy` needed), so the title can sit behind the summit.
+- Concept page (not part of the site yet): `docs/design/kailash-day/` and the artifact https://claude.ai/artifact/HNf4oEqMzF4a18cEHH4cA2. It has:
+  - a giant "BEYOND" (Six Caps) behind the summit, "the clouds" in Bodoni italic on the cloud sea
+  - a frosted glass intro card and frosted nav pills
+  - a 01–04 descent index (above the clouds, into the clouds, selected work, the forest)
+  - a summit marker (6,638 m), Kailash's coordinates and an altitude readout that counts down while scrolling
+  - mouse parallax (sky, title and mountain at different depths)
+  - the title rising from behind the peak on load
+  - a scroll preview of the camera sinking into the clouds
+- Not done: wiring it into `index.html` (the plan is a photo + cutout hero that dissolves into the existing ray-marched clouds during the descent), and the night version.
 
 ### 2026-10-20: hummingbird haze 4%
 - Puli turned the bird's haze down from 8% to 6%, then to 4%: `BIRD_HAZE` 0.04. Preview artifact updated to match.
