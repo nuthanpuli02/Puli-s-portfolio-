@@ -18,7 +18,7 @@ Then open http://localhost:8000. Opening the files directly from disk won't work
 
 | Path | What it is |
 |---|---|
-| `index.html` | The main page: a photographic Kailash by day (`assets/kailash-day-*`), ray-marched 3D clouds, voxel Puli, the fall, and the forest game (the `src/puli3d.js` module is inlined into it) |
+| `index.html` | The main page: a photographic Kailash cut-out by day (`assets/kailash-day-*`) standing in ray-marched 3D clouds, voxel Puli, the fall, and the forest game (the `src/puli3d.js` module is inlined into it) |
 | `contact.html` | The contact page (built from `src/contact.src.html`) |
 | `assets/` | Contact-page assets: forest photos and depth maps, 3D models, textures, and the recorded swim wave |
 | `src/puli3d.js` | Voxel character, birds, moss forest, fall choreography and the runner game |

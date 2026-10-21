@@ -15,7 +15,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - **Betta swim (contact page, night):** rebuilt on 2026-10-20 to run through the betta's own skeleton (see Log); whole-body swimming on a 12-joint spine after his tenth review (he approved the body bend and the top/bottom fins); waiting for his next look via the preview https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs. If he likes it, delete `assets/swim-wave.json` (no longer loaded) and change the Guppie credit on the contact page and in the README, which still says the guppy's motion drives the betta. Tuning knobs are at the top of the betta section in `src/contact.src.html` (up/down bending: `PITCH_BODY`, `PITCH_CURL`; tail waviness toward its end: `TAIL_EDGE`; body: `BODY_AMP`, `BODY_WAVELEN`, `BALANCE`, `BODY_CURL`; tail fin: `TAIL_WAVE`, `TAIL_STEP`, `TAIL_SLANT`, `TAIL_TWIST`, `TAIL_CURL`; steering: `FISH_SPEED`, `FISH_TURN`, `TURN_ACC`, `TURN_SNAP`, `FISH_PITCH`, `BRAKE`): `SPINE_AMP` (body sway), `RECOIL` (head swing), `SPINE_BEND`/`TAIL_K`/`TAIL_DAMP`/`MAX_CURL` (turn curl), and the numbers in `swimFish`.
 - **Hummingbird (contact page, day):** colours brightened and tinted from the forest photo behind it (2026-10-20); now the animated "Hummingbird – Rigged, 6 Animations" model, blending hover and forward flight by speed, lit from the forest photo. Waiting for his review on a phone.
 - Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
-- **Photographic Kailash intro (main page):** day version built into `index.html` (2026-10-21) after Puli approved the concept (`docs/design/kailash-day/`). Waiting for his review on his phone; next, design the night version the same way (photo + mask + title, keeping the 3D clouds and the descent).
+- **Photographic Kailash intro (main page):** day version built into `index.html` (2026-10-21); since his "two sets of clouds" note the mountain is a cut-out standing in the 3D clouds (see Log). Waiting for his review on his phone; next, design the night version the same way (photo + mask + title, keeping the 3D clouds and the descent).
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
@@ -23,6 +23,18 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: Kailash as a cut-out in the 3D clouds (one cloud system)
+- Puli: "It looks like there are two sets of clouds here, can we just make a photorealistic 3D model of that mountain using the references?" (the photo's own sea of clouds sat behind the live 3D clouds).
+- A true 3D model can't be made from one AI photo here, so the photo is now cut down to the mountain alone and stands as a flat cut-out inside the 3D scene. Its sky and clouds are gone; the shader draws the sky in the photo's colours and the only clouds are the live 3D ones, in front of and around the mountain.
+- How it works (`index.html`):
+  - The mountain is a vertical plane at depth `MTN_Z` 12 (title "BEYOND" at `TITLE_Z` 13 behind it), sized and placed by `dayLayout()` so it fills the screen as before at the opening tilt. It moves with the camera like the clouds do, so it rises at the same speed during the descent (replaces `PHOTO_RISE`, `uFar`, `uPhoto`).
+  - Pass 1 (low-res ray march) treats the cut-out as an opaque wall at its depth: clouds in front cover it, clouds behind it are hidden. Only the mask's eroded interior hides what's behind (`mtnCover`), and pass 2 swaps sky for mountain at the soft edge; this stops a bright or dark halo where low-res and full-res edges disagree.
+  - Day sky gradient (`skyCol` / `daySky`) and cloud colours are measured from the photo.
+  - The mountain fades as the camera sinks into the cloud deck (`mtnA` = smoothstep 0.95–1.6 of camY), so it no longer shows from inside the clouds.
+- Masks: `assets/kailash-day-{wide,tall}-mask.png`, made with `tools/mountain_only.py` (sky by region growing, the photo's clouds by brightness and texture, an outline traced around Kailash to keep the distant ridges out, holes filled, base fading into haze). The commands and outlines used are in the script's header comment.
+- Checked headless at phone 412×915 (0–32% of the descent) and desktop 1440×900; night is unchanged.
+- Not done: night version; phone frame rate.
 
 ### 2026-10-21: day photo rises with the clouds
 - Puli, on his phone: while descending through the clouds the mountain reappeared, and it rose more slowly than the text and the clouds.
