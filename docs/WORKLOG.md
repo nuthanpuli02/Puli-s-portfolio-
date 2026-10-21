@@ -13,14 +13,29 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 ## Open items
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
-- Mixamo animations (run, jump, falls, get-up, idle FBX files are on Puli's computer) to be mapped onto voxel Puli.
+- Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). The voxel limbs are single rigid blocks, so elbows and knees can't bend; kneeling and running read from the limb directions only.
 - Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
-- Hosting: GitHub Pages can serve this repo directly (Settings → Pages → main, root). A custom domain is still to decide.
+- Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: Mixamo animations on voxel Puli; GitHub Pages on
+- Puli tested both pages on his laptop and phone: everything runs smoothly, including the fish and bird. What bothers him is the visual quality of the sky, fall and game.
+- He switched on GitHub Pages: https://nuthanpuli02.github.io/Puli-s-portfolio-/
+- Six Mixamo clips were baked in a headless browser (three.js FBXLoader) at 30 fps into the voxel rig's terms. Per frame: torso rotation (a frame built from hips to neck and shoulder to shoulder, relative to the bind pose), head rotation relative to the torso, each limb's direction (shoulder to hand, hip to foot) as a rotation from straight down, and hip height (1 = standing). Stored in `src/puli3d.js` as `MIXA`, int16 base64, about 57 KB. Sampled with `clipAt(name, seconds, loop)` and put on the rig with `applyClip`; the root matrix now includes `sc.body` inside the body's own lean.
+- Where each clip plays:
+  - free-fall segments of the fall: Falling (limbs and head only; the choreography keeps the body's tilt and roll; vine stretch and hold poses unchanged)
+  - impact: Falling Flat Impact from 0.32 s at 1.3x
+  - get-up: Getting Up, clip seconds 1.2 to 6.6 at 2x; the get-up stage is now 2.7 s (was 0.8 s)
+  - landed: Breathing Idle, with the head still turning toward the pointer
+  - game run: Running, phase tied to distance (one cycle per 270 units)
+  - game jump: Jumping, frame picked from vertical speed (rising, apex, falling)
+  - Slide, hover, game over and sky flight keep their hand-made poses.
+- Checked headless: lying, push-up, rising and idle look right; run and jump read clearly; the fall renders without errors.
+- Preview artifact updated to match.
 
 ### 2026-10-20: merged the contact-page work into main; credits tidied
 - Puli confirmed the hummingbird colours and the betta's swim are fixed. The work from branch `claude/eager-lovelace-ub440d` was fast-forwarded into `main`.
