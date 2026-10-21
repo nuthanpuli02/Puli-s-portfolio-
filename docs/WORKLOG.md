@@ -14,14 +14,21 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- **Mt. Kailash (2026-10-21):** waiting for Puli's verdict on the new 3D mountain, on laptop and phone (look and smoothness). Revert point: commit `0580fe3`. Fallback plan: option 1, a photo with a depth map like the contact page.
+- **Mt. Kailash, night (3D):** the sharp 3D mountain (2026-10-21) now shows only at night; by day the photo cut-out replaces it. Puli: "smooth but still not how I wanted". In progress: Poly Haven CC0 rock and snow PBR textures on it (his choice over a downloaded model).
 - Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
+- **Photographic Kailash intro (main page):** day version built into `index.html` (2026-10-21); since his "two sets of clouds" note the mountain is a cut-out standing in the 3D clouds (see Log). Paused on 2026-10-21 at Puli's request ("we'll get back to it later"), waiting for his review on his phone via the private preview https://claude.ai/artifact/U6FKFjZZ26eHeDUHautPj6 (a copy of `index.html` that opens in daylight; republish it after changes). The shared preview https://claude.ai/artifact/4DbHHJTdXxiKAiBsiMisLW still shows the old intro. Next: his feedback on the day cut-out, then the night version the same way (photo + mountain-only mask + title, keeping the 3D clouds and the descent).
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: merged the photographic day intro with the sharp 3D mountain
+- Puli asked me to check his day-scene changes (branch `claude/eager-lovelace-ub440d`, made in another chat from an older `main`, before the elbows/knees and the sharp 3D mountain). Merged it into `main`.
+- Result: by day the photo cut-out, "BEYOND" and the frosted card (the branch's work, unchanged); at night the sharp 3D mountain (`fsM`). The 3D mountain's opacity is multiplied by `1-look`, so it never shows by day.
+- Merge details in `index.html`: pass 1 alpha is `mix(aOut, TfM, uLook)` (cloud transmittance in front of the night mountain or the day plane); pass 2 has both layers, the 3D one's opacity is now `uM3A` (the branch already used `uMtnA` for the photo); the 3D layer is bound to texture unit 7 in pass 2, and its height and snow maps are bound again to units 6/7 before each `fsM` draw because pass 2 puts the title on unit 6; `fsM` takes the camera's sideways shift `uCamX`.
+- Checked headless at 1280×800, day and night.
 
 ### 2026-10-21: Mt. Kailash, sharp and in full 3D (option 2)
 - Puli picked option 2 (keep the mountain fully 3D and upgrade it) over option 1 (photo + depth map). If he isn't happy, revert to commit `0580fe3` (the last commit before this work) and try option 1 or keep improving from here.
@@ -59,6 +66,62 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli confirmed the hummingbird colours and the betta's swim are fixed. The work from branch `claude/eager-lovelace-ub440d` was fast-forwarded into `main`.
 - The betta no longer uses the guppy's recorded swim (it now swims through its own rebuilt skeleton), so `assets/swim-wave.json` was deleted and the "Guppie Animated" credit removed from the contact page and README. Two models remain credited: the hummingbird (Animal Animator) and the betta (BlueMesh).
 - The shared preview https://claude.ai/artifact/4DbHHJTdXxiKAiBsiMisLW was updated to the same contact page. A second preview made by the other chat (https://claude.ai/artifact/6jWDc71EVjRXDLV3HF4qKs) may now be behind; use the first one.
+### 2026-10-21: Kailash as a cut-out in the 3D clouds (one cloud system)
+- Puli: "It looks like there are two sets of clouds here, can we just make a photorealistic 3D model of that mountain using the references?" (the photo's own sea of clouds sat behind the live 3D clouds).
+- A true 3D model can't be made from one AI photo here, so the photo is now cut down to the mountain alone and stands as a flat cut-out inside the 3D scene. Its sky and clouds are gone; the shader draws the sky in the photo's colours and the only clouds are the live 3D ones, in front of and around the mountain.
+- How it works (`index.html`):
+  - The mountain is a vertical plane at depth `MTN_Z` 12 (title "BEYOND" at `TITLE_Z` 13 behind it), sized and placed by `dayLayout()` so it fills the screen as before at the opening tilt. It moves with the camera like the clouds do, so it rises at the same speed during the descent (replaces `PHOTO_RISE`, `uFar`, `uPhoto`).
+  - Pass 1 (low-res ray march) treats the cut-out as an opaque wall at its depth: clouds in front cover it, clouds behind it are hidden. Only the mask's eroded interior hides what's behind (`mtnCover`), and pass 2 swaps sky for mountain at the soft edge; this stops a bright or dark halo where low-res and full-res edges disagree.
+  - Day sky gradient (`skyCol` / `daySky`) and cloud colours are measured from the photo.
+  - The mountain fades as the camera sinks into the cloud deck (`mtnA` = smoothstep 0.95–1.6 of camY), so it no longer shows from inside the clouds.
+- Masks: `assets/kailash-day-{wide,tall}-mask.png`, made with `tools/mountain_only.py` (sky by region growing, the photo's clouds by brightness and texture, an outline traced around Kailash to keep the distant ridges out, holes filled, base fading into haze). The commands and outlines used are in the script's header comment.
+- Checked headless at phone 412×915 (0–32% of the descent) and desktop 1440×900; night is unchanged.
+- Not done: night version; phone frame rate.
+
+### 2026-10-21: day photo rises with the clouds
+- Puli, on his phone: while descending through the clouds the mountain reappeared, and it rose more slowly than the text and the clouds.
+- Cause: the photo sat on the picture plane and moved only with the camera's tilt, while the 3D clouds rose with the camera's height. When the camera tilted back up (pitch -0.30 → 0), the not-yet-faded photo came back into view.
+- Fix: the photo, the title and every label pinned to the photo rise by `PHOTO_RISE` 0.3 screen heights per unit the camera sinks below 3.85 (the "the clouds" text no longer has its own scroll offset). The photo fades earlier (`photoW` smoothstep 1.4–2.4 of camY instead of 1.0–2.0). Its bottom 7% melts into haze (no smeared last row).
+- Checked headless at phone size every 4% from 0 to 24%, and on desktop at 6%, 12% and 20%: everything rises together and the mountain doesn't come back.
+
+### 2026-10-21: photographic Kailash intro built into the main page (day)
+- Puli approved the day concept and asked that the 3D sea of clouds and the descent stay exactly as they were.
+- How it fits together (`index.html`):
+  - Pass 1 (low-res ray march) is unchanged except, by day (`uLook`):
+    - the clouds take the photo's measured colours (lit tops warm gold, shadows grey-blue, warm haze)
+    - the sun moves to the left as in the photo
+    - while the camera is high (`uFar`), 3D clouds fade between distances `FAR0` 6 and `FAR1` 12, so the near 3D sea of clouds runs into the photo's own distant sea
+    - the drawn backdrop is left out where the photo replaces it (`uPhoto`); alpha is then cloud transmittance
+  - Pass 2 (full res) draws the photo sharply behind the clouds. It lives on the picture plane (x across, y up, in screen heights; `uPhotoBox`), so it tilts with the camera pitch. It fills the screen at the opening tilt (`PITCH0` -0.17, spare 1.08); beyond its bottom edge it fades to haze, above its top the sky deepens.
+  - "BEYOND" (Six Caps, `buildTitle`) is drawn where the mask says sky (`uMaskTex`) and the clouds let it through, so it sits behind the summit with clouds in front. It rises from behind the peak as the intro ends and lifts away as the descent starts.
+  - Pointer parallax: photo 0.012, title 0.55 of that.
+- The photo fades as the camera sinks (`photoW` = smoothstep 1.0–2.0 of camY), so the existing cloud entry, the "Puli's Portfolio" card, Selected Work, the fall and the game are untouched.
+- Night keeps the drawn mountain and the old lockup (`look` = photo loaded × day).
+- The old ray-marched mountain is hidden by day (`uMount.w × (1-look)`).
+- When the backdrop switches, the frame-blending history is reset (it left a ghost of the old mountain).
+- Overlay `#dayhero` (day only, fades with the hero):
+  - kicker, coordinates, an altitude readout from camY, the summit marker, "the clouds" pinned to the photo
+  - the frosted card ("Descend into the work" scrolls to Selected Work; "Get in touch" opens the contact page)
+  - the 01–04 index
+  - on phones the corners, index, card text and summit label are hidden
+- Assets: `assets/kailash-day-{wide,tall}.jpg` (about 150 KB each) and `-mask.png` (about 7 KB each), cut with `tools/cutout_sky.py`.
+- Checked headless at 1280×800 and 412×860 at descent 0, 10%, 20% and 30%. Night is unchanged (compared before and after).
+- Private preview of the main page (a copy that opens in daylight): https://claude.ai/artifact/U6FKFjZZ26eHeDUHautPj6. The shared preview https://claude.ai/artifact/4DbHHJTdXxiKAiBsiMisLW was not updated and still shows the old intro.
+- Not done: the night version; phone frame rate with the extra full-res photo pass is unchecked.
+
+### 2026-10-21: photographic Kailash intro, day design concept
+- Puli wants the main page's mountain upgraded to photorealistic, day version first (night after he approves the day one). His references: golden-hour SEPTEMBER poster (huge title behind the summit, small corner labels), WILDLIFE (frosted glass panel, title clipped by the mountain, 01/02/03 index), misty monochrome mockups, MOUNTAIN MAN poster. He chose a mix of golden-hour and frosted glass.
+- Free photo sites are blocked from the cloud session, so with his OK the images were made with Figma AI (gemini-3.1-flash-image), in his Figma file "Puli portfolio – mountain hero (day)" (https://www.figma.com/design/NYsWfPlBuvruMrFFLK9DL9, nodes 1:2 wide 1376×768 and 2:2 tall 768×1376). Figma's download URLs are blocked here too; the full-size images were taken with get_screenshot (base64).
+- `tools/cutout_sky.py` cuts the mountain out of the sky by region-growing the sky from the top edge (pip `scipy` needed), so the title can sit behind the summit.
+- Concept page (not part of the site yet): `docs/design/kailash-day/` and the artifact https://claude.ai/artifact/HNf4oEqMzF4a18cEHH4cA2. It has:
+  - a giant "BEYOND" (Six Caps) behind the summit, "the clouds" in Bodoni italic on the cloud sea
+  - a frosted glass intro card and frosted nav pills
+  - a 01–04 descent index (above the clouds, into the clouds, selected work, the forest)
+  - a summit marker (6,638 m), Kailash's coordinates and an altitude readout that counts down while scrolling
+  - mouse parallax (sky, title and mountain at different depths)
+  - the title rising from behind the peak on load
+  - a scroll preview of the camera sinking into the clouds
+- Not done: wiring it into `index.html` (the plan is a photo + cutout hero that dissolves into the existing ray-marched clouds during the descent), and the night version.
 
 ### 2026-10-20: hummingbird haze 4%
 - Puli turned the bird's haze down from 8% to 6%, then to 4%: `BIRD_HAZE` 0.04. Preview artifact updated to match.

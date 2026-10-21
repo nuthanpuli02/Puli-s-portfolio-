@@ -11,7 +11,7 @@ This is Nuthan Puli's interactive portfolio. Write his name as "Puli" in convers
 
 The main page is one continuous scroll that a single camera follows:
 
-1. Mt. Kailash intro above the clouds ("Beyond the clouds").
+1. Mt. Kailash intro above the clouds ("Beyond the clouds"). By day the mountain is a photo cut-out (`assets/kailash-day-{wide,tall}.jpg` plus a mountain-only mask) standing inside the 3D clouds, with the sky drawn in the photo's colours, a giant "BEYOND" behind the summit, the live 3D clouds as the only clouds, and a frosted-glass card and labels; at night the 3D mountain (sharp layer `fsM`, baked maps `assets/kailash-{h,s}.webp`) and the old title lockup remain until the night version is designed.
 2. Into the clouds: "Puli's Portfolio" and the short intro.
 3. Below the clouds: the Selected Work section (HTML over the sky).
 4. Only after Selected Work has scrolled fully off-screen, the jetpack malfunctions.
@@ -24,13 +24,13 @@ The contact page (`contact.html`) is a separate page: a photographic jungle with
 
 | Path | What it is | How it's edited |
 |---|---|---|
-| `index.html` | Main page: WebGL1 ray-marched clouds and mountain, Selected Work, and an inlined copy of `src/puli3d.js` | Edit HTML/CSS/scene code directly. For the character, forest or game, edit `src/puli3d.js`, then run `python3 tools/inline_puli3d.py` |
+| `index.html` | Main page: WebGL1 ray-marched clouds (with a photographic Kailash cut-out by day, a drawn mountain at night), Selected Work, and an inlined copy of `src/puli3d.js` | Edit HTML/CSS/scene code directly. For the character, forest or game, edit `src/puli3d.js`, then run `python3 tools/inline_puli3d.py` |
 | `src/puli3d.js` | Voxel Puli (built from the pixel character sheet), birds and laser, moss forest, fall choreography, runner game | Source of truth for that code |
 | `contact.html` | Built contact page | Never edit by hand; build it from the source |
 | `src/contact.src.html` | Contact page source, with `__IMPORTMAP__`, `__FISH_YAW__` and `__BIRD_YAW__` placeholders | Edit this, then run `python3 tools/build_contact.py` (writes `contact.html`); `python3 tools/build_contact.py local` writes `contact.test.html` that loads three.js from `./node_modules` for offline tests |
 | `assets/` | Kailash height and snow maps (main page), and contact assets: forest photos and depth maps, glTF models and textures | Model buffers are named `.wasm` and glTF files `.json` only so that static hosts serve them; they are ordinary glTF data |
 | `src/character-sheet.html` | The 2D pixel character sheet (front, back, side) the voxel model is built from | Reference |
-| `tools/` | `inline_puli3d.py`, `build_contact.py`, and `bake_kailash.py` (+ `bake_kailash.js`), which bakes `assets/kailash-h.webp` and `assets/kailash-s.webp` for the sharp mountain layer | `python3 tools/bake_kailash.py` (needs node, numpy, Pillow) |
+| `tools/` | `inline_puli3d.py`, `build_contact.py`, `mountain_only.py` (makes the day Kailash masks), and `bake_kailash.py` (+ `bake_kailash.js`), which bakes `assets/kailash-h.webp` and `assets/kailash-s.webp` for the sharp night mountain | `python3 tools/bake_kailash.py` (needs node, numpy, Pillow) |
 
 The contact page loads three.js 0.169.0 from cdn.jsdelivr.net. The main page uses no libraries.
 
