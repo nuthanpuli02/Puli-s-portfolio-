@@ -14,13 +14,23 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- Final quality pass: mountain, clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
+- **Mt. Kailash (2026-10-21):** waiting for Puli's verdict on the new 3D mountain, on laptop and phone (look and smoothness). Revert point: commit `0580fe3`. Fallback plan: option 1, a photo with a depth map like the contact page.
+- Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: Mt. Kailash, sharp and in full 3D (option 2)
+- Puli picked option 2 (keep the mountain fully 3D and upgrade it) over option 1 (photo + depth map). If he isn't happy, revert to commit `0580fe3` (the last commit before this work) and try option 1 or keep improving from here.
+- Why it looked soft before: the whole scene is ray-marched at 0.32–0.5 of screen resolution and upscaled, the elevation data is only 256² (16 m per texel, smoothed SRTM), and the rock bands were flat colour stripes.
+- New sharp mountain layer: shader `fsM` traces the mountain at screen resolution (1.2× CSS px on phones, 1× on desktop). The cloud pass leaves sky where the mountain is and stores the cloud transmittance there; pass 2 adds the mountain through it. While the view moves it traces a reduced viewport (0.6 on phones, 0.75 on desktop); when the view holds still it adds 16 jittered samples for anti-aliasing and then stops rendering until the view changes.
+- New baked maps, `assets/kailash-h.webp` (16-bit height + cavity) and `assets/kailash-s.webp` (snow cover), 1024², made by `python3 tools/bake_kailash.py` (runs `tools/bake_kailash.js` with node). The bake upsamples the SRTM data bicubically, then adds terraced strata beds on the steep faces, ribs, gullies cut along multi-direction flow lines, the south-face gash, a rounded summit dome, cavity, and snow on the bed ledges, couloirs, lee faces and the dome.
+- Shading: bedding and block detail below the map's resolution, soft sun shadows, sky light scaled by cavity, bounce light from the cloud deck below, blue-shadowed snow, snow sparkle, distance haze plus denser haze low down.
+- Until the maps load (or if WebP fails), the old soft mountain is drawn; the sharp one fades in over 0.7 s. Once loaded, the cloud pass's own 256² heightmap is rebuilt from the baked one so both silhouettes match.
+- Not checked yet: speed on Puli's Redmi. If the intro or the first scroll stutters, lower the `mq` factor (pass 1c in the frame loop) or the moving-view `sub` factor.
 
 ### 2026-10-21: elbows and knees
 - Puli: the Mixamo animations looked weird on rigid limbs; add joints.

@@ -28,9 +28,9 @@ The contact page (`contact.html`) is a separate page: a photographic jungle with
 | `src/puli3d.js` | Voxel Puli (built from the pixel character sheet), birds and laser, moss forest, fall choreography, runner game | Source of truth for that code |
 | `contact.html` | Built contact page | Never edit by hand; build it from the source |
 | `src/contact.src.html` | Contact page source, with `__IMPORTMAP__`, `__FISH_YAW__` and `__BIRD_YAW__` placeholders | Edit this, then run `python3 tools/build_contact.py` (writes `contact.html`); `python3 tools/build_contact.py local` writes `contact.test.html` that loads three.js from `./node_modules` for offline tests |
-| `assets/` | Contact assets: forest photos and depth maps, glTF models and textures | Model buffers are named `.wasm` and glTF files `.json` only so that static hosts serve them; they are ordinary glTF data |
+| `assets/` | Kailash height and snow maps (main page), and contact assets: forest photos and depth maps, glTF models and textures | Model buffers are named `.wasm` and glTF files `.json` only so that static hosts serve them; they are ordinary glTF data |
 | `src/character-sheet.html` | The 2D pixel character sheet (front, back, side) the voxel model is built from | Reference |
-| `tools/` | `inline_puli3d.py` and `build_contact.py` | |
+| `tools/` | `inline_puli3d.py`, `build_contact.py`, and `bake_kailash.py` (+ `bake_kailash.js`), which bakes `assets/kailash-h.webp` and `assets/kailash-s.webp` for the sharp mountain layer | `python3 tools/bake_kailash.py` (needs node, numpy, Pillow) |
 
 The contact page loads three.js 0.169.0 from cdn.jsdelivr.net. The main page uses no libraries.
 

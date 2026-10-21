@@ -280,7 +280,8 @@ attribute vec2 a; void main(){ gl_Position=vec4(a,0.,1.); }
 precision highp float;
 uniform vec2 uRes; uniform float uTime, uCamY, uPitch, uNight, uInside;
 uniform sampler2D uText; uniform vec4 uTextBox; uniform float uTextA; uniform float uTextX; uniform vec4 uMount; // mount: x, z, halfSize, alpha
-uniform sampler2D uHm; uniform float uDbg; uniform float uFrame; // box: centerY, width, height, planeZ
+uniform sampler2D uHm; uniform float uDbg; uniform float uFrame; uniform float uHiA; // box: centerY, width, height, planeZ
+// uHiA: how far the sharp mountain layer (fsM) has taken over; while it is on, this pass leaves sky behind the mountain
 
 float hash(vec3 p){ p=fract(p*0.3183099+0.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 float noise(vec3 x){
@@ -451,7 +452,7 @@ vec3 mountainCol(vec3 p, float tm, vec3 rd){
   return c;
 }
 
-vec3 skyCol(vec3 rd, vec3 sun){
+vec3 skyCol(vec3 rd, vec3 sun, float stars){
   float up=clamp(rd.y*0.5+0.5,0.0,1.0);
   vec3 dayTop=vec3(0.12,0.30,0.74), dayHor=vec3(0.86,0.88,0.90);
   vec3 nTop=vec3(0.015,0.03,0.09), nHor=vec3(0.10,0.15,0.29);
@@ -460,7 +461,7 @@ vec3 skyCol(vec3 rd, vec3 sun){
   vec3 c=mix(dsky, mix(nHor,nTop,pow(up,1.2)), uNight);
   float s=max(dot(rd,sun),0.0);
   c+=mix(vec3(1.0,0.90,0.76)*(pow(s,4.0)*0.25+pow(s,200.0)*1.2), vec3(0.75,0.82,1.0)*(pow(s,10.0)*0.18+smoothstep(0.9993,0.9996,s)*0.9), uNight);
-  if(uNight>0.01 && rd.y>0.0 && uCamY>0.9){ vec3 g=floor(rd*260.0); float st=step(0.9975,hash(g)); c+=vec3(st)*uNight*0.8*smoothstep(0.0,0.25,rd.y)*smoothstep(0.9,1.8,uCamY); }
+  if(stars>0.5 && uNight>0.01 && rd.y>0.0 && uCamY>0.9){ vec3 g=floor(rd*260.0); float st=step(0.9975,hash(g)); c+=vec3(st)*uNight*0.8*smoothstep(0.0,0.25,rd.y)*smoothstep(0.9,1.8,uCamY); }
   return c;
 }
 
@@ -469,14 +470,15 @@ void main(){
   vec3 ro=vec3(0.0,uCamY,0.0);
   vec3 rd=normalize(vec3(uv.x,uv.y+uPitch,1.25));
   vec3 sun=normalize(mix(vec3(0.70,0.30,0.55),vec3(0.45,0.55,0.7),uNight));
-  vec3 sky=skyCol(rd,sun);
+  float T=1.0; vec3 col=vec3(0.0);
+  float tm=traceM(ro,rd);
+  bool hiM=tm<1e4 && uHiA>0.0;
+  vec3 sky=skyCol(rd,sun,hiM?0.0:1.0);
 
   vec3 lit=mix(vec3(1.06,1.02,0.96),vec3(0.86,0.91,1.02),uNight);
   vec3 shad=mix(vec3(0.50,0.54,0.72),vec3(0.09,0.13,0.25),uNight);
   vec3 amb=mix(vec3(0.70,0.80,0.95),vec3(0.18,0.24,0.40),uNight);
 
-  float T=1.0; vec3 col=vec3(0.0);
-  float tm=traceM(ro,rd);
   // the lettering stands on a plane in the scene; this pass only records how visible that plane is
   float tp=uTextBox.w/rd.z; bool textDone=uTextA<0.01;
   if(!textDone){
@@ -484,7 +486,7 @@ void main(){
     vec2 tuv=vec2((P.x-uTextX)/uTextBox.y+0.5, 0.5-(P.y-uTextBox.x)/uTextBox.z);
     if(!(tuv.x>-0.02&&tuv.x<1.02&&tuv.y>-0.02&&tuv.y<1.02)) textDone=true;
   }
-  float Tf=(tp<tm)?1.0:0.0; bool gotTf=textDone;
+  float Tf=(tp<tm)?1.0:0.0; bool gotTf=textDone, noText=textDone;
   float t=0.02+0.08*fract(hash(vec3(gl_FragCoord.xy,1.0))+uFrame*0.6180339);
   for(int i=0;i<56;i++){
     vec3 p=ro+rd*t;
@@ -505,18 +507,20 @@ void main(){
     t+=dt;
   }
   if(!gotTf) Tf*=T;
-  vec3 bg=sky; if(tm<1e4) bg=mix(sky,mountainCol(ro+rd*tm,tm,rd),uMount.w);
+  vec3 bg=sky; if(tm<1e4 && uHiA<0.999) bg=mix(sky,mountainCol(ro+rd*tm,tm,rd),uMount.w*(1.0-uHiA));
   vec3 outc=col+T*bg;
+  // on the mountain the text plane is hidden anyway (it stands behind it), so alpha carries the cloud transmittance instead
+  float aOut=(uHiA>0.0&&(tm<1e4||noText))?T:Tf;
   // inside the cloud: the whole view becomes cloud, with slow drifting light and shade so you feel the motion
   if(uInside>0.001){
     float w=fbm(vec3(rd.xy*2.2,uTime*0.18+uCamY*1.4));
     float w2=fbm(vec3(rd.xy*5.0+3.0,uTime*0.25+uCamY*2.2));
     vec3 fogc=mix(shad,lit,clamp(0.55+rd.y*0.6+(w-0.45)*0.9,0.0,1.0))+amb*0.08;
     float k=uInside*clamp(0.80+(w2-0.45)*0.6,0.0,1.0);
-    outc=mix(outc,fogc,k); Tf*=1.0-k;
+    outc=mix(outc,fogc,k); aOut*=1.0-k;
   }
   outc=pow(outc,vec3(0.95));
-  gl_FragColor=vec4(outc,Tf);
+  gl_FragColor=vec4(outc,aOut);
 }
 </script>
 <script id="fs3" type="x-shader">
@@ -525,14 +529,156 @@ precision highp float;
 uniform sampler2D uCur, uHist; uniform vec2 uSrc; uniform float uW;
 void main(){ vec2 st=gl_FragCoord.xy/uSrc; gl_FragColor=mix(texture2D(uCur,st),texture2D(uHist,st),uW); }
 </script>
+<script id="fsM" type="x-shader">
+// Mt. Kailash at screen resolution. The cloud pass leaves a hole (sky colour) where the mountain is and
+// stores the cloud transmittance in front of it; pass 2 adds this layer through that transmittance.
+// Height comes from a baked 1024² map (SRTM elevation upsampled, with strata, ribs and drainage gullies added
+// offline; see tools/bake_kailash.js). R,G = 16-bit height, B = cavity; the second map holds snow cover.
+precision highp float;
+uniform vec2 uRes, uJit; uniform float uCamY, uPitch, uNight; uniform vec4 uMount;
+uniform sampler2D uH, uS;
+const float Y0=-0.37, SPAN=3.35, NT=1024.0;
+float hash(vec3 p){ p=fract(p*0.3183099+0.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float noise(vec3 x){
+  vec3 i=floor(x); vec3 f=fract(x); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x), mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x), mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);
+}
+float fbm(vec3 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*noise(p); p=p*2.02+vec3(1.7,9.2,3.1); a*=0.5; } return s; }
+vec2 toUV(vec2 xz){ return vec2(0.5+(xz.x-uMount.x)/(2.0*uMount.z), 0.5-(xz.y-uMount.y)/(2.0*uMount.z)); }
+float dec(vec4 a){ return (a.r*65280.0+a.g*255.0)/65535.0; }
+// 16-bit height has to be filtered by hand; cavity rides along in blue
+vec2 hc(vec2 uv){
+  vec2 f=uv*NT-0.5; vec2 i=floor(f); vec2 w=f-i;
+  vec4 a=texture2D(uH,(i+vec2(0.5,0.5))/NT), b=texture2D(uH,(i+vec2(1.5,0.5))/NT);
+  vec4 c=texture2D(uH,(i+vec2(0.5,1.5))/NT), d=texture2D(uH,(i+vec2(1.5,1.5))/NT);
+  float h=mix(mix(dec(a),dec(b),w.x),mix(dec(c),dec(d),w.x),w.y);
+  float cv=mix(mix(a.b,b.b,w.x),mix(c.b,d.b,w.x),w.y);
+  return vec2(Y0+h*SPAN,cv);
+}
+float H(vec2 xz){ vec2 uv=toUV(xz); if(uv.x<=0.002||uv.x>=0.998||uv.y<=0.002||uv.y>=0.998) return -9.0; return hc(uv).x; }
+float trace(vec3 ro, vec3 rd){
+  vec3 bmin=vec3(uMount.x-uMount.z,Y0,uMount.y-uMount.z), bmax=vec3(uMount.x+uMount.z,Y0+SPAN,uMount.y+uMount.z);
+  vec3 inv=1.0/rd; vec3 t0=(bmin-ro)*inv, t1=(bmax-ro)*inv;
+  vec3 tl=min(t0,t1), th=max(t0,t1);
+  float tn=max(max(tl.x,tl.y),max(tl.z,0.0)), tf=min(min(th.x,th.y),th.z);
+  if(tn>tf) return -1.0;
+  float t=tn, lt=t;
+  for(int i=0;i<220;i++){
+    vec3 p=ro+rd*t; float d=p.y-H(p.xz);
+    if(d<0.0){ // bisect between the last point above and this one below
+      float a=lt, b=t;
+      for(int k=0;k<7;k++){ float m=0.5*(a+b); vec3 q=ro+rd*m; if(q.y-H(q.xz)<0.0) b=m; else a=m; }
+      return 0.5*(a+b);
+    }
+    lt=t; t+=clamp(d*0.42,0.0022+t*0.00035,0.06);
+    if(t>tf) break;
+  }
+  return -1.0;
+}
+float shadow(vec3 p, vec3 L){
+  float s=1.0, t=0.012;
+  for(int i=0;i<28;i++){
+    vec3 q=p+L*t; if(q.y>Y0+SPAN) break;
+    float d=q.y-H(q.xz);
+    s=min(s,clamp(d*22.0/t,0.0,1.0)); if(s<0.001) break;
+    t+=0.009+t*0.14;
+  }
+  return s*s*(3.0-2.0*s);
+}
+void main(){
+  vec2 uv=(gl_FragCoord.xy+uJit-0.5*uRes)/uRes.y;
+  vec3 ro=vec3(0.0,uCamY,0.0);
+  vec3 rd=normalize(vec3(uv.x,uv.y+uPitch,1.25));
+  float t=trace(ro,rd);
+  if(t<0.0){ gl_FragColor=vec4(0.0); return; }
+  vec3 p=ro+rd*t; vec2 muv=toUV(p.xz);
+  vec3 q=p-vec3(uMount.x,0.0,uMount.y);
+  // normal from the height map (1.5 texels apart, so the bilinear cells don't show)
+  float e=uMount.z*2.0/NT*1.5;
+  float hx=H(p.xz+vec2(e,0.0))-H(p.xz-vec2(e,0.0)), hz=H(p.xz+vec2(0.0,e))-H(p.xz-vec2(0.0,e));
+  vec3 n=normalize(vec3(-hx,2.0*e,-hz));
+  float cav=hc(muv).y;
+  float hn=(p.y-Y0)/SPAN;
+  // rock grain below the map's resolution: thin bedding steps (each bed a riser and a ledge) and crumble
+  float yb=p.y+(fbm(q*2.0)-0.5)*0.05+q.x*0.01;
+  float bed=noise(vec3(q.x*3.0,yb*150.0,q.z*3.0)), bed2=noise(vec3(q.x*6.0+3.0,yb*330.0,q.z*6.0));
+  float steepF=1.0-smoothstep(0.55,0.85,n.y);
+  float grit=fbm(q*95.0);
+  // beds come in blocks: each one is broken by vertical joints, so it doesn't read as wood grain
+  float blk=noise(vec3(q.x*16.0,yb*60.0,q.z*16.0));
+  float joint=1.0-smoothstep(0.0,0.035,abs(noise(vec3(q.x*22.0,p.y*2.0,q.z*22.0))-0.5));
+  vec3 nd=normalize(n+vec3(grit-0.5,0.0,fbm(q*95.0+vec3(7.1))-0.5)*0.35+vec3(0.0,((bed-0.5)*0.45*(0.4+blk)+(bed2-0.5)*0.12)*steepF*(1.0-smoothstep(0.6,0.8,hn)),0.0));
+  // snow: baked cover, then broken up at fine scale, shed from anything too steep, kept on ledges
+  float sm=texture2D(uS,muv).r;
+  float brk=fbm(q*38.0+vec3(3.0));
+  float snow=smoothstep(0.30,0.52,sm+(brk-0.5)*0.50+(bed-0.5)*0.35*(1.0-sm));
+  snow*=smoothstep(0.08,0.32,nd.y+0.35*sm);
+  // high up nearly everything that isn't sheer holds snow; the dome is white
+  snow=max(snow,smoothstep(0.70,0.86,hn+(brk-0.5)*0.10+(bed-0.5)*0.06)*smoothstep(0.05,0.35,nd.y));
+  // rock: dark brown-grey conglomerate, colour shifting bed to bed, reddish where it's freshly exposed
+  float layer=noise(vec3(q.x*0.8,yb*42.0,q.z*0.8));
+  vec3 rock=mix(vec3(0.16,0.135,0.12),vec3(0.36,0.30,0.25),layer*0.75+grit*0.35);
+  rock=mix(rock,vec3(0.36,0.22,0.15),smoothstep(0.62,0.80,fbm(q*6.0+vec3(5.0)))*0.40);
+  rock*=(0.90+0.10*smoothstep(0.15,0.45,bed))*(0.80+0.35*blk)*(1.0-0.22*joint*steepF*smoothstep(0.4,0.7,blk))*(0.55+0.45*cav); // seams, blocks, joints
+  vec3 snowA=vec3(0.93,0.95,0.98)*(0.88+0.12*cav);
+  rock=mix(rock,vec3(0.06,0.065,0.08),uNight*0.6);
+  vec3 alb=mix(rock,snowA,snow);
+  vec3 N=normalize(mix(nd,n,snow*0.6)); // snow smooths the surface
+  // light: low golden-hour sun from the right (south-east), moon at night
+  vec3 L=normalize(mix(vec3(0.62,0.32,-0.72),vec3(0.50,0.55,-0.65),uNight));
+  float sh=shadow(p+n*0.004,L);
+  float ndl=max(dot(N,L),0.0);
+  float wrap=snow*max(dot(N,L)+0.35,0.0)/1.35*0.25; // light diffusing through the snowpack softens the terminator
+  vec3 sunc=mix(vec3(1.55,1.30,1.02),vec3(0.42,0.50,0.75),uNight);
+  vec3 skyc=mix(vec3(0.30,0.42,0.68),vec3(0.035,0.055,0.11),uNight);
+  vec3 cloudc=mix(vec3(0.80,0.80,0.86),vec3(0.06,0.08,0.13),uNight); // bounce from the sunlit cloud deck below
+  float occ=cav*cav;
+  vec3 c=alb*(sunc*(ndl*sh+wrap*sh)
+            +skyc*(0.55+0.45*N.y)*occ
+            +cloudc*0.22*clamp(0.5-0.5*N.y,0.0,1.0)*smoothstep(1.6,0.6,p.y)*occ);
+  // snow sparkle and a little sheen at grazing angles
+  vec3 hv=normalize(L-rd);
+  c+=sunc*snow*sh*(pow(max(dot(N,hv),0.0),60.0)*0.25+pow(1.0-max(dot(N,-rd),0.0),5.0)*0.08);
+  // atmosphere: distance haze plus denser haze low down, lit warmer toward the sun
+  vec3 sun=normalize(mix(vec3(0.70,0.30,0.55),vec3(0.45,0.55,0.7),uNight));
+  float mu=max(dot(rd,sun),0.0);
+  vec3 hazec=mix(vec3(0.66,0.73,0.86)+vec3(0.30,0.20,0.08)*pow(mu,6.0),vec3(0.09,0.13,0.25),uNight);
+  float fog=1.0-exp(-t*0.016-0.5*exp(-max(p.y-0.6,0.0)*2.2));
+  c=c/(1.0+c*0.30)*1.22;
+  c=mix(c,hazec,fog*0.85);
+  gl_FragColor=vec4(pow(c,vec3(0.95)),1.0);
+}
+</script>
 <script id="fs2" type="x-shader">
 // pass 2, full resolution: upscale the clouds with a soft 5-tap filter (removes grain), then draw the lettering crisply
 precision highp float;
-uniform sampler2D uScene, uText; uniform vec2 uRes, uSrc; uniform vec4 uTextBox; uniform float uTextA, uTextX, uCamY, uPitch, uNight;
+uniform sampler2D uScene, uText, uMtn; uniform vec2 uRes, uSrc; uniform vec4 uTextBox; uniform float uTextA, uTextX, uCamY, uPitch, uNight, uMtnA, uHiOn; uniform vec2 uMSub, uMMax;
+// same sky as the cloud pass (without stars), so the hole it left can be swapped for the mountain exactly
+vec3 skyCol(vec3 rd, vec3 sun){
+  vec3 dayTop=vec3(0.12,0.30,0.74), dayHor=vec3(0.86,0.88,0.90), dayMid=vec3(0.42,0.62,0.93);
+  vec3 nTop=vec3(0.015,0.03,0.09), nHor=vec3(0.10,0.15,0.29);
+  float up=clamp(rd.y*0.5+0.5,0.0,1.0);
+  vec3 dsky=mix(mix(dayHor,dayMid,smoothstep(-0.06,0.12,rd.y)),dayTop,smoothstep(0.15,0.80,rd.y));
+  vec3 c=mix(dsky, mix(nHor,nTop,pow(up,1.2)), uNight);
+  float s=max(dot(rd,sun),0.0);
+  c+=mix(vec3(1.0,0.90,0.76)*(pow(s,4.0)*0.25+pow(s,200.0)*1.2), vec3(0.75,0.82,1.0)*(pow(s,10.0)*0.18+smoothstep(0.9993,0.9996,s)*0.9), uNight);
+  return c;
+}
 void main(){
   vec2 st=gl_FragCoord.xy/uRes; vec2 px=1.0/uSrc;
   vec4 c=texture2D(uScene,st)*0.4+(texture2D(uScene,st+vec2(px.x,0.0))+texture2D(uScene,st-vec2(px.x,0.0))+texture2D(uScene,st+vec2(0.0,px.y))+texture2D(uScene,st-vec2(0.0,px.y)))*0.15;
-  vec3 col=c.rgb;
+  vec3 col=c.rgb; float mCov=0.0;
+  if(uHiOn>0.5){
+    vec4 m=texture2D(uMtn,min(st*uMSub,uMMax)); mCov=m.a;
+    if(m.a>0.002){
+      vec2 uv=(gl_FragCoord.xy-0.5*uRes)/uRes.y;
+      vec3 rd=normalize(vec3(uv.x,uv.y+uPitch,1.25));
+      vec3 sun=normalize(mix(vec3(0.70,0.30,0.55),vec3(0.45,0.55,0.7),uNight));
+      vec3 sk=pow(skyCol(rd,sun),vec3(0.95));
+      col+=c.a*uMtnA*(m.rgb-sk*m.a);
+    }
+  }
   if(uTextA>0.005){
     vec2 uv=(gl_FragCoord.xy-0.5*uRes)/uRes.y;
     vec3 rd=normalize(vec3(uv.x,uv.y+uPitch,1.25));
@@ -540,7 +686,7 @@ void main(){
     vec2 tuv=vec2((P.x-uTextX)/uTextBox.y+0.5, 0.5-(P.y-uTextBox.x)/uTextBox.z);
     if(tuv.x>0.0&&tuv.x<1.0&&tuv.y>0.0&&tuv.y<1.0){
       vec4 tx=texture2D(uText,tuv);
-      float vis=c.a*uTextA;
+      float vis=c.a*uTextA*(1.0-mCov);
       vec3 scol=mix(vec3(0.10,0.22,0.50),vec3(0.0,0.02,0.07),uNight);
       col=mix(col,scol,tx.g*0.18*vis*(1.0-tx.r));
       col=mix(col,mix(vec3(0.99,0.99,1.0),vec3(0.94,0.96,1.0),uNight),tx.r*vis);
@@ -1514,7 +1660,7 @@ window.PuliChar=function(gl,mainBuf){
   gl.attachShader(pr2,sh(gl.VERTEX_SHADER,document.getElementById('vs').textContent));
   gl.attachShader(pr2,sh(gl.FRAGMENT_SHADER,document.getElementById('fs2').textContent));
   gl.linkProgram(pr2);
-  const U2={}; for(const n of ['uScene','uText','uRes','uSrc','uTextBox','uTextA','uTextX','uCamY','uPitch','uNight']) U2[n]=gl.getUniformLocation(pr2,n);
+  const U2={}; for(const n of ['uScene','uText','uRes','uSrc','uTextBox','uTextA','uTextX','uCamY','uPitch','uNight','uMtn','uMtnA','uHiOn','uMSub','uMMax']) U2[n]=gl.getUniformLocation(pr2,n);
   const loc2=gl.getAttribLocation(pr2,'a');
   const pr3=gl.createProgram();
   gl.attachShader(pr3,sh(gl.VERTEX_SHADER,document.getElementById('vs').textContent));
@@ -1534,7 +1680,55 @@ window.PuliChar=function(gl,mainBuf){
       gl.bindFramebuffer(gl.FRAMEBUFFER,r.fb); gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,r.tex,0); }
     gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.activeTexture(gl.TEXTURE0); }
   let prevCam=null;
-  const U={}; for(const n of ['uRes','uTime','uCamY','uPitch','uNight','uInside','uText','uTextBox','uTextA','uTextX','uMount','uHm','uDbg','uFrame']) U[n]=gl.getUniformLocation(pr,n);
+  const U={}; for(const n of ['uRes','uTime','uCamY','uPitch','uNight','uInside','uText','uTextBox','uTextA','uTextX','uMount','uHm','uDbg','uFrame','uHiA']) U[n]=gl.getUniformLocation(pr,n);
+  // sharp Kailash layer: its own program and targets at screen resolution. It only re-renders when the view changes;
+  // while the view holds still it adds jittered samples (up to 16) for anti-aliasing, then costs nothing.
+  const prM=gl.createProgram();
+  gl.attachShader(prM,sh(gl.VERTEX_SHADER,document.getElementById('vs').textContent));
+  gl.attachShader(prM,sh(gl.FRAGMENT_SHADER,document.getElementById('fsM').textContent));
+  gl.linkProgram(prM);
+  const UM={}; for(const n of ['uRes','uJit','uCamY','uPitch','uNight','uMount','uH','uS']) UM[n]=gl.getUniformLocation(prM,n);
+  const locM=gl.getAttribLocation(prM,'a');
+  const MRT=[0,1,2].map(()=>({tex:gl.createTexture(),fb:gl.createFramebuffer()}));
+  let mW=0, mH=0, mIdx=1, mN=0, mKey='', mSub=1, mVw=1, mVh=1, hiA=0, hiReady=false;
+  function mSize(w,h){ if(w===mW&&h===mH) return; mW=w; mH=h; mN=0; mKey='';
+    gl.activeTexture(gl.TEXTURE4);
+    for(const r of MRT){ gl.bindTexture(gl.TEXTURE_2D,r.tex);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,r.fb); gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,r.tex,0);
+      gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); }
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.activeTexture(gl.TEXTURE0); }
+  // baked maps (tools/bake_kailash.js): until both arrive the cloud pass keeps drawing its own softer mountain
+  { const texH=gl.createTexture(), texS=gl.createTexture(); let got=0;
+    const load=(src,t,unit,filt)=>{ const im=new Image(); im.onload=()=>{
+        gl.activeTexture(unit); gl.bindTexture(gl.TEXTURE_2D,t);
+        gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.NONE); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,im);
+        gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.BROWSER_DEFAULT_WEBGL);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,filt); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,filt);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+        gl.activeTexture(gl.TEXTURE0);
+        if(unit===gl.TEXTURE6) lowFromHi(im);
+        if(++got===2) hiReady=true; };
+      im.src=src; };
+    load('assets/kailash-h.webp',texH,gl.TEXTURE6,gl.NEAREST); load('assets/kailash-s.webp',texS,gl.TEXTURE7,gl.LINEAR);
+    gl.useProgram(prM); gl.uniform1i(UM.uH,6); gl.uniform1i(UM.uS,7); gl.useProgram(pr); }
+  // the cloud pass still traces the mountain (to stop marching at it); give it a 4×-averaged copy of the baked
+  // height, re-encoded for its pow(h,1.18)*3.30 curve, so its silhouette matches the sharp layer
+  function lowFromHi(im){ try{
+    const c=document.createElement('canvas'); c.width=1024; c.height=1024; const x=c.getContext('2d',{willReadFrequently:true});
+    x.drawImage(im,0,0); const d=x.getImageData(0,0,1024,1024).data, out=new Uint8Array(256*256*2);
+    for(let r=0;r<256;r++) for(let k=0;k<256;k++){ let sum=0;
+      for(let dy=0;dy<4;dy++) for(let dx=0;dx<4;dx++){ const i=((r*4+dy)*1024+k*4+dx)*4; sum+=(d[i]*256+d[i+1])/65535; }
+      const y=sum/16*3.35, h=Math.pow(Math.min(1,Math.max(0,y/3.30)),1/1.18), v=Math.round(h*65535);
+      out[2*(r*256+k)]=v>>8; out[2*(r*256+k)+1]=v&255; }
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,hmTex); gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE_ALPHA,256,256,0,gl.LUMINANCE_ALPHA,gl.UNSIGNED_BYTE,out);
+    gl.activeTexture(gl.TEXTURE0);
+  }catch(e){} }
+  const halton=(i,b)=>{ let f=1,r=0; while(i>0){ f/=b; r+=f*(i%b); i=Math.floor(i/b); } return r; };
   // name texture: red = sharp letters, green = soft halo that keeps it readable over white cloud
   const TW=2048, TH=1024, tex=gl.createTexture();
   function buildText(){
@@ -1587,7 +1781,7 @@ window.PuliChar=function(gl,mainBuf){
   gl.uniform1f(U.uDbg, location.hash==='#mt'?1:location.hash==='#mt2'?2:0);
 
   // render at reduced resolution; adapt to keep it smooth
-  let scale=innerWidth<700?0.32:0.5;
+  let scale=innerWidth<700?0.32:0.5; const scale0=scale;
   const DPR=Math.min(devicePixelRatio||1,1.75);
   function size(){ const W=Math.round(innerWidth*DPR), H=Math.round(innerHeight*DPR); if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; } fbSize(Math.max(2,Math.round(innerWidth*scale)),Math.max(2,Math.round(innerHeight*scale))); }
   addEventListener('resize',size); size();
@@ -1651,7 +1845,9 @@ window.PuliChar=function(gl,mainBuf){
     // name plane: fixed in the world, sized to fit the screen at the start
     const asp=innerWidth/innerHeight;
     const zM=8.5, hwM=0.5*asp*zM/1.25;
-    gl.uniform4f(U.uMount, -hwM*(asp<1?0.36:0.60), zM, 2.8, sstep(0.5,1.1,camY));
+    const mountX=-hwM*(asp<1?0.36:0.60), mountW=sstep(0.5,1.1,camY);
+    gl.uniform4f(U.uMount, mountX, zM, 2.8, mountW);
+    if(hiReady) hiA=Math.min(1,hiA+Math.max(dt/700,0.08)); gl.uniform1f(U.uHiA,hiA);
     const zT=19, hw=0.5*asp*zT/1.25, tw=Math.min(12,2*hw*(asp<1?0.95:0.56)), th=tw*0.5;
     const TB=[3.85+(0.205-0.17)*zT/1.25, tw, th, zT]; gl.uniform4f(U.uTextBox, ...TB);
     const e2=1-Math.pow(1-k2,3);
@@ -1679,6 +1875,33 @@ window.PuliChar=function(gl,mainBuf){
     gl.enableVertexAttribArray(loc3); gl.vertexAttribPointer(loc3,2,gl.FLOAT,false,0,0);
     gl.drawArrays(gl.TRIANGLES,0,3);
     histIdx=3-histIdx; histValid=true;
+    // pass 1c: sharp mountain, only when something that changes it has changed
+    const mVis=mountW>0.001&&hiReady;
+    if(mVis){
+      const mq=(innerWidth<700?1.2:1.0)*clamp(scale/scale0,0.6,1);
+      mSize(Math.max(2,Math.round(innerWidth*mq)),Math.max(2,Math.round(innerHeight*mq)));
+      const key=[camY.toFixed(5),pitch.toFixed(5),night.toFixed(3),mountX.toFixed(4),mW,mH].join();
+      // while the view moves, trace a reduced viewport (motion hides it); the first still frame restarts at full size
+      const moving=key!==mKey; if(moving){ mKey=key; mN=0; }
+      const sub=moving?(innerWidth<700?0.6:0.75):1;
+      if(!moving&&mSub<1) mN=0;
+      if(mN<16){
+        const vw=Math.max(2,Math.round(mW*sub)), vh=Math.max(2,Math.round(mH*sub)); mSub=sub; mVw=vw; mVh=vh;
+        gl.useProgram(prM); gl.bindFramebuffer(gl.FRAMEBUFFER,MRT[0].fb); gl.viewport(0,0,vw,vh);
+        gl.uniform2f(UM.uRes,vw,vh); gl.uniform2f(UM.uJit,mN?halton(mN,2)-0.5:0,mN?halton(mN,3)-0.5:0);
+        gl.uniform1f(UM.uCamY,camY); gl.uniform1f(UM.uPitch,pitch); gl.uniform1f(UM.uNight,night); gl.uniform4f(UM.uMount,mountX,8.5,2.8,1);
+        gl.enableVertexAttribArray(locM); gl.vertexAttribPointer(locM,2,gl.FLOAT,false,0,0);
+        gl.drawArrays(gl.TRIANGLES,0,3);
+        const ms=MRT[mIdx], md=MRT[3-mIdx];
+        gl.useProgram(pr3); gl.bindFramebuffer(gl.FRAMEBUFFER,md.fb);
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,MRT[0].tex); gl.uniform1i(U3.uCur,2);
+        gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,ms.tex); gl.uniform1i(U3.uHist,3);
+        gl.uniform2f(U3.uSrc,mW,mH); gl.uniform1f(U3.uW,mN/(mN+1));
+        gl.enableVertexAttribArray(loc3); gl.vertexAttribPointer(loc3,2,gl.FLOAT,false,0,0);
+        gl.drawArrays(gl.TRIANGLES,0,3);
+        mIdx=3-mIdx; mN++;
+      }
+    }
     // pass 2: smooth upscale and sharp lettering at screen resolution
     gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,cv.width,cv.height);
     gl.useProgram(pr2);
@@ -1687,6 +1910,9 @@ window.PuliChar=function(gl,mainBuf){
     gl.uniform2f(U2.uRes,cv.width,cv.height); gl.uniform2f(U2.uSrc,fbW,fbH);
     gl.uniform4f(U2.uTextBox,...TB); gl.uniform1f(U2.uTextA,TA); gl.uniform1f(U2.uTextX,TX);
     gl.uniform1f(U2.uCamY,camY); gl.uniform1f(U2.uPitch,pitch); gl.uniform1f(U2.uNight,night);
+    gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D,MRT[mIdx].tex); gl.uniform1i(U2.uMtn,4); gl.activeTexture(gl.TEXTURE0);
+    gl.uniform2f(U2.uMSub,mVw/Math.max(1,mW),mVh/Math.max(1,mH)); gl.uniform2f(U2.uMMax,(mVw-0.5)/Math.max(1,mW),(mVh-0.5)/Math.max(1,mH));
+    gl.uniform1f(U2.uMtnA,mVis?mountW*hiA:0); gl.uniform1f(U2.uHiOn,mVis&&hiA>0?1:0);
     gl.enableVertexAttribArray(loc2); gl.vertexAttribPointer(loc2,2,gl.FLOAT,false,0,0);
     gl.drawArrays(gl.TRIANGLES,0,3);
     }
