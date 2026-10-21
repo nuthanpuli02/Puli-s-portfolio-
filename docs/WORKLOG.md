@@ -14,15 +14,20 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- **Mt. Kailash, night (3D):** the sharp 3D mountain (2026-10-21) now shows only at night; by day the photo cut-out replaces it. Puli: "smooth but still not how I wanted". In progress: Poly Haven CC0 rock and snow PBR textures on it (his choice over a downloaded model).
+- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Poly Haven's download host is blocked from the cloud session, so the texture files have to come from Puli (Cliff Side for rock, Snow 02 for snow, 2K JPG). His verdict on the untextured version: "smooth but still not how I wanted".
 - Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
-- **Photographic Kailash intro (main page):** day version built into `index.html` (2026-10-21); since his "two sets of clouds" note the mountain is a cut-out standing in the 3D clouds (see Log). Paused on 2026-10-21 at Puli's request ("we'll get back to it later"), waiting for his review on his phone via the private preview https://claude.ai/artifact/U6FKFjZZ26eHeDUHautPj6 (a copy of `index.html` that opens in daylight; republish it after changes). The shared preview https://claude.ai/artifact/4DbHHJTdXxiKAiBsiMisLW still shows the old intro. Next: his feedback on the day cut-out, then the night version the same way (photo + mountain-only mask + title, keeping the 3D clouds and the descent).
+- The photographic day intro (photo cut-out, giant "BEYOND", frosted card, 01–04 index, altitude readout) was reverted on 2026-10-21 at Puli's request. It is kept in git: commit `5a0617b` (branch `claude/eager-lovelace-ub440d`) and the merge `78fa3cc`; the frosted card and labels could be brought back on top of the 3D mountain if he asks.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-21: day photo intro reverted; 3D mountain day and night
+- Puli: "keep it 3D and add the polyhaven textures, revert the day scene and make both of them 3D and then add textures".
+- Reverted the merge `78fa3cc` (`git revert -m 1`): `index.html`, `CLAUDE.md` and `README.md` are back to the sharp-3D version (`b6b51e3`), and the day photos, masks, design concept and the `cutout_sky.py`/`mountain_only.py` tools are removed from `main` (still in git history). The worklog keeps its entries about the photo work.
+- Next: Poly Haven textures on the 3D mountain, once Puli sends the files.
 
 ### 2026-10-21: merged the photographic day intro with the sharp 3D mountain
 - Puli asked me to check his day-scene changes (branch `claude/eager-lovelace-ub440d`, made in another chat from an older `main`, before the elbows/knees and the sharp 3D mountain). Merged it into `main`.
