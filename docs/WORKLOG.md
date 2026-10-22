@@ -12,6 +12,8 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
+- **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. First: Puli's answers on palette direction, hero theme and game lives without birds; then the foundations (palette, type, buttons). The Kailash/cloud items below are superseded by the redesign.
+
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
 - **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added, then reframed as the hero with golden hour, ridges, the title overlay and wind-blown snow (2026-10-22, see Log); he likes the detail and the blowing snow (2026-10-22). Clouds reworked 2026-10-22 (billowy, better lit); waiting for his verdict. His verdict on the untextured version: "smooth but still not how I wanted".
@@ -23,6 +25,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-22: redesign agreed (v2)
+- Puli: better, but still not good enough, and the page lags on load on his PC and phone. He decided to redesign the whole concept.
+- Plan in `docs/REDESIGN.md`: keep the into-the-clouds reveal, the game and its assets, and the contact page; drop the current landing page, the 3D mountain and clouds, the current Selected Work section, the sky birds and the jetpack flight. New design system first (palette, type, custom buttons), then sections built one by one (1 hero, 2 into the clouds, 3 my work with the contact call-to-action, 4 contact page as is, 5 game teaser with Puli standing by the text and falling through a hole into the forest), then transitions.
+- The pre-redesign version is on branch `archive/v1-3d-sky` (commit `de9d4cf`).
 
 ### 2026-10-22: clouds no longer grainy while scrolling
 - Puli: the clouds look really grainy when scrolling.
