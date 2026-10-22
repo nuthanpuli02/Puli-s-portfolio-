@@ -37,6 +37,6 @@ Binary model buffers use a `.wasm` file name and glTF files use `.json`, only so
 - "[Hummingbird – Rigged, 6 Animations (Open Bill)](https://sketchfab.com/3d-models/hummingbird-rigged-6-animations-open-bill-d9b448ac1025485e843d54bebf35390a)" by [Animal Animator](https://sketchfab.com/animalanimator)
 - "[Betta Splendens](https://sketchfab.com/3d-models/betta-splendens-f4eeb7f50ad24873842bd954ad27d23b)" by [BlueMesh](https://sketchfab.com/VapTor)
 
-The contact-page forest images were generated with Gemini, and their depth maps were made with Depth Anything V2. Fonts are served from Google Fonts.
+The contact-page forest images were generated with Gemini, and their depth maps were made with Depth Anything V2. The main page's Mt. Kailash is built from SRTM elevation data (via AWS Terrain Tiles) and textured with the CC0 Poly Haven materials "[Cliff Side](https://polyhaven.com/a/cliff_side)" and "[Snow 02](https://polyhaven.com/a/snow_02)" (no attribution required). Fonts are served from Google Fonts.
 
 © Nuthan Puli. Code and design in this repository are the author's own unless credited above.

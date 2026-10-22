@@ -14,7 +14,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Poly Haven's download host is blocked from the cloud session, so the texture files have to come from Puli (Cliff Side for rock, Snow 02 for snow, 2K JPG). His verdict on the untextured version: "smooth but still not how I wanted".
+- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added 2026-10-22 (see Log); waiting for his verdict. His verdict on the untextured version: "smooth but still not how I wanted".
 - Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - The photographic day intro (photo cut-out, giant "BEYOND", frosted card, 01–04 index, altitude readout) was reverted on 2026-10-21 at Puli's request. It is kept in git: commit `5a0617b` (branch `claude/eager-lovelace-ub440d`) and the merge `78fa3cc`; the frosted card and labels could be brought back on top of the 3D mountain if he asks.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
@@ -23,6 +23,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-22: Poly Haven rock and snow on the 3D mountain
+- Puli downloaded the CC0 Poly Haven maps (2K JPG) to his computer: Cliff Side (diffuse, normal GL, rough) and Snow 02 (diffuse, normal GL, rough). Poly Haven's download host is blocked from the cloud session.
+- Packed for the web at 1024², tiling, mipmapped, anisotropic where supported: `assets/kailash-rock-a.jpg` (rock colour), `assets/kailash-rock-n.jpg` (RG normal, B roughness), `assets/kailash-snow.jpg` (RG normal, B brightness; the scan's dark twig specks filled in). Snow 02's roughness was flat (about 0.8), so it isn't shipped; icy patches come from noise instead.
+- `fsM`: triplanar projection (X and Z faces keep the image's layers horizontal, so Cliff Side's strata line up with Kailash's), two scales per material (tiles of 0.28 and 0.95 units) to hide repeats. Normals blended per projection; rock colour pulled from orange toward dark brown-grey with more contrast; snow gathers where the rock's normal faces up; specular from the rock's roughness map, matte snow with glossy icy patches; dark cracks get less sky light.
+- Textures are bound again to units 2–4 before each `fsM` draw (the blend pass and pass 2 use those units). The sharp layer waits for all five maps.
+- Credits: Poly Haven is CC0 (no attribution needed); credited in the README anyway.
+- Honest limit: at the intro framing the mountain is only about 450 px wide on a laptop, so the scans mostly show as grain and tone, not as visible rock detail.
 
 ### 2026-10-21: day photo intro reverted; 3D mountain day and night
 - Puli: "keep it 3D and add the polyhaven textures, revert the day scene and make both of them 3D and then add textures".

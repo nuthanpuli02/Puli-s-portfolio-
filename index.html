@@ -536,7 +536,7 @@ void main(){ vec2 st=gl_FragCoord.xy/uSrc; gl_FragColor=mix(texture2D(uCur,st),t
 // offline; see tools/bake_kailash.js). R,G = 16-bit height, B = cavity; the second map holds snow cover.
 precision highp float;
 uniform vec2 uRes, uJit; uniform float uCamY, uPitch, uNight; uniform vec4 uMount;
-uniform sampler2D uH, uS;
+uniform sampler2D uH, uS, uRA, uRN, uSN;
 const float Y0=-0.37, SPAN=3.35, NT=1024.0;
 float hash(vec3 p){ p=fract(p*0.3183099+0.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 float noise(vec3 x){
@@ -600,31 +600,51 @@ void main(){
   vec3 n=normalize(vec3(-hx,2.0*e,-hz));
   float cav=hc(muv).y;
   float hn=(p.y-Y0)/SPAN;
-  // rock grain below the map's resolution: thin bedding steps (each bed a riser and a ledge) and crumble
+  // surface detail from scanned Poly Haven materials (CC0): Cliff Side for the rock, Snow 02 for the snow.
+  // Projected from three sides (triplanar) so the steep faces aren't stretched; on the faces the image's own
+  // horizontal layers line up with Kailash's strata. Two scales per material hide the tiling.
+  vec3 w=pow(abs(n),vec3(4.0)); w/=w.x+w.y+w.z;
   float yb=p.y+(fbm(q*2.0)-0.5)*0.05+q.x*0.01;
-  float bed=noise(vec3(q.x*3.0,yb*150.0,q.z*3.0)), bed2=noise(vec3(q.x*6.0+3.0,yb*330.0,q.z*6.0));
-  float steepF=1.0-smoothstep(0.55,0.85,n.y);
-  float grit=fbm(q*95.0);
-  // beds come in blocks: each one is broken by vertical joints, so it doesn't read as wood grain
-  float blk=noise(vec3(q.x*16.0,yb*60.0,q.z*16.0));
-  float joint=1.0-smoothstep(0.0,0.035,abs(noise(vec3(q.x*22.0,p.y*2.0,q.z*22.0))-0.5));
-  vec3 nd=normalize(n+vec3(grit-0.5,0.0,fbm(q*95.0+vec3(7.1))-0.5)*0.35+vec3(0.0,((bed-0.5)*0.45*(0.4+blk)+(bed2-0.5)*0.12)*steepF*(1.0-smoothstep(0.6,0.8,hn)),0.0));
-  // snow: baked cover, then broken up at fine scale, shed from anything too steep, kept on ledges
+  vec2 uX=vec2(q.z,-yb), uY=q.xz, uZ=vec2(q.x,-yb);
+  const float S1=1.0/0.28, S2=1.0/0.95;
+  vec3 aX=texture2D(uRA,uX*S1).rgb, aY=texture2D(uRA,uY*S1).rgb, aZ=texture2D(uRA,uZ*S1).rgb;
+  vec3 bX=texture2D(uRA,uX*S2+0.37).rgb, bY=texture2D(uRA,uY*S2+0.37).rgb, bZ=texture2D(uRA,uZ*S2+0.37).rgb;
+  vec3 ra=(aX*w.x+aY*w.y+aZ*w.z)*0.55+(bX*w.x+bY*w.y+bZ*w.z)*0.45;
+  vec4 nX=texture2D(uRN,uX*S1), nY=texture2D(uRN,uY*S1), nZ=texture2D(uRN,uZ*S1);
+  vec4 mX=texture2D(uRN,uX*S2+0.37), mY=texture2D(uRN,uY*S2+0.37), mZ=texture2D(uRN,uZ*S2+0.37);
+  // tangent normals (GL convention) to world space, "whiteout" blend per projection
+  vec2 tX=(nX.xy+mX.xy)-1.0, tY=(nY.xy+mY.xy)-1.0, tZ=(nZ.xy+mZ.xy)-1.0;
+  float bumpK=1.4;
+  // X and Z faces: image up = world up, image right = along the face; top face: image up = -z
+  vec3 wX=vec3(n.x, n.y+tX.y*bumpK, n.z+tX.x*bumpK*sign(n.x+1e-4));
+  vec3 wY=vec3(n.x+tY.x*bumpK, n.y, n.z-tY.y*bumpK);
+  vec3 wZ=vec3(n.x+tZ.x*bumpK*sign(n.z+1e-4), n.y+tZ.y*bumpK, n.z);
+  vec3 nd=normalize(wX*w.x+wY*w.y+wZ*w.z);
+  float rRough=(nX.b*w.x+nY.b*w.y+nZ.b*w.z);
+  vec3 sX=texture2D(uSN,uX*S1*1.6).rgb, sY=texture2D(uSN,uY*S1*1.6).rgb, sZ=texture2D(uSN,uZ*S1*1.6).rgb;
+  vec3 sT=sX*w.x+sY*w.y+sZ*w.z;
+  vec2 sTn=sT.xy*2.0-1.0;
+  vec3 ns=normalize(n+vec3(sTn.x,0.0,sTn.y)*0.35);
+  float bed=noise(vec3(q.x*3.0,yb*150.0,q.z*3.0));
+  // snow: baked cover, broken up by the rock's own relief (snow sits in its hollows and on its ledges), shed from anything too steep
   float sm=texture2D(uS,muv).r;
   float brk=fbm(q*38.0+vec3(3.0));
-  float snow=smoothstep(0.30,0.52,sm+(brk-0.5)*0.50+(bed-0.5)*0.35*(1.0-sm));
+  float rl=dot(ra,vec3(0.3,0.5,0.2)); // the scan's brightness: lit ledge tops are bright, cracks dark
+  float snow=smoothstep(0.30,0.52,sm+(brk-0.5)*0.45+(nd.y-n.y)*0.9+(bed-0.5)*0.25*(1.0-sm));
   snow*=smoothstep(0.08,0.32,nd.y+0.35*sm);
   // high up nearly everything that isn't sheer holds snow; the dome is white
   snow=max(snow,smoothstep(0.70,0.86,hn+(brk-0.5)*0.10+(bed-0.5)*0.06)*smoothstep(0.05,0.35,nd.y));
-  // rock: dark brown-grey conglomerate, colour shifting bed to bed, reddish where it's freshly exposed
+  // rock: the scan's colour pulled from orange sandstone toward Kailash's dark brown-grey conglomerate,
+  // keeping its contrast; a little variation bed to bed
   float layer=noise(vec3(q.x*0.8,yb*42.0,q.z*0.8));
-  vec3 rock=mix(vec3(0.16,0.135,0.12),vec3(0.36,0.30,0.25),layer*0.75+grit*0.35);
-  rock=mix(rock,vec3(0.36,0.22,0.15),smoothstep(0.62,0.80,fbm(q*6.0+vec3(5.0)))*0.40);
-  rock*=(0.90+0.10*smoothstep(0.15,0.45,bed))*(0.80+0.35*blk)*(1.0-0.22*joint*steepF*smoothstep(0.4,0.7,blk))*(0.55+0.45*cav); // seams, blocks, joints
-  vec3 snowA=vec3(0.93,0.95,0.98)*(0.88+0.12*cav);
-  rock=mix(rock,vec3(0.06,0.065,0.08),uNight*0.6);
+  vec3 rock=mix(vec3(rl),ra,0.30)*vec3(0.86,0.80,0.76)*mix(0.60,1.0,layer);
+  rock=pow(rock/0.45,vec3(1.6))*0.40; // more of the scan's light/dark contrast
+  rock=mix(rock,rock*vec3(1.18,0.92,0.80),smoothstep(0.62,0.80,fbm(q*6.0+vec3(5.0)))*0.5);
+  rock*=0.55+0.45*cav;
+  vec3 snowA=vec3(0.93,0.95,0.98)*(0.80+0.20*sT.b/0.80)*(0.88+0.12*cav);
+  rock=mix(rock,rock*vec3(0.32,0.36,0.46),uNight*0.7);
   vec3 alb=mix(rock,snowA,snow);
-  vec3 N=normalize(mix(nd,n,snow*0.6)); // snow smooths the surface
+  vec3 N=normalize(mix(nd,ns,snow));
   // light: low golden-hour sun from the right (south-east), moon at night
   vec3 L=normalize(mix(vec3(0.62,0.32,-0.72),vec3(0.50,0.55,-0.65),uNight));
   float sh=shadow(p+n*0.004,L);
@@ -633,13 +653,18 @@ void main(){
   vec3 sunc=mix(vec3(1.55,1.30,1.02),vec3(0.42,0.50,0.75),uNight);
   vec3 skyc=mix(vec3(0.30,0.42,0.68),vec3(0.035,0.055,0.11),uNight);
   vec3 cloudc=mix(vec3(0.80,0.80,0.86),vec3(0.06,0.08,0.13),uNight); // bounce from the sunlit cloud deck below
-  float occ=cav*cav;
+  float occ=cav*cav*mix(0.6+0.4*smoothstep(0.1,0.5,rl),1.0,snow); // the scan's dark cracks get less sky
   vec3 c=alb*(sunc*(ndl*sh+wrap*sh)
             +skyc*(0.55+0.45*N.y)*occ
             +cloudc*0.22*clamp(0.5-0.5*N.y,0.0,1.0)*smoothstep(1.6,0.6,p.y)*occ);
-  // snow sparkle and a little sheen at grazing angles
+  // specular from roughness: the rock's own map, and snow that is matte except for wind-glazed icy patches
   vec3 hv=normalize(L-rd);
-  c+=sunc*snow*sh*(pow(max(dot(N,hv),0.0),60.0)*0.25+pow(1.0-max(dot(N,-rd),0.0),5.0)*0.08);
+  float ice=smoothstep(0.62,0.75,fbm(q*14.0+vec3(11.0)))*snow;
+  float rough=mix(mix(rRough,0.85,snow),0.25,ice);
+  float gl2=(1.0-rough)*(1.0-rough), sp=mix(6.0,220.0,gl2);
+  float fres=0.04+0.96*pow(1.0-max(dot(N,-rd),0.0),5.0);
+  c+=sunc*sh*pow(max(dot(N,hv),0.0),sp)*(sp+2.0)/8.0*fres*mix(0.25,1.0,snow)*0.35*ndl;
+  c+=sunc*snow*sh*pow(1.0-max(dot(N,-rd),0.0),5.0)*0.06;
   // atmosphere: distance haze plus denser haze low down, lit warmer toward the sun
   vec3 sun=normalize(mix(vec3(0.70,0.30,0.55),vec3(0.45,0.55,0.7),uNight));
   float mu=max(dot(rd,sun),0.0);
@@ -1687,7 +1712,7 @@ window.PuliChar=function(gl,mainBuf){
   gl.attachShader(prM,sh(gl.VERTEX_SHADER,document.getElementById('vs').textContent));
   gl.attachShader(prM,sh(gl.FRAGMENT_SHADER,document.getElementById('fsM').textContent));
   gl.linkProgram(prM);
-  const UM={}; for(const n of ['uRes','uJit','uCamY','uPitch','uNight','uMount','uH','uS']) UM[n]=gl.getUniformLocation(prM,n);
+  const UM={}; for(const n of ['uRes','uJit','uCamY','uPitch','uNight','uMount','uH','uS','uRA','uRN','uSN']) UM[n]=gl.getUniformLocation(prM,n);
   const locM=gl.getAttribLocation(prM,'a');
   const MRT=[0,1,2].map(()=>({tex:gl.createTexture(),fb:gl.createFramebuffer()}));
   let mW=0, mH=0, mIdx=1, mN=0, mKey='', mSub=1, mVw=1, mVh=1, hiA=0, hiReady=false;
@@ -1701,7 +1726,22 @@ window.PuliChar=function(gl,mainBuf){
       gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); }
     gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.activeTexture(gl.TEXTURE0); }
   // baked maps (tools/bake_kailash.js): until both arrive the cloud pass keeps drawing its own softer mountain
-  { const texH=gl.createTexture(), texS=gl.createTexture(); let got=0;
+  const texH=gl.createTexture(), texS=gl.createTexture(), texRA=gl.createTexture(), texRN=gl.createTexture(), texSN=gl.createTexture();
+  const aniso=gl.getExtension('EXT_texture_filter_anisotropic')||gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+  { let got=0;
+    // Poly Haven materials (CC0), 1024² and tiling: mipmapped so distant rock averages instead of shimmering
+    const loadMat=(src,t)=>{ const im=new Image(); im.onload=()=>{
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,t);
+        gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.NONE); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,im);
+        gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.BROWSER_DEFAULT_WEBGL);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+        if(aniso) gl.texParameterf(gl.TEXTURE_2D,aniso.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+        gl.activeTexture(gl.TEXTURE0); if(++got===5) hiReady=true; };
+      im.src=src; };
+    loadMat('assets/kailash-rock-a.jpg',texRA); loadMat('assets/kailash-rock-n.jpg',texRN); loadMat('assets/kailash-snow.jpg',texSN);
     const load=(src,t,unit,filt)=>{ const im=new Image(); im.onload=()=>{
         gl.activeTexture(unit); gl.bindTexture(gl.TEXTURE_2D,t);
         gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.NONE); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
@@ -1711,10 +1751,10 @@ window.PuliChar=function(gl,mainBuf){
         gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
         gl.activeTexture(gl.TEXTURE0);
         if(unit===gl.TEXTURE6) lowFromHi(im);
-        if(++got===2) hiReady=true; };
+        if(++got===5) hiReady=true; };
       im.src=src; };
     load('assets/kailash-h.webp',texH,gl.TEXTURE6,gl.NEAREST); load('assets/kailash-s.webp',texS,gl.TEXTURE7,gl.LINEAR);
-    gl.useProgram(prM); gl.uniform1i(UM.uH,6); gl.uniform1i(UM.uS,7); gl.useProgram(pr); }
+    gl.useProgram(prM); gl.uniform1i(UM.uH,6); gl.uniform1i(UM.uS,7); gl.uniform1i(UM.uRA,2); gl.uniform1i(UM.uRN,3); gl.uniform1i(UM.uSN,4); gl.useProgram(pr); }
   // the cloud pass still traces the mountain (to stop marching at it); give it a 4×-averaged copy of the baked
   // height, re-encoded for its pow(h,1.18)*3.30 curve, so its silhouette matches the sharp layer
   function lowFromHi(im){ try{
@@ -1888,6 +1928,10 @@ window.PuliChar=function(gl,mainBuf){
       if(mN<16){
         const vw=Math.max(2,Math.round(mW*sub)), vh=Math.max(2,Math.round(mH*sub)); mSub=sub; mVw=vw; mVh=vh;
         gl.useProgram(prM); gl.bindFramebuffer(gl.FRAMEBUFFER,MRT[0].fb); gl.viewport(0,0,vw,vh);
+        // units 2–4 are reused by the blend pass and pass 2, so bind the materials again for this draw
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,texRA); gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,texRN);
+        gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D,texSN); gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D,texH);
+        gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D,texS); gl.activeTexture(gl.TEXTURE0);
         gl.uniform2f(UM.uRes,vw,vh); gl.uniform2f(UM.uJit,mN?halton(mN,2)-0.5:0,mN?halton(mN,3)-0.5:0);
         gl.uniform1f(UM.uCamY,camY); gl.uniform1f(UM.uPitch,pitch); gl.uniform1f(UM.uNight,night); gl.uniform4f(UM.uMount,mountX,8.5,2.8,1);
         gl.enableVertexAttribArray(locM); gl.vertexAttribPointer(locM,2,gl.FLOAT,false,0,0);
