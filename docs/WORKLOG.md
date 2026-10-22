@@ -26,6 +26,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: Puli's tiger logo
+- Puli sent his logo: a red, black and white brush-painted tiger in the stalking pose (transparent PNG, 1086×1448). Trimmed and saved as `site/src/assets/tiger-logo.webp` (218×300, 24 KB); header shows it 64 px tall (phone 54 px) with a soft shadow, and it is the tab icon. The text-on-paths draft and `tools/tiger_logo.py` are removed.
+
 ### 2026-10-22: waves stay behind the ridge
 - Puli: the waves showed over the ridge and under it.
 - Cause: the ridge's fade mask spanned the whole hero, so the lower part of the rock itself was half transparent and the waves showed through it.
@@ -55,7 +58,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Header: tiger logo (first draft, `tools/tiger_logo.py` → `site/src/assets/tiger-logo.svg`: a stalking tiger in the pose of Puli's two references, its long lines written as "NUTHAN PULI ·" along SVG paths, face/ears/paws as strokes; drawn from scratch, not traced), red Contact button (`?theme=day|night` for the contact page); `ThemeSwitch` (sun knob on a silver track by day, cratered moon on a navy track with stars by night).
 - Hero photos: Puli's links point to a Higgsfield user's CDN (`d8j0ntlcm91z4.cloudfront.net/user_38xz…`), i.e. images generated on someone's Higgsfield account and used by the Lithos template; no licence is stated there. Treat them as placeholders until Puli confirms he may use them or makes his own pair.
 - JS bundle 424 KB (147 KB gzipped: React, GSAP, Motion). Checked headless at 1280×800 and 412×915, light and dark.
-- Open: tiger logo needs work (the first draft reads as a cartoon cat at large size); circular text wording to confirm; sections 2+.
+- Open: sections 2+.
 
 ### 2026-10-22: v2 foundations and section 1 (hero)
 - Palette agreed: light mode = moonlit silver `#C0C0C0` ground, charcoal `#2A2A2A` text, crimson `#D21319` accent; dark mode = midnight navy ground, soft white `#E8E9DF` text, signal red `#E10600` accent; sage/olive as small highlights. All in `v2/styles/tokens.css` as CSS variables, with the button set (`.btn-primary`, `.btn-secondary`, `.btn-text`, `.btn-icon`; 44 px touch targets, hover/press/focus/disabled). Fonts: Playfair Display italic + Inter (from Puli's demo).
