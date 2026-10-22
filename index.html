@@ -334,7 +334,7 @@ attribute vec2 a; void main(){ gl_Position=vec4(a,0.,1.); }
 precision highp float;
 uniform vec2 uRes; uniform float uTime, uCamY, uPitch, uNight, uInside;
 uniform sampler2D uText; uniform vec4 uTextBox; uniform float uTextA; uniform float uTextX; uniform vec4 uMount; // mount: x, z, halfSize, alpha
-uniform sampler2D uHm; uniform float uDbg; uniform float uFrame; uniform float uHiA; uniform float uJitT; // uJitT: 1 = new sample offsets every frame, 0 = fixed (while moving, so it doesn't shimmer) // box: centerY, width, height, planeZ
+uniform sampler2D uHm; uniform float uDbg; uniform float uFrame; uniform float uHiA; // box: centerY, width, height, planeZ
 // uHiA: how far the sharp mountain layer (fsM) has taken over; while it is on, this pass leaves sky behind the mountain
 
 float hash(vec3 p){ p=fract(p*0.3183099+0.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
@@ -611,7 +611,8 @@ void main(){
   float ph=mix(hgF,hgB,0.45)*1.35;
   // each sample sits at the same random fraction of its own step (so the jitter scales with the growing steps and
   // hides their banding); the fraction changes every frame and the history blend averages it out
-  float jit=fract(hash(vec3(gl_FragCoord.xy,1.0))+uFrame*0.6180339*uJitT);
+  vec2 jp=gl_FragCoord.xy+5.588238*mod(uFrame,64.0); // interleaved gradient noise, shifted every frame so its diagonal pattern doesn't settle
+  float jit=fract(52.9829189*fract(dot(jp,vec2(0.06711056,0.00583715))));
   float t=0.02;
   for(int i=0;i<56;i++){
     float dt=0.07+t*0.055;
@@ -677,8 +678,20 @@ void main(){
 <script id="fs3" type="x-shader">
 // temporal accumulation: average this frame with the history to remove the per-frame sampling grain
 precision highp float;
-uniform sampler2D uCur, uHist; uniform vec2 uSrc; uniform float uW;
-void main(){ vec2 st=gl_FragCoord.xy/uSrc; gl_FragColor=mix(texture2D(uCur,st),texture2D(uHist,st),uW); }
+// uClamp=1 (clouds): the history is first clamped to the range of this frame's 3×3 neighbourhood, so it can keep
+// averaging out the grain even while the camera moves, without leaving trails (the usual temporal anti-aliasing trick).
+// uClamp=0 (the still mountain layer): a plain running average of jittered frames.
+uniform sampler2D uCur, uHist; uniform vec2 uSrc; uniform float uW, uClamp;
+void main(){
+  vec2 st=gl_FragCoord.xy/uSrc, px=1.0/uSrc;
+  vec4 c=texture2D(uCur,st), h=texture2D(uHist,st);
+  if(uClamp>0.5){
+    vec4 mn=c, mx=c;
+    for(int j=-1;j<=1;j++) for(int i=-1;i<=1;i++){ if(i==0&&j==0) continue; vec4 v=texture2D(uCur,st+vec2(float(i),float(j))*px); mn=min(mn,v); mx=max(mx,v); }
+    h=clamp(h,mn,mx);
+  }
+  gl_FragColor=mix(c,h,uW);
+}
 </script>
 <script id="fsM" type="x-shader">
 // Mt. Kailash at screen resolution. The cloud pass leaves a hole (sky colour) where the mountain is and
@@ -1937,7 +1950,7 @@ window.PuliChar=function(gl,mainBuf){
   gl.attachShader(pr3,sh(gl.VERTEX_SHADER,document.getElementById('vs').textContent));
   gl.attachShader(pr3,sh(gl.FRAGMENT_SHADER,document.getElementById('fs3').textContent));
   gl.linkProgram(pr3);
-  const U3={}; for(const n of ['uCur','uHist','uSrc','uW']) U3[n]=gl.getUniformLocation(pr3,n);
+  const U3={}; for(const n of ['uCur','uHist','uSrc','uW','uClamp']) U3[n]=gl.getUniformLocation(pr3,n);
   const loc3=gl.getAttribLocation(pr3,'a');
   // three low-res targets: the fresh frame, and two history buffers that swap every frame
   const RT=[0,1,2].map(()=>({tex:gl.createTexture(),fb:gl.createFramebuffer()}));
@@ -1951,7 +1964,7 @@ window.PuliChar=function(gl,mainBuf){
       gl.bindFramebuffer(gl.FRAMEBUFFER,r.fb); gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,r.tex,0); }
     gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.activeTexture(gl.TEXTURE0); }
   let prevCam=null, lastMotion=0;
-  const U={}; for(const n of ['uRes','uTime','uCamY','uPitch','uNight','uInside','uText','uTextBox','uTextA','uTextX','uMount','uHm','uDbg','uFrame','uHiA','uMK','uSummit','uJitT']) U[n]=gl.getUniformLocation(pr,n);
+  const U={}; for(const n of ['uRes','uTime','uCamY','uPitch','uNight','uInside','uText','uTextBox','uTextA','uTextX','uMount','uHm','uDbg','uFrame','uHiA','uMK','uSummit']) U[n]=gl.getUniformLocation(pr,n);
   // sharp Kailash layer: its own program and targets at screen resolution. It only re-renders when the view changes;
   // while the view holds still it adds jittered samples (up to 16) for anti-aliasing, then costs nothing.
   const prM=gl.createProgram();
@@ -2187,7 +2200,6 @@ window.PuliChar=function(gl,mainBuf){
     const skipScene=PC&&PC.covered();
     if(!skipScene){
     // pass 1: clouds, mountain and sky into the low-res buffer
-    gl.uniform1f(U.uJitT,lastMotion>0.05?0:1); // a fixed sample pattern while moving: steadier than fresh noise every frame
     gl.bindFramebuffer(gl.FRAMEBUFFER,RT[0].fb); gl.viewport(0,0,fbW,fbH);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,hmTex);
     gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
@@ -2196,12 +2208,13 @@ window.PuliChar=function(gl,mainBuf){
     const cam=[camY,pitch,TX];
     let motion=prevCam?Math.abs(cam[0]-prevCam[0])*60+Math.abs(cam[1]-prevCam[1])*90+Math.abs(cam[2]-prevCam[2])*4:1;
     prevCam=cam; lastMotion=motion;
-    const w=histValid?0.88*(1-clamp(motion)):0;
+    // with the neighbourhood clamp the history can stay strong while scrolling (it used to drop to 0, so every moving frame was raw noise)
+    const w=histValid?0.90-0.18*clamp(motion):0;
     const src=RT[histIdx], dst=RT[3-histIdx];
     gl.useProgram(pr3); gl.bindFramebuffer(gl.FRAMEBUFFER,dst.fb);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,RT[0].tex); gl.uniform1i(U3.uCur,2);
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,src.tex); gl.uniform1i(U3.uHist,3);
-    gl.uniform2f(U3.uSrc,fbW,fbH); gl.uniform1f(U3.uW,w);
+    gl.uniform2f(U3.uSrc,fbW,fbH); gl.uniform1f(U3.uW,w); gl.uniform1f(U3.uClamp,1);
     gl.enableVertexAttribArray(loc3); gl.vertexAttribPointer(loc3,2,gl.FLOAT,false,0,0);
     gl.drawArrays(gl.TRIANGLES,0,3);
     histIdx=3-histIdx; histValid=true;
@@ -2230,7 +2243,7 @@ window.PuliChar=function(gl,mainBuf){
         gl.useProgram(pr3); gl.bindFramebuffer(gl.FRAMEBUFFER,md.fb);
         gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,MRT[0].tex); gl.uniform1i(U3.uCur,2);
         gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,ms.tex); gl.uniform1i(U3.uHist,3);
-        gl.uniform2f(U3.uSrc,mW,mH); gl.uniform1f(U3.uW,mN/(mN+1));
+        gl.uniform2f(U3.uSrc,mW,mH); gl.uniform1f(U3.uW,mN/(mN+1)); gl.uniform1f(U3.uClamp,0);
         gl.enableVertexAttribArray(loc3); gl.vertexAttribPointer(loc3,2,gl.FLOAT,false,0,0);
         gl.drawArrays(gl.TRIANGLES,0,3);
         mIdx=3-mIdx; mN++;

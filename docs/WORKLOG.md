@@ -24,6 +24,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: clouds no longer grainy while scrolling
+- Puli: the clouds look really grainy when scrolling.
+- Root cause: the history blend (`fs3`) dropped to weight 0 whenever the camera moved (`0.88*(1-motion)`), so every frame while scrolling was the raw, single-sample ray march; the last change (sharper threshold, lighter upscale filter, a fixed jitter while moving) made that raw grain more visible.
+- Fix: `fs3` clamps the history to the min/max of this frame's 3×3 neighbourhood (`uClamp`=1 for the clouds; 0 for the mountain layer's still-frame average), so the history can stay strong while moving without trails: weight now 0.90 still, 0.72 at full motion. The jitter is interleaved gradient noise shifted every frame (`5.588238*frame`), always changing (the fixed-while-moving pattern and `uJitT` are gone).
+- Checked headless mid-scroll (page scrolling continuously during the shot), before vs after, laptop and phone: the speckle is gone.
+
 ### 2026-10-22: billowy, better-lit clouds
 - Puli chose a dense, billowy cloud sea (SEPTEMBER poster) over soft mist.
 - Shape (`density()`, upper deck): the cumulus envelope is eroded by `billow()` noise (|2n−1| over three octaves) at two scales plus a faint fine octave, gently at the base and more toward the tops (`er` 0.42→0.70 by height in the cloud), so the tops are rounded cauliflower puffs and the bases flatter. Threshold slope 5.5 (a steeper 7.5 turned noise into speckle).
