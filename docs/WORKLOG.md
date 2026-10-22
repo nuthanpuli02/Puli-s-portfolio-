@@ -12,6 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
+- **Palette choice (2026-10-23):** temporary picker live on /v2/; waiting for Puli to choose (see Log). Then bake it into tokens.css and remove the picker.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
@@ -25,6 +26,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-23: palette preview (temporary)
+Puli wants to compare colour palettes and is considering soft charcoal instead of navy for night. Added a temporary picker (bottom-left, `src/components/PalettePicker.jsx`) with five palettes, each with day and night sets, in `src/palettes.js`: Midnight (current), Charcoal (night #1C1C1E), Sand & Ink (warm sand / warm black), Moss (pale sage / deep forest), Mono (paper white / near black). They override the tokens.css colour roles plus `--smoke` and the waves' line/accent colours; the choice is remembered as `puli-palette` and can be linked with `?palette=midnight|charcoal|sand|moss|mono`. When he picks one: move its values into tokens.css and delete the picker, palettes.js and the `usePalette` wiring in App/Hero.
 
 ### 2026-10-23: darker navy, bigger name, waves below the ridge
 Puli asked for a darker navy, a slightly bigger name, and the wavy lines showing below the branch (behind it, not over it). Night background `--bg` #141737 → #0B0D26, `--navy` #1B1E4A → #12143A, dark `--surface` to match. Name `clamp(64px,12.8vw,198px)` (was 58/11.5vw/178), phone 18vw (was 17vw); ridge top formula retuned so the peaks still cover the bottom of "HAN". Waves now run down to 72% and fade out by 92% (were cut at 40–70%); the ridge's own bottom fade is now only the last 7% so the rock stays solid and the waves show only around and below it. Next: Puli wants to try other colour palettes.

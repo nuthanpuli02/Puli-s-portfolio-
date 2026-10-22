@@ -6,9 +6,10 @@ import CircularText from '../components/reactbits/CircularText.jsx';
 // Section 1. Layers, back to front: Waves (React Bits, reacts to the cursor) → the bare ridge → the same ridge
 // overgrown, seen through a soft spotlight → "NUTHAN" (React Bits FoldText) → the game badge (CircularText) →
 // smoke rising from the bottom, which carries the page into section 2.
-export default function Hero({ theme }) {
+export default function Hero({ theme, palette }) {
   const heroRef = useRef(null);
   const dark = theme === 'dark';
+  const colours = dark ? palette.night : palette.day;
 
   // Spotlight: follows the cursor or finger; with no input it drifts along the ridge on its own.
   // Only two CSS variables change per frame.
@@ -57,8 +58,8 @@ export default function Hero({ theme }) {
     <section className="hero" id="top" ref={heroRef} aria-labelledby="heroName">
       <Waves
         className="hero__waves"
-        lineColor={dark ? 'rgba(232,233,223,0.30)' : 'rgba(42,42,42,0.30)'}
-        accentColor={dark ? '#E10600' : '#D21319'}
+        lineColor={`rgba(${colours.ink},0.30)`}
+        accentColor={colours.accent}
         lightMode={!dark}
         spacing={14}
         amplitude={28}
