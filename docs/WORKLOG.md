@@ -26,6 +26,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: waves stay behind the ridge
+- Puli: the waves showed over the ridge and under it.
+- Cause: the ridge's fade mask spanned the whole hero, so the lower part of the rock itself was half transparent and the waves showed through it.
+- Fix: `.hero__ridges` is now exactly the photo's box (74vw wide, 2688:1520), so only the photo's outer 11% sides and bottom 20% fade and the rock is solid; the waves layer fades out from 40% to 70% of the hero height, so the area under the ridge stays calm. Phone: the box spans the width, 38% of the height, bottom fade only.
+
 ### 2026-10-22: smaller ridge; switch animation in sync
 - Puli: shrink the ridge a bit more; the switch's knob moved slower than its scene changed.
 - Ridge 74% of the width (max 1300 px), starting at 12% so the peaks still cover the bottom of "HAN"; phone 38% of the screen height.
