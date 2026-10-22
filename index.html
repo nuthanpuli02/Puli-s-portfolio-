@@ -682,6 +682,12 @@ float noise(vec3 x){
 }
 float fbm(vec3 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*noise(p); p=p*2.02+vec3(1.7,9.2,3.1); a*=0.5; } return s; }
 vec2 toUV(vec2 xz){ return vec2(0.5+(xz.x-uMount.x)/(2.0*uMount.z), 0.5-(xz.y-uMount.y)/(2.0*uMount.z)); }
+// erosion-like fine relief: three octaves of ridged noise (sharp ribs, soft hollows), mountain-local units
+float microRelief(vec2 x){
+  float s=0.0, a=0.5; vec3 p=vec3(x*42.0,0.0);
+  for(int i=0;i<3;i++){ float r=1.0-abs(2.0*noise(p)-1.0); s+=a*r*r; p=p*2.13+vec3(3.1,1.7,0.0); a*=0.5; }
+  return s/0.875;
+}
 float dec(vec4 a){ return (a.r*65280.0+a.g*255.0)/65535.0; }
 // 16-bit height has to be filtered by hand; cavity rides along in blue
 vec2 hc(vec2 uv){
@@ -736,6 +742,15 @@ void main(){
   vec3 n=normalize(vec3(-hx,2.0*e,-hz));
   float cav=hc(muv).y;
   float hn=(p.y-Y0)/SPAN;
+  // relief finer than the height map: ridged noise over the ground plan, so on steep faces it runs down the fall line
+  // as gullies and ribs (only lighting and occlusion; the outline still comes from the map)
+  vec3 qd=q*vec3(1.0,0.0,1.0);
+  float ed=0.0022;
+  float m0=microRelief(q.xz), mx=microRelief(q.xz+vec2(ed,0.0)), mz=microRelief(q.xz+vec2(0.0,ed));
+  float steepM=1.0-smoothstep(0.35,0.90,n.y);
+  n=normalize(n+vec3(-(mx-m0)/ed,0.0,-(mz-m0)/ed)*0.010*(0.35+0.65*steepM));
+  float microAO=mix(0.78,1.0,smoothstep(0.15,0.65,m0));
+  cav*=microAO;
   // surface detail from scanned Poly Haven materials (CC0): Cliff Side for the rock, Snow 02 for the snow.
   // Projected from three sides (triplanar) so the steep faces aren't stretched; on the faces the image's own
   // horizontal layers line up with Kailash's strata. Two scales per material hide the tiling.
@@ -745,11 +760,15 @@ void main(){
   const float S1=1.0/0.28, S2=1.0/0.95;
   vec3 aX=texture2D(uRA,uX*S1).rgb, aY=texture2D(uRA,uY*S1).rgb, aZ=texture2D(uRA,uZ*S1).rgb;
   vec3 bX=texture2D(uRA,uX*S2+0.37).rgb, bY=texture2D(uRA,uY*S2+0.37).rgb, bZ=texture2D(uRA,uZ*S2+0.37).rgb;
+  const float S3=1.0/0.085;
+  vec3 cX=texture2D(uRA,uX*S3+0.71).rgb, cY=texture2D(uRA,uY*S3+0.71).rgb, cZ=texture2D(uRA,uZ*S3+0.71).rgb;
   vec3 ra=(aX*w.x+aY*w.y+aZ*w.z)*0.55+(bX*w.x+bY*w.y+bZ*w.z)*0.45;
+  ra*=0.55+0.9*dot(cX*w.x+cY*w.y+cZ*w.z,vec3(0.3,0.5,0.2)); // fine grain: cracks and pebbles
   vec4 nX=texture2D(uRN,uX*S1), nY=texture2D(uRN,uY*S1), nZ=texture2D(uRN,uZ*S1);
   vec4 mX=texture2D(uRN,uX*S2+0.37), mY=texture2D(uRN,uY*S2+0.37), mZ=texture2D(uRN,uZ*S2+0.37);
   // tangent normals (GL convention) to world space, "whiteout" blend per projection
-  vec2 tX=(nX.xy+mX.xy)-1.0, tY=(nY.xy+mY.xy)-1.0, tZ=(nZ.xy+mZ.xy)-1.0;
+  vec4 fX=texture2D(uRN,uX*S3+0.71), fY=texture2D(uRN,uY*S3+0.71), fZ=texture2D(uRN,uZ*S3+0.71);
+  vec2 tX=(nX.xy+mX.xy+fX.xy*0.8)-1.4, tY=(nY.xy+mY.xy+fY.xy*0.8)-1.4, tZ=(nZ.xy+mZ.xy+fZ.xy*0.8)-1.4;
   float bumpK=1.4;
   // X and Z faces: image up = world up, image right = along the face; top face: image up = -z
   vec3 wX=vec3(n.x, n.y+tX.y*bumpK, n.z+tX.x*bumpK*sign(n.x+1e-4));
@@ -760,7 +779,9 @@ void main(){
   vec3 sX=texture2D(uSN,uX*S1*1.6).rgb, sY=texture2D(uSN,uY*S1*1.6).rgb, sZ=texture2D(uSN,uZ*S1*1.6).rgb;
   vec3 sT=sX*w.x+sY*w.y+sZ*w.z;
   vec2 sTn=sT.xy*2.0-1.0;
-  vec3 ns=normalize(n+vec3(sTn.x,0.0,sTn.y)*0.35);
+  vec3 s2=texture2D(uSN,uY*S3*1.3+0.2).rgb*w.y+texture2D(uSN,uX*S3*1.3+0.2).rgb*w.x+texture2D(uSN,uZ*S3*1.3+0.2).rgb*w.z;
+  vec2 sTn2=s2.xy*2.0-1.0;
+  vec3 ns=normalize(n+vec3(sTn.x+sTn2.x*0.8,0.0,sTn.y+sTn2.y*0.8)*0.40);
   float bed=noise(vec3(q.x*3.0,yb*150.0,q.z*3.0));
   // snow: Kailash carries a lot of it. Baked cover plus a bias, broken up in broad patches (not salt-and-pepper),
   // gathering on anything facing up in the rock's relief; it plasters even steep faces up high, and the dome is white
@@ -2141,14 +2162,14 @@ window.PuliChar=function(gl,mainBuf){
     // pass 1c: sharp mountain, only when something that changes it has changed
     const mVis=mountW>0.001&&hiReady;
     if(mVis){
-      const mq=(innerWidth<700?1.2:1.0)*clamp(scale/scale0,0.6,1);
+      const mq=(innerWidth<700?1.5:1.35)*clamp(scale/scale0,0.6,1); // above CSS resolution, so fine detail survives
       mSize(Math.max(2,Math.round(innerWidth*mq)),Math.max(2,Math.round(innerHeight*mq)));
       const key=[camY.toFixed(5),pitch.toFixed(5),night.toFixed(3),mountX.toFixed(4),zM.toFixed(4),mW,mH].join();
       // while the view moves, trace a reduced viewport (motion hides it); the first still frame restarts at full size
       const moving=key!==mKey; if(moving){ mKey=key; mN=0; }
       const sub=moving?(innerWidth<700?0.6:0.75):1;
       if(!moving&&mSub<1) mN=0;
-      if(mN<16){
+      if(mN<12){
         const vw=Math.max(2,Math.round(mW*sub)), vh=Math.max(2,Math.round(mH*sub)); mSub=sub; mVw=vw; mVh=vh;
         gl.useProgram(prM); gl.bindFramebuffer(gl.FRAMEBUFFER,MRT[0].fb); gl.viewport(0,0,vw,vh);
         // units 2–4 are reused by the blend pass and pass 2, so bind the materials again for this draw

@@ -24,6 +24,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: finer surface detail
+- Puli: "we need more detail".
+- `fsM`: fine relief below the height map's resolution (`microRelief`, three octaves of ridged noise over the ground plan, so on steep faces it runs down the fall line as gullies and ribs); it tilts the normal and darkens crevices (`microAO`, down to 0.78). A third, fine tiling of the Cliff Side scan (tiles of 0.085 units) adds cracks and pebbles to the rock colour and normal; a fine tiling of Snow 02 adds drifts and ripples.
+- The sharp mountain layer now renders above CSS resolution (1.35× on a laptop, 1.5× on a phone, was 1.0/1.2) and accumulates 12 still frames (was 16). It is cached when the view is still, so the extra cost is only while scrolling; on the phone it is about 1.7× the pixels of before. If the intro stutters on the Redmi, lower `mq` first.
+
 ### 2026-10-22: crisper ridges, blue shaded snow
 - Puli agreed to tackle the smooth, rounded outline first.
 - Bake (`tools/bake_kailash.js`, step 1b): unsharp-mask sharpening of the SRTM shape at three scales (blur radius 30/9/4 texels; crests raised 0.45/0.80/0.55 of their excess, hollows deepened 0.30/0.35/0.25), only above 25–45% height and not on the summit dome. A first try at 1.1/1.3 turned the shoulders into flat-topped castles. Maps re-baked.
