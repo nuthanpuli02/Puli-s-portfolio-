@@ -26,6 +26,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: smaller ridge; switch animation in sync
+- Puli: shrink the ridge a bit more; the switch's knob moved slower than its scene changed.
+- Ridge 74% of the width (max 1300 px), starting at 12% so the peaks still cover the bottom of "HAN"; phone 38% of the screen height.
+- Cause of the switch mismatch: the knob used a 0.6 s anticipate/overshoot curve (slow start), the skies, sun/moon, clouds and stars used 0.45–0.6 s ease-out (fast start) and the stars a 0.1 s delay. Now every part of the switch uses the same `--dn-t` 0.5 s and `--dn-ease` cubic-bezier(.65,0,.35,1), no delay.
+
 ### 2026-10-22: hero smaller, smoke lower and wispier, night switch redone, badge in the corner
 - Puli: everything too big (name, ridge, the role line, the switch); clouds and smoke looked like two separate things, sat too high and covered the ridge; the night side of the switch didn't match his reference; badge to the bottom-right corner.
 - Sizes: NUTHAN clamp(58px, 11.5vw, 178px) (phone 17vw); role line 14–19 px; ridge 86% of the width (max 1500 px), in a wrapper (`.hero__ridges`) whose mask fades the photo's own left/right edges and its base, so it floats without hard edges; it starts at 9% so the peaks still cover the bottom of "HAN". Switch 84×36 (phone 72×31).
