@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Waves from '../components/reactbits/Waves.jsx';
 import FoldText from '../components/reactbits/FoldText.jsx';
 import CircularText from '../components/reactbits/CircularText.jsx';
@@ -6,10 +6,15 @@ import CircularText from '../components/reactbits/CircularText.jsx';
 // Section 1. Layers, back to front: Waves (React Bits, reacts to the cursor) → the bare ridge → the same ridge
 // overgrown, seen through a soft spotlight → "NUTHAN" (React Bits FoldText) → the game badge (CircularText) →
 // smoke rising from the bottom, which carries the page into section 2.
-export default function Hero({ theme, palette }) {
+export default function Hero({ theme }) {
   const heroRef = useRef(null);
   const dark = theme === 'dark';
-  const colours = dark ? palette.night : palette.day;
+  // the waves are drawn in WebGL, so they take their colours from the CSS tokens (--ink, --accent) whenever the theme changes
+  const [colours, setColours] = useState({ ink: '31,31,31', accent: '#D21319' });
+  useEffect(() => {
+    const cs = getComputedStyle(document.documentElement);
+    setColours({ ink: cs.getPropertyValue('--ink').trim() || '31,31,31', accent: cs.getPropertyValue('--accent').trim() || '#D21319' });
+  }, [theme]);
 
   // Spotlight: follows the cursor or finger; with no input it drifts along the ridge on its own.
   // Only two CSS variables change per frame.

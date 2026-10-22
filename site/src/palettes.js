@@ -1,7 +1,8 @@
-// Colour palettes to try out (temporary: the picker goes once Puli chooses one, and the winner moves into tokens.css).
-// Each palette has a day and a night set. They are written as CSS variables over the defaults in tokens.css,
-// so the day/night switch keeps working. The id is remembered as "puli-palette" and can be set with ?palette=<id>.
-import { useCallback, useEffect, useState } from 'react';
+// Saved colour palettes (see docs/PALETTES.md). The site's live colours are in src/styles/tokens.css:
+// Charcoal by day and Moss by night, chosen 2026-10-23. Nothing here runs unless the address asks for it.
+//
+// Preview without changing any code: add ?day=<id>&night=<id> (or ?palette=<id> for both) to the address,
+// e.g. /v2/?day=sand&night=charcoal. To switch for real, copy a palette's values into tokens.css.
 
 export const PALETTES = [
   {
@@ -31,38 +32,23 @@ export const PALETTES = [
   },
 ];
 
-const vars = c => `--bg:${c.bg};--bg-deep:${c.bgDeep};--surface:${c.surface};--surface-line:rgba(${c.ink},.14);` +
+const vars = c => `--bg:${c.bg};--bg-deep:${c.bgDeep};--surface:${c.surface};--surface-line:rgba(${c.ink},.14);--ink:${c.ink};` +
   `--text:${c.text};--text-soft:rgba(${c.ink},.72);--accent:${c.accent};--accent-hover:${c.accentHover};` +
   `--highlight:${c.highlight};--focus:${c.highlight};--smoke:${c.smoke};`;
 
-const css = p => `:root{${vars(p.day)}}:root[data-theme="dark"]{${vars(p.night)}}` +
-  `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${vars(p.night)}}}`;
+const find = id => PALETTES.find(p => p.id === id);
 
-const find = id => PALETTES.find(p => p.id === id) || PALETTES[0];
-
-function initial() {
-  try {
-    const q = new URLSearchParams(location.search).get('palette');
-    if (q && PALETTES.some(p => p.id === q)) return q;
-    return localStorage.getItem('puli-palette') || PALETTES[0].id;
-  } catch (e) { return PALETTES[0].id; }
-}
-
-function apply(p) {
-  let el = document.getElementById('puli-palette');
-  if (!el) { el = document.createElement('style'); el.id = 'puli-palette'; document.head.appendChild(el); }
-  el.textContent = css(p);
-}
-
-// write the saved palette before React's first paint, so the page doesn't flash the default colours
-apply(find(initial()));
-
-export function usePalette() {
-  const [id, setId] = useState(() => find(initial()).id);
-  useEffect(() => { apply(find(id)); }, [id]);
-  const choose = useCallback(next => {
-    try { localStorage.setItem('puli-palette', next); } catch (e) { /* private mode */ }
-    setId(next);
-  }, []);
-  return [find(id), choose];
-}
+// Preview from the address only; runs once, before React's first paint.
+(function preview() {
+  let q;
+  try { q = new URLSearchParams(location.search); } catch (e) { return; }
+  const day = find(q.get('day') || q.get('palette')), night = find(q.get('night') || q.get('palette'));
+  if (!day && !night) return;
+  let css = '';
+  if (day) css += `:root{${vars(day.day)}}`;
+  if (night) css += `:root[data-theme="dark"]{${vars(night.night)}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${vars(night.night)}}}`;
+  const el = document.createElement('style');
+  el.id = 'puli-palette-preview';
+  el.textContent = css;
+  document.head.appendChild(el);
+})();
