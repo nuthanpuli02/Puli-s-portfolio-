@@ -4,7 +4,7 @@
 
 :root{
   /* palette (Puli's sets) */
-  --navy:#1B1E4A; --stone:#AFAEA2; --crimson:#D21319;
+  --navy:#12143A; --stone:#AFAEA2; --crimson:#D21319;
   --soft-white:#E8E9DF; --sage:#A9B887; --olive:#2E3D28;
   --charcoal:#2A2A2A; --silver:#C0C0C0; --signal:#E10600;
 
@@ -36,15 +36,15 @@
   --t-fast:160ms; --t-med:320ms; --t-slow:900ms;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#141737; --bg-deep:var(--navy);
-  --surface:rgba(24,27,58,.62); --surface-line:rgba(232,233,223,.14);
+  --bg:#0B0D26; --bg-deep:var(--navy);
+  --surface:rgba(16,18,46,.62); --surface-line:rgba(232,233,223,.14);
   --text:var(--soft-white); --text-soft:rgba(232,233,223,.72);
   --accent:var(--signal); --accent-hover:#FF2A1F; --on-accent:#FFFFFF;
   --highlight:var(--sage); --focus:var(--sage);
 }}
 :root[data-theme="dark"]{
-  --bg:#141737; --bg-deep:var(--navy);
-  --surface:rgba(24,27,58,.62); --surface-line:rgba(232,233,223,.14);
+  --bg:#0B0D26; --bg-deep:var(--navy);
+  --surface:rgba(16,18,46,.62); --surface-line:rgba(232,233,223,.14);
   --text:var(--soft-white); --text-soft:rgba(232,233,223,.72);
   --accent:var(--signal); --accent-hover:#FF2A1F; --on-accent:#FFFFFF;
   --highlight:var(--sage); --focus:var(--sage);

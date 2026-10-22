@@ -26,6 +26,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-23: darker navy, bigger name, waves below the ridge
+Puli asked for a darker navy, a slightly bigger name, and the wavy lines showing below the branch (behind it, not over it). Night background `--bg` #141737 → #0B0D26, `--navy` #1B1E4A → #12143A, dark `--surface` to match. Name `clamp(64px,12.8vw,198px)` (was 58/11.5vw/178), phone 18vw (was 17vw); ridge top formula retuned so the peaks still cover the bottom of "HAN". Waves now run down to 72% and fade out by 92% (were cut at 40–70%); the ridge's own bottom fade is now only the last 7% so the rock stays solid and the waves show only around and below it. Next: Puli wants to try other colour palettes.
+
 ### 2026-10-22: ridge spans the full width
 Puli asked for the branch (ridge photo) to stretch from left to right across the screen. `.hero__ridges` is now 104% wide (left -2%, so the photo's ragged right edge sits off-screen) with no side fade, only the bottom fade into the smoke. Its top is tied to the name (`calc(19% + min(7.25vw,112px) - 13.5vw)`) so the peaks cover the bottom of "HAN" at any width (checked 1280, 1440, 1680, 1920). Phone: ridge 62% of the hero tall from `25% - 112px`, so the peaks touch the name; smoke raised to 34vh to close the empty gap between ridge and smoke.
 

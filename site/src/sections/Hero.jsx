@@ -75,7 +75,7 @@ export default function Hero({ theme }) {
       <div className="hero__title">
         <h1 id="heroName" className="hero__name">
           <FoldText text="NUTHAN" hinge="top" foldStyle="paper" duration={0.9} stagger={0.07} hoverRefold refoldRadius={160}
-            fontSize="clamp(58px, 11.5vw, 178px)" fontWeight={900} color="var(--text)" />
+            fontSize="clamp(64px, 12.8vw, 198px)" fontWeight={900} color="var(--text)" />
         </h1>
       </div>
       {/* in front of the ridge, so it stays readable where the peaks cover the name */}
