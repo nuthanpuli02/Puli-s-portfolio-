@@ -14,6 +14,8 @@ html{scroll-behavior:smooth}
 .logo{display:inline-flex;align-items:center;color:var(--text);border-radius:10px;min-height:44px}
 .logo:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .logo__tiger{display:block;height:64px;width:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.18))}
+.logo{gap:10px;text-decoration:none}
+.logo__word{font:900 21px/1 var(--font-sans);letter-spacing:.06em;color:var(--text)}
 
 /* ===== day/night switch (under the header, on the right) ===== */
 .theme-switch-slot{position:fixed;z-index:30;top:calc(var(--header-h) + env(safe-area-inset-top,0px) - 4px);right:var(--gutter)}
@@ -122,6 +124,8 @@ html{scroll-behavior:smooth}
 @media (max-width:760px){
   :root{ --header-h:68px; }
   .logo__tiger{height:54px}
+  .logo{gap:8px}
+  .logo__word{font-size:17px}
   .site-header__title{font-size:10px;letter-spacing:.28em}
   .dn-switch{--w:72px;--h:31px;--k:24px;--pad:3.5px}
   .hero{--r:150px}

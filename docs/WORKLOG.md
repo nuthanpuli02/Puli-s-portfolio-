@@ -26,6 +26,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-23: "PULI" beside the tiger logo
+Puli asked for his name next to the logo. `.logo__word` in the header link: Inter 900, 21 px (17 px on phones), 0.06em tracking, in `--text`. Checked at 1280, 412 and 360 px wide; on 360 px it still clears the centred "PORTFOLIO". Next: section 2 (into the clouds).
+
 ### 2026-10-23: palette locked: Charcoal by day, Moss by night
 Puli picked Charcoal (day) and Moss (night) from the preview. Their values are now the roles in `site/src/styles/tokens.css` (plus a new `--ink` r,g,b token for tints; `--smoke` moved there from app.css); the hero's WebGL waves read `--ink`/`--accent` from the tokens on every theme change. The picker is removed. All five palettes are saved, as he asked, in `docs/PALETTES.md` (table with every value) and `site/src/palettes.js`; any of them can be previewed with `?day=<id>&night=<id>` or `?palette=<id>` (midnight, charcoal, sand, moss, mono) without changing code.
 
