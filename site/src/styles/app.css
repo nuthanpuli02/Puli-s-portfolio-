@@ -79,10 +79,9 @@ html{scroll-behavior:smooth}
   background:radial-gradient(120% 85% at 50% 0%,var(--bg) 0%,var(--bg) 45%,var(--bg-deep) 100%);
   --mx:-999px;--my:-999px;--r:260px}
 .hero__waves{z-index:0;opacity:.9;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 40%,transparent 70%);mask-image:linear-gradient(180deg,#000 0,#000 40%,transparent 70%)}
-.hero__ridges{position:absolute;z-index:3;pointer-events:none;left:50%;top:12%;width:min(74vw,1300px);aspect-ratio:2688/1520;transform:translateX(-50%);
+.hero__ridges{position:absolute;z-index:3;pointer-events:none;left:-2%;top:calc(19% + min(7.25vw, 112px) - 13.5vw);width:104%;aspect-ratio:2688/1520;
   /* the box is exactly the photo, so only its own outer edges melt away; the rock itself stays solid */
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 11%,#000 89%,transparent 100%),linear-gradient(180deg,#000 0,#000 80%,transparent 100%);
-  -webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 11%,#000 89%,transparent 100%),linear-gradient(180deg,#000 0,#000 80%,transparent 100%);mask-composite:intersect}
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 78%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 78%,transparent 100%)}
 .hero__ridge{position:absolute;inset:0;background-repeat:no-repeat;background-position:50% 0;background-size:100% 100%;pointer-events:none;
   transform-origin:50% 30%;animation:heroZoom 1.8s var(--ease-out) both}
 .hero__ridge--stone{z-index:3;background-image:url(../assets/ridge-stone.webp)}
@@ -129,7 +128,7 @@ html{scroll-behavior:smooth}
   .site-header__title{font-size:10px;letter-spacing:.28em}
   .dn-switch{--w:72px;--h:31px;--k:24px;--pad:3.5px}
   .hero{--r:150px}
-  .hero__ridges{left:0;width:100%;top:25%;aspect-ratio:auto;height:38%;transform:none;
+  .hero__ridges{left:0;width:100%;top:calc(25% - 112px);aspect-ratio:auto;height:62%;transform:none;
     -webkit-mask-image:linear-gradient(180deg,#000 0,#000 80%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 80%,transparent 100%)}
   .hero__ridge{background-size:auto 100%;background-position:42% 0}
   .hero__ridge--stone{background-image:url(../assets/ridge-stone-s.webp)}
@@ -139,7 +138,7 @@ html{scroll-behavior:smooth}
   .hero__role{top:calc(25% - 24px);font-size:13px}
   .hero__badge{right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
   .hero__badge .circular-text{transform:scale(.86);transform-origin:100% 100%}
-  .hero__smoke{height:20vh}
+  .hero__smoke{height:34vh}
 }
 @media (prefers-reduced-motion: reduce){ .hero__ridge{animation:none} .hero__smoke-rise{animation:none;opacity:.5;transform:none}
   .hero__role,.hero__badge,.site-header__title{animation:none;opacity:1} }

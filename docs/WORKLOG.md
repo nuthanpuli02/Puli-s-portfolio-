@@ -26,6 +26,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: ridge spans the full width
+Puli asked for the branch (ridge photo) to stretch from left to right across the screen. `.hero__ridges` is now 104% wide (left -2%, so the photo's ragged right edge sits off-screen) with no side fade, only the bottom fade into the smoke. Its top is tied to the name (`calc(19% + min(7.25vw,112px) - 13.5vw)`) so the peaks cover the bottom of "HAN" at any width (checked 1280, 1440, 1680, 1920). Phone: ridge 62% of the hero tall from `25% - 112px`, so the peaks touch the name; smoke raised to 34vh to close the empty gap between ridge and smoke.
+
 ### 2026-10-22: Puli's tiger logo
 - Puli sent his logo: a red, black and white brush-painted tiger in the stalking pose (transparent PNG, 1086×1448). Trimmed and saved as `site/src/assets/tiger-logo.webp` (218×300, 24 KB); header shows it 64 px tall (phone 54 px) with a soft shadow, and it is the tab icon. The text-on-paths draft and `tools/tiger_logo.py` are removed.
 
