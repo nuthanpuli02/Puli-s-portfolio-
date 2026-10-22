@@ -731,7 +731,7 @@ void main(){
   vec3 p=ro+rd*t; vec2 muv=toUV(p.xz);
   vec3 q=(p-vec3(uMount.x,0.0,uMount.y))/uMK; // detail coordinates stay the same size on the rock whatever the scale
   // normal from the height map (1.5 texels apart, so the bilinear cells don't show)
-  float e=uMount.z*2.0/NT*1.5;
+  float e=uMount.z*2.0/NT*1.1;
   float hx=H(p.xz+vec2(e,0.0))-H(p.xz-vec2(e,0.0)), hz=H(p.xz+vec2(0.0,e))-H(p.xz-vec2(0.0,e));
   vec3 n=normalize(vec3(-hx,2.0*e,-hz));
   float cav=hc(muv).y;
@@ -768,7 +768,7 @@ void main(){
   float brk=fbm(q*9.0+vec3(3.0)), brk2=fbm(q*26.0+vec3(8.0));
   float rl=dot(ra,vec3(0.3,0.5,0.2)); // the scan's brightness: lit ledge tops are bright, cracks dark
   float hiF=smoothstep(0.40,0.80,hn);
-  float snow=smoothstep(0.22,0.40,sm*1.15+0.10+hiF*0.25+(brk-0.5)*0.45+(brk2-0.5)*0.12+(nd.y-n.y)*0.8+(bed-0.5)*0.15);
+  float snow=smoothstep(0.27,0.35,sm*1.15+0.10+hiF*0.25+(brk-0.5)*0.45+(brk2-0.5)*0.12+(nd.y-n.y)*0.8+(bed-0.5)*0.15);
   snow*=smoothstep(-0.10+0.25*(1.0-hiF),0.20+0.25*(1.0-hiF),nd.y+0.45*sm);
   snow=max(snow,smoothstep(0.62,0.80,hn+(brk-0.5)*0.12)*smoothstep(-0.05,0.30,nd.y));
   // rock: dark grey-brown conglomerate; the scan gives the grain and the light/dark structure, little of its orange
@@ -792,7 +792,7 @@ void main(){
   vec3 cloudc=mix(vec3(0.90,0.80,0.70),vec3(0.06,0.08,0.13),uNight); // bounce from the sunlit cloud deck below
   float occ=cav*cav*mix(0.6+0.4*smoothstep(0.1,0.5,rl),1.0,snow); // the scan's dark cracks get less sky
   vec3 c=alb*(sunc*(ndl*sh+wrap*sh)
-            +skyc*(0.55+0.45*N.y)*occ
+            +skyc*mix(vec3(1.0),vec3(1.05,1.25,1.65),snow*(1.0-uNight*0.5))*(0.55+0.45*N.y)*occ // shaded snow glows blue with skylight
             +cloudc*0.22*clamp(0.5-0.5*N.y,0.0,1.0)*smoothstep(1.6,0.6,p.y)*occ);
   // specular from roughness: the rock's own map, and snow that is matte except for wind-glazed icy patches
   vec3 hv=normalize(L-rd);
@@ -802,6 +802,8 @@ void main(){
   float fres=0.04+0.96*pow(1.0-max(dot(N,-rd),0.0),5.0);
   c+=sunc*sh*pow(max(dot(N,hv),0.0),sp)*(sp+2.0)/8.0*fres*mix(0.04,1.0,ice)*0.30*ndl;
   c+=sunc*snow*sh*pow(1.0-max(dot(N,-rd),0.0),5.0)*0.06;
+  // warm edge where the sun grazes the snow (light scattered just under the surface)
+  c+=sunc*vec3(1.0,0.78,0.55)*snow*sh*smoothstep(0.0,0.25,ndl)*(1.0-smoothstep(0.25,0.6,ndl))*0.20*(1.0-uNight);
   // atmosphere: distance haze plus denser haze low down, lit warmer toward the sun
   vec3 sun=normalize(mix(vec3(-0.66,0.27,-0.70),vec3(0.45,0.55,0.7),uNight));
   float mu=max(dot(rd,sun),0.0);

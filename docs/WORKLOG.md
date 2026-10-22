@@ -24,6 +24,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: crisper ridges, blue shaded snow
+- Puli agreed to tackle the smooth, rounded outline first.
+- Bake (`tools/bake_kailash.js`, step 1b): unsharp-mask sharpening of the SRTM shape at three scales (blur radius 30/9/4 texels; crests raised 0.45/0.80/0.55 of their excess, hollows deepened 0.30/0.35/0.25), only above 25–45% height and not on the summit dome. A first try at 1.1/1.3 turned the shoulders into flat-topped castles. Maps re-baked.
+- `fsM`: normals from 1.1 texels apart (was 1.5); sharper snow/rock edges (smoothstep 0.27–0.35); snow in shade takes a blue skylight tint; a warm band where the sun grazes the snow.
+- Next ideas if he still wants more realism: light and colour of the shaded faces, sharper snow-rock contact detail, and the outline at the base.
+
 ### 2026-10-22: much more snow; spindrift as real grains
 - Puli: the blowing snow looked like a glow, not snow blowing off (the summit was fine); the mountain needs a lot more snow; still not realistic enough.
 - The glow was the crest wisps in the low-res cloud pass (at 0.32–0.5 resolution they can only be soft). They are switched off (`if(false)` in `spindrift()`); the summit plume stays, its march box now covers only the plume.

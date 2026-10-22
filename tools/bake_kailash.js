@@ -21,6 +21,21 @@ function bakeKailash(src,N,Y0,SPAN,SIZE){
       H[r*N+c]=cr(row(-1),row(0),row(1),row(2),ty); } }
   const grad=(A,i)=>{ const r=(i/N)|0,c=i-r*N; const l=A[r*N+Math.max(0,c-1)],R=A[r*N+Math.min(N-1,c+1)],u=A[Math.max(0,r-1)*N+c],d=A[Math.min(N-1,r+1)*N+c];
     return [(R-l)/(2*dx),-(d-u)/(2*dx)]; };
+  // 1b. crisp ridges: SRTM is smoothed, so arêtes come out rounded. Sharpen at two scales (unsharp mask): crests are
+  //     pushed up and narrowed more than hollows are deepened; the summit dome is left alone; nothing below the cloud deck
+  { const bl=(A,rad)=>{ const T=new Float32Array(NN), O=new Float32Array(NN), w=2*rad+1;
+      for(let r=0;r<N;r++){ let s=0; for(let c=-rad;c<=rad;c++) s+=A[r*N+Math.min(N-1,Math.max(0,c))];
+        for(let c=0;c<N;c++){ T[r*N+c]=s/w; s+=A[r*N+Math.min(N-1,c+rad+1)]-A[r*N+Math.max(0,c-rad)]; } }
+      for(let c=0;c<N;c++){ let s=0; for(let r=-rad;r<=rad;r++) s+=T[Math.min(N-1,Math.max(0,r))*N+c];
+        for(let r=0;r<N;r++){ O[r*N+c]=s/w; s+=T[Math.min(N-1,r+rad+1)*N+c]-T[Math.max(0,r-rad)*N+c]; } }
+      return O; };
+    let mi=0; for(let i=1;i<NN;i++) if(H[i]>H[mi]) mi=i; const r0=(mi/N)|0, c0=mi-r0*N;
+    for(const [rad,kU,kD] of [[30,0.45,0.30],[9,0.80,0.35],[4,0.55,0.25]]){
+      const B1=bl(bl(H,rad),rad);
+      for(let i=0;i<NN;i++){ const r=(i/N)|0, c=i-r*N, d2=((r-r0)**2+(c-c0)**2)*dx*dx;
+        const hn=(H[i]-Y0)/SPAN, D=H[i]-B1[i];
+        const m=sst(0.25,0.45,hn)*sst(0.02,0.08,d2);
+        H[i]+=(D>0?D*kU:D*kD)*m; } } }
   // coarse steepness (from the smooth data) decides where cliffs and strata go
   const steep=new Float32Array(NN), top=Y0+SPAN;
   for(let i=0;i<NN;i++){ const g=grad(H,i); steep[i]=sst(0.70,1.45,Math.hypot(g[0],g[1])); }
