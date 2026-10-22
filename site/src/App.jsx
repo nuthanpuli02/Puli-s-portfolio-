@@ -11,10 +11,7 @@ export default function App() {
       <Header theme={theme} onToggleTheme={toggleTheme} />
       <main>
         <Hero theme={theme} />
-        <Clouds />
-        <section className="next-placeholder" id="work" aria-label="My work (coming next)">
-          <p>Section 3 · My work · coming next</p>
-        </section>
+        <Clouds theme={theme} />
         <section className="next-placeholder" id="game" aria-label="Game (coming later)">
           <p>Game teaser · coming later</p>
         </section>

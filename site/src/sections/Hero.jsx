@@ -5,7 +5,7 @@ import CircularText from '../components/reactbits/CircularText.jsx';
 
 // Section 1. Layers, back to front: Waves (React Bits, reacts to the cursor) → the bare ridge → the same ridge
 // overgrown, seen through a soft spotlight → "NUTHAN" (React Bits FoldText) → the game badge (CircularText) →
-// smoke rising from the bottom, which carries the page into section 2.
+// clouds rising from the bottom, which carry the page into section 2.
 export default function Hero({ theme }) {
   const heroRef = useRef(null);
   const dark = theme === 'dark';
@@ -59,6 +59,31 @@ export default function Hero({ theme }) {
     return () => { io.disconnect(); cancelAnimationFrame(raf); hero.removeEventListener('pointermove', aim); hero.removeEventListener('pointerdown', aim); };
   }, []);
 
+  // clouds: rise with the scroll (near faster than far) and drift sideways; transforms only
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return undefined;
+    const far = hero.querySelector('.hero__cloud--far'), near = hero.querySelector('.hero__cloud--near');
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0, visible = true;
+    const t0 = performance.now();
+    const frame = now => {
+      raf = 0;
+      const sy = Math.max(0, -hero.getBoundingClientRect().top);
+      const t = reduce ? 0 : (now - t0) * 0.00008, w = Math.min(1, window.innerWidth / 1280);
+      far.style.transform = `translate3d(${(Math.sin(t + 1.3) * 34 * w).toFixed(1)}px,${(-sy * 0.16).toFixed(1)}px,0)`;
+      near.style.transform = `translate3d(${(Math.sin(t * 1.3) * -46 * w).toFixed(1)}px,${(-sy * 0.34).toFixed(1)}px,0)`;
+      if (visible && !reduce) raf = requestAnimationFrame(frame);
+    };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kick(); });
+    io.observe(hero);
+    const onScroll = () => { if (reduce) kick(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    kick();
+    return () => { io.disconnect(); cancelAnimationFrame(raf); window.removeEventListener('scroll', onScroll); };
+  }, []);
+
   return (
     <section className="hero" id="top" ref={heroRef} aria-labelledby="heroName">
       <Waves
@@ -95,13 +120,12 @@ export default function Hero({ theme }) {
         </CircularText>
       </a>
 
-      {/* smoke: one wispy texture, three copies drifting upward one after another and fading out as they rise,
-          over a soft base that runs into the next section, so it reads as a single smoke that keeps rising */}
-      <div className="hero__smoke" aria-hidden="true">
-        <span className="hero__smoke-base" />
-        <span className="hero__smoke-rise" style={{ '--d': '0s', '--o': '0px' }} />
-        <span className="hero__smoke-rise" style={{ '--d': '-6s', '--o': '-480px' }} />
-        <span className="hero__smoke-rise" style={{ '--d': '-12s', '--o': '-950px' }} />
+      {/* clouds: two banks (far = darker, higher; near = lighter, lower). They rise into place on load, drift
+          sideways and rise faster than the page when scrolling; the near bank's flat base runs straight into
+          section 2, which starts in the same colour */}
+      <div className="hero__clouds" aria-hidden="true">
+        <div className="cbank cbank--top hero__cloud hero__cloud--far" style={{ '--mx': '-520px' }} />
+        <div className="cbank cbank--top hero__cloud hero__cloud--near" style={{ '--mx': '-90px' }} />
       </div>
     </section>
   );

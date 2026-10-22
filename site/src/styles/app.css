@@ -72,7 +72,7 @@ html{scroll-behavior:smooth}
 .dn-switch.is-night .dn-switch__stars{opacity:1;transform:none}
 
 /* ===== hero ===== */
-/* layers, back to front: waves · NUTHAN · bare ridge · overgrown ridge (spotlight) · badge · smoke.
+/* layers, back to front: waves · NUTHAN · bare ridge · overgrown ridge (spotlight) · clouds · badge.
    The name sits behind the ridge, so the peaks overlap the bottom of its letters. */
 .hero{position:relative;height:100vh;height:100dvh;min-height:600px;overflow:hidden;isolation:isolate;
   background:radial-gradient(120% 85% at 50% 0%,var(--bg) 0%,var(--bg) 45%,var(--bg-deep) 100%);
@@ -103,52 +103,55 @@ html{scroll-behavior:smooth}
 .hero__badge:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .hero__badge-icon{width:34px;height:34px;color:var(--accent)}
 
-/* smoke: a soft base plus three copies of one wispy texture, rising and fading in turn (all masks over --smoke) */
-.hero__smoke{position:absolute;z-index:6;left:0;right:0;bottom:0;height:clamp(150px,24vh,240px);pointer-events:none}
-.hero__smoke-base,.hero__smoke-rise{position:absolute;left:-15%;right:-15%;bottom:0;background:var(--smoke);
-  -webkit-mask-image:url(../assets/smoke.png);mask-image:url(../assets/smoke.png);-webkit-mask-repeat:repeat-x;mask-repeat:repeat-x;
-  transition:background-color var(--t-med) var(--ease-out)}
-.hero__smoke-base{height:70%;-webkit-mask-size:1400px 100%;mask-size:1400px 100%;-webkit-mask-position:-300px 0;mask-position:-300px 0}
-.hero__smoke-rise{height:100%;-webkit-mask-size:1400px 100%;mask-size:1400px 100%;-webkit-mask-position:var(--o) 0;mask-position:var(--o) 0;
-  transform-origin:50% 100%;opacity:0;animation:smokeRise 18s linear var(--d) infinite;will-change:transform,opacity}
-@keyframes smokeRise{
-  0%{transform:translateY(22%) scaleY(.85);opacity:0}
-  25%{opacity:.75}
-  70%{opacity:.45}
-  100%{transform:translateY(-16%) scaleY(1.15);opacity:0}}
+/* clouds at the bottom of the hero: they rise into place on load; Hero.jsx moves them with the scroll */
+.hero__clouds{position:absolute;z-index:6;inset:0;pointer-events:none;animation:cloudsIn 2.2s var(--ease-out) .2s both}
+@keyframes cloudsIn{from{transform:translateY(22vh)}to{transform:none}}
+.hero__cloud{position:absolute;left:-14%;width:128%;height:130vh;will-change:transform}
+/* the lit top fades into the flat body quickly, so the colour is already flat where the hero meets section 2 */
+.hero__cloud.cbank--top{background:linear-gradient(180deg,var(--hi) 0,var(--c) calc(var(--edge) * .6),var(--c) 100%)}
+.hero__cloud--far{top:63%;--hi:var(--cloud-far-hi);--c:var(--cloud-far);opacity:.95}
+.hero__cloud--near{top:73%}
+
 
 .next-placeholder{min-height:70vh;display:grid;place-items:center;background:var(--bg);color:var(--text-soft);font:500 12px/1 var(--font-sans);letter-spacing:.24em;text-transform:uppercase;
   transition:background-color var(--t-med) var(--ease-out)}
 
-/* ===== section 2: into the clouds ===== */
-/* a tall section whose stage stays pinned while the page scrolls; Clouds.jsx moves the layers */
-.clouds{position:relative;height:380vh;background:var(--bg)}
-.clouds__stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;isolation:isolate;background:var(--smoke);
-  transition:background-color var(--t-med) var(--ease-out)}
-.clouds__deep,.clouds__floor{position:absolute;inset:0;pointer-events:none}
-.clouds__deep{background:var(--cloud-in);opacity:0}
-.clouds__floor{background:var(--bg);opacity:0}
-/* one cloud = a billowy top edge, a solid middle and a billowy bottom edge (the same texture, flipped) */
-.cloud{--edge:clamp(170px,26vw,340px);position:absolute;left:-14%;width:128%;top:0;height:calc(var(--h) * 100lvh);pointer-events:none;
-  transform:translate3d(0,100lvh,0);will-change:transform;
-  --hi:var(--cloud-near-hi);--c:var(--cloud-near);--lo:var(--cloud-near-lo);
-  background:linear-gradient(180deg,var(--hi) 0,var(--c) calc(var(--edge) * 1.3),var(--c) calc(100% - var(--edge) * 1.2),var(--lo) 100%);
-  -webkit-mask-image:url(../assets/cloudbank.webp),linear-gradient(#000,#000),url(../assets/cloudbank-flip.webp);
-          mask-image:url(../assets/cloudbank.webp),linear-gradient(#000,#000),url(../assets/cloudbank-flip.webp);
-  -webkit-mask-size:auto var(--edge),100% calc(100% - 2 * var(--edge) + 4px),auto var(--edge);
-          mask-size:auto var(--edge),100% calc(100% - 2 * var(--edge) + 4px),auto var(--edge);
-  -webkit-mask-position:var(--mx) 0,0 calc(var(--edge) - 2px),calc(var(--mx) - 400px) 100%;
-          mask-position:var(--mx) 0,0 calc(var(--edge) - 2px),calc(var(--mx) - 400px) 100%;
-  -webkit-mask-repeat:repeat-x,no-repeat,repeat-x;mask-repeat:repeat-x,no-repeat,repeat-x}
-.cloud--far{--hi:var(--cloud-far-hi);--c:var(--cloud-far);--lo:var(--cloud-far-lo);opacity:.92}
-.cloud--near{opacity:.94}
+/* ===== cloud banks (hero and section 2) =====
+   one generated texture, used as a mask: .cbank--top = billowy top edge over a solid body (lit top, flat body);
+   .cbank--bottom = solid body with a billowy underside that darkens a little (cloud undersides are shaded) */
+.cbank{--edge:clamp(170px,26vw,340px);--hi:var(--cloud-near-hi);--c:var(--cloud-near);--lo:var(--cloud-near-lo);--mx:0px;pointer-events:none}
+.cbank--top{background:linear-gradient(180deg,var(--hi) 0,var(--c) calc(var(--edge) * 1.3),var(--c) 100%);
+  -webkit-mask-image:url(../assets/cloudbank.webp),linear-gradient(#000,#000);mask-image:url(../assets/cloudbank.webp),linear-gradient(#000,#000);
+  -webkit-mask-size:auto var(--edge),100% calc(100% - var(--edge) + 2px);mask-size:auto var(--edge),100% calc(100% - var(--edge) + 2px);
+  -webkit-mask-position:var(--mx) 0,0 calc(var(--edge) - 2px);mask-position:var(--mx) 0,0 calc(var(--edge) - 2px);
+  -webkit-mask-repeat:repeat-x,no-repeat;mask-repeat:repeat-x,no-repeat}
+.cbank--bottom{background:linear-gradient(180deg,var(--c) 0,var(--c) calc(100% - var(--edge) * 1.4),var(--lo) 100%);
+  -webkit-mask-image:linear-gradient(#000,#000),url(../assets/cloudbank-flip.webp);mask-image:linear-gradient(#000,#000),url(../assets/cloudbank-flip.webp);
+  -webkit-mask-size:100% calc(100% - var(--edge) + 2px),auto var(--edge);mask-size:100% calc(100% - var(--edge) + 2px),auto var(--edge);
+  -webkit-mask-position:0 0,var(--mx) 100%;mask-position:0 0,var(--mx) 100%;
+  -webkit-mask-repeat:no-repeat,repeat-x;mask-repeat:no-repeat,repeat-x}
 
-.clouds__copy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-  padding:0 var(--gutter);text-align:center;color:var(--text);opacity:0;will-change:transform,opacity}
-.clouds__title{margin:0 0 clamp(18px,2.6vw,30px);line-height:.95;font-weight:400;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;column-gap:clamp(12px,1.5vw,26px)}
+/* ===== section 2: inside the clouds ===== */
+/* a tall section whose stage stays pinned while the page scrolls; Clouds.jsx moves the layers */
+.clouds{position:relative;height:400vh;background:var(--cloud-in)}
+.clouds__stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;isolation:isolate;background:var(--cloud-in);
+  transition:background-color var(--t-med) var(--ease-out)}
+.clouds__track{position:absolute;top:0;left:0;height:100%;width:200%;display:flex;will-change:transform}
+.clouds__panel{position:relative;flex:0 0 50%;height:100%}
+.clouds__ceiling{position:absolute;top:0;left:-6%;width:112%;will-change:transform}
+.clouds__ceiling--far{--c:var(--cloud-far);--lo:var(--cloud-far-lo);z-index:1}
+.clouds__ceiling--near{z-index:2}
+.clouds__copy{position:absolute;left:0;right:0;top:27%;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 var(--gutter) 4vh;color:var(--text);opacity:0;will-change:transform,opacity}
+.clouds__title{margin:0 0 clamp(20px,3vw,34px);line-height:.95;font-weight:400;text-align:center}
+.clouds__title .shiny-text{display:inline-flex;flex-wrap:wrap;align-items:baseline;justify-content:center;column-gap:clamp(12px,1.5vw,26px)}
 .clouds__script{font:italic 400 clamp(54px,8.4vw,128px)/1 var(--font-display);letter-spacing:-.01em}
 .clouds__caps{font:900 clamp(42px,6.6vw,100px)/1 var(--font-sans);text-transform:uppercase;letter-spacing:-.02em}
-.clouds__copy p{margin:0 0 12px;max-width:46ch;font:400 clamp(16px,1.35vw,19px)/1.65 var(--font-sans);color:var(--text)}
+.clouds__line{position:relative;margin:0 0 12px;width:min(46ch,100%);font:400 clamp(16px,1.35vw,19px)/1.65 var(--font-sans);color:var(--text);text-align:left}
+.clouds__ghost{visibility:hidden}
+.clouds__line .clouds__typed{position:absolute;inset:0;display:block}
+.clouds__panel--next{display:grid;place-items:center;color:var(--text-soft);font:500 12px/1 var(--font-sans);letter-spacing:.24em;text-transform:uppercase}
+.clouds__panel--next p{margin-top:20vh}
 
 /* ===== phones ===== */
 @media (max-width:760px){
@@ -169,11 +172,12 @@ html{scroll-behavior:smooth}
   .hero__role{top:calc(25% - 24px);font-size:13px}
   .hero__badge{right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
   .hero__badge .circular-text{transform:scale(.86);transform-origin:100% 100%}
-  .hero__smoke{height:34vh}
-  .clouds__title{flex-direction:column;align-items:center;row-gap:2px}
+  .hero__cloud--far{top:62%} .hero__cloud--near{top:70%}
+  .clouds__title .shiny-text{flex-direction:column;align-items:center;row-gap:2px}
+  .clouds__copy{top:24%}
   .clouds__caps{font-size:13vw}
   .clouds__script{font-size:15vw}
 }
-@media (prefers-reduced-motion: reduce){ .hero__ridge{animation:none} .hero__smoke-rise{animation:none;opacity:.5;transform:none}
+@media (prefers-reduced-motion: reduce){ .hero__ridge{animation:none} .hero__clouds{animation:none}
   .hero__role,.hero__badge,.site-header__title{animation:none;opacity:1} }
 

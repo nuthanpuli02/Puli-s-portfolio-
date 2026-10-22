@@ -1,81 +1,102 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import ShinyText from '../components/reactbits/ShinyText.jsx';
+import TextType from '../components/reactbits/TextType.jsx';
 
-// Section 2, into the clouds. The hero's smoke becomes a cloud bank and the page sinks through it:
-// the section is tall and its stage stays pinned while you scroll; scroll position (p, 0 → 1) moves cloud
-// layers upward past the camera at different speeds (far ones slower and darker, near ones faster and lighter).
-// "Puli's Portfolio" and the intro appear in the middle; a last, thick cloud covers the screen, and when it
-// lifts the page is below the clouds, on the plain background of section 3.
+// Section 2, inside the clouds. The hero's clouds rise and cover the screen; the section's stage then stays
+// pinned while you scroll, and scroll progress p (0 → 1) drives it:
+//   0 → .22  the covering cloud keeps rising until it hangs as a ceiling, revealing the darker inside of the cloud
+//   .14→ .26 "Puli's Portfolio" (React Bits ShinyText) fades in; at .2 the intro lines start typing (React Bits TextType)
+//   .60→ .97 the whole scene pans sideways, as if the camera moves right, into section 3
+// The typing plays once per page load: once started it never resets, even if you scroll back up.
 // Only transforms and opacity change per frame, and the loop runs only while the section is on screen.
 
-// cloud layers: s/e = the p at which it enters from the bottom / leaves at the top, h = its height (in screens),
-// x = where along the texture it starts (px), d = sideways drift (px), kind = far | near | exit
-const LAYERS = [
-  { kind: 'far',  s: -0.10, e: 0.56, h: 1.1,  x: -220,  d: 40 },
-  { kind: 'far',  s: 0.16,  e: 0.86, h: 1.2,  x: -760,  d: -50 },
-  { kind: 'near', s: -0.14, e: 0.30, h: 1.3,  x: -40,   d: -60 },
-  { kind: 'near', s: 0.12,  e: 0.50, h: 1.0,  x: -1180, d: 70 },
-  { kind: 'near', s: 0.42,  e: 0.78, h: 0.9,  x: -560,  d: -55 },
-];
-const EXIT = { s: 0.62, e: 1.0, h: 2, x: 0, d: 0 }; // h is recomputed per screen size (see exitHeight)
-// the scene behind is swapped for the plain background (section 3's colour) at the moment the exit cloud's
-// billowy top edge has passed above the screen; its solid middle covers everything then, so the swap is never seen
-const edgePx = () => Math.min(340, Math.max(170, 0.26 * window.innerWidth)); // same as --edge in app.css
-// just tall enough that its solid middle can cover the whole screen between its two billowy edges
-const exitHeight = vh => Math.max(1.6, 1 + (2 * edgePx()) / vh + 0.12);
+const LINE1 = "I'm a student working in machine learning. My thesis teaches transformer models to find security flaws in source code.";
+const LINE2 = 'I also freelance, building models, dashboards and websites. Small projects, done carefully.';
+const TYPE_MS = 24; // per character
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const edgePx = () => Math.min(340, Math.max(170, 0.26 * window.innerWidth)); // same as --edge in app.css
 
-export default function Clouds() {
+// ShinyText takes real colours (it blends them in JS), so read them from the tokens when the theme changes
+function useShine(theme) {
+  const [c, setC] = useState({ color: '#1F1F1F', shine: '#A3A39F' });
+  useEffect(() => {
+    const cs = getComputedStyle(document.documentElement);
+    setC({ color: cs.getPropertyValue('--text').trim() || '#1F1F1F', shine: cs.getPropertyValue('--shine').trim() || '#A3A39F' });
+  }, [theme]);
+  return c;
+}
+
+function TypedLine({ text, start, cursor }) {
+  // the full line sits invisibly underneath to hold the space, so nothing moves while the text types in
+  return (
+    <p className="clouds__line">
+      <span className="clouds__ghost" aria-hidden="true">{text}</span>
+      {start ? (
+        <TextType as="span" className="clouds__typed" text={text} loop={false} typingSpeed={TYPE_MS} showCursor={cursor}
+          cursorStyle="bar" cursorBlinkDuration={0.55} />
+      ) : <span className="text-type__sr">{text}</span>}
+    </p>
+  );
+}
+
+export default function Clouds({ theme }) {
   const ref = useRef(null);
+  const [typing, setTyping] = useState(0); // 0 = not yet, 1 = first line, 2 = second line
+  const shine = useShine(theme);
+
+  // start typing once, when the title is in view
+  const startTyping = useRef(() => {});
+  startTyping.current = () => { if (!typing) setTyping(1); };
+  useEffect(() => {
+    if (typing !== 1) return undefined;
+    const id = setTimeout(() => setTyping(2), LINE1.length * TYPE_MS + 350);
+    return () => clearTimeout(id);
+  }, [typing]);
 
   useEffect(() => {
     const section = ref.current;
     if (!section) return undefined;
     const stage = section.querySelector('.clouds__stage');
-    const layers = [...section.querySelectorAll('.cloud')];
-    const exit = section.querySelector('.cloud--exit');
-    const deep = section.querySelector('.clouds__deep');
-    const floor = section.querySelector('.clouds__floor');
+    const track = section.querySelector('.clouds__track');
+    const cover = section.querySelector('.clouds__ceiling--near');
+    const far = section.querySelector('.clouds__ceiling--far');
     const copy = section.querySelector('.clouds__copy');
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    let raf = 0, visible = false;
+    let raf = 0, visible = false, started = false;
     const t0 = performance.now();
-
-    // place one cloud: it enters at the bottom at p = s and has left past the top at p = e
-    const place = (el, L, p, vh, t) => {
-      const k = (p - L.s) / (L.e - L.s);
-      const y = vh - k * (vh * (1 + L.h));
-      // sideways drift, scaled to the screen so a cloud never slides far enough to show its own side
-      const x = reduce ? 0 : Math.sin(t * 0.00009 + L.x) * L.d * Math.min(1, window.innerWidth / 1280);
-      el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
-    };
 
     const frame = now => {
       raf = 0;
       const r = section.getBoundingClientRect();
-      const vh = stage.clientHeight || window.innerHeight;
+      const vh = stage.clientHeight || window.innerHeight, vw = stage.clientWidth || window.innerWidth;
       const p = clamp01(-r.top / Math.max(1, r.height - vh));
-      const hE = exitHeight(vh);
-      if (hE !== EXIT.h) { EXIT.h = hE; exit.style.setProperty('--h', hE.toFixed(3)); }
-      const exitTop = vh - ((p - EXIT.s) / (EXIT.e - EXIT.s)) * vh * (1 + EXIT.h);
-      const below = exitTop <= -edgePx();
-      layers.forEach((el, i) => {
-        if (el === exit) { place(el, EXIT, p, vh, 0); return; }
-        place(el, LAYERS[i], p, vh, now - t0);
-        el.style.opacity = below ? '0' : '';
-      });
-      deep.style.opacity = below ? '0' : smooth(0.02, 0.26, p).toFixed(3);
-      floor.style.opacity = below ? '1' : '0';
-      const show = smooth(0.25, 0.37, p) * (1 - smooth(0.62, 0.72, p));
+      const edge = edgePx(), phone = vw < 760;
+      const t = reduce ? 0 : (now - t0) * 0.00008, w = Math.min(1, vw / 1280);
+
+      // the covering cloud: tall enough to fill the screen at p = 0, then it rises until its underside hangs at the top
+      const hc = vh + edge * 1.6;
+      cover.style.height = `${hc.toFixed(0)}px`;
+      const rest = vh * (phone ? 0.25 : 0.27);
+      const rise = smooth(0, 0.22, p);
+      const pan = smooth(0.6, 0.97, p) * vw;
+      cover.style.transform = `translate3d(${(Math.sin(t * 1.3) * -30 * w).toFixed(1)}px,${(-rise * (hc - rest)).toFixed(1)}px,0)`;
+      // a darker bank behind it hangs a little lower, rises less and pans a little slower: depth
+      far.style.height = `${hc.toFixed(0)}px`;
+      const restFar = rest + vh * 0.07;
+      far.style.transform = `translate3d(${(pan * 0.18 + Math.sin(t + 1.3) * 26 * w).toFixed(1)}px,${(vh * 0.25 * (1 - rise) - rise * (hc - restFar)).toFixed(1)}px,0)`;
+      track.style.transform = `translate3d(${(-pan).toFixed(1)}px,0,0)`;
+
+      const show = smooth(0.14, 0.26, p);
       copy.style.opacity = show.toFixed(3);
-      copy.style.transform = `translate3d(0,${((0.48 - p) * 0.22 * vh).toFixed(1)}px,0) scale(${(0.965 + 0.035 * smooth(0.25, 0.45, p)).toFixed(4)})`;
+      copy.style.transform = `translate3d(0,${((1 - show) * 28).toFixed(1)}px,0)`;
+      if (!started && p >= 0.2) { started = true; startTyping.current(); }
       if (visible && !reduce) raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
     const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kick(); }, { rootMargin: '20% 0px' });
     io.observe(section);
-    // with reduced motion there is no drift, so the frame only needs to run when the page scrolls
     const onScroll = () => { if (reduce && visible) kick(); };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', kick);
@@ -86,20 +107,25 @@ export default function Clouds() {
   return (
     <section className="clouds" id="about" ref={ref} aria-labelledby="cloudsTitle">
       <div className="clouds__stage">
-        <div className="clouds__deep" aria-hidden="true" />
-        {LAYERS.filter(l => l.kind === 'far').map((l, i) => (
-          <div key={`f${i}`} className="cloud cloud--far" style={{ '--h': l.h, '--mx': `${l.x}px` }} aria-hidden="true" />
-        ))}
-        <div className="clouds__copy">
-          <h2 id="cloudsTitle" className="clouds__title"><span className="clouds__script">Puli's</span> <span className="clouds__caps">Portfolio</span></h2>
-          <p>I'm a student working in machine learning. My thesis teaches transformer models to find security flaws in source code.</p>
-          <p>I also freelance, building models, dashboards and websites. Small projects, done carefully.</p>
+        <div className="clouds__track">
+          <div className="clouds__panel">
+            <div className="clouds__copy">
+              <h2 id="cloudsTitle" className="clouds__title">
+                <ShinyText color={shine.color} shineColor={shine.shine} speed={2.6} delay={1.8} shineWidth={34} angle={115}>
+                  <span className="clouds__script">Puli's</span> <span className="clouds__caps">Portfolio</span>
+                </ShinyText>
+              </h2>
+              <TypedLine text={LINE1} start={typing >= 1} cursor={typing === 1} />
+              <TypedLine text={LINE2} start={typing >= 2} cursor={typing === 2} />
+            </div>
+          </div>
+          {/* section 3 starts here; Puli has its design in mind, so this is a placeholder for now */}
+          <div className="clouds__panel clouds__panel--next" id="work" aria-label="My work (coming next)">
+            <p>Section 3 · coming next</p>
+          </div>
+          <div className="cbank cbank--bottom clouds__ceiling clouds__ceiling--far" style={{ '--mx': '-610px' }} aria-hidden="true" />
+          <div className="cbank cbank--bottom clouds__ceiling clouds__ceiling--near" style={{ '--mx': '-170px' }} aria-hidden="true" />
         </div>
-        {LAYERS.filter(l => l.kind === 'near').map((l, i) => (
-          <div key={`n${i}`} className="cloud cloud--near" style={{ '--h': l.h, '--mx': `${l.x}px` }} aria-hidden="true" />
-        ))}
-        <div className="clouds__floor" aria-hidden="true" />
-        <div className="cloud cloud--exit" style={{ '--h': EXIT.h, '--mx': '-330px' }} aria-hidden="true" />
       </div>
     </section>
   );
