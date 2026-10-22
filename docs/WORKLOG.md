@@ -14,7 +14,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added, then reframed as the hero with golden hour, ridges, the title overlay and wind-blown snow (2026-10-22, see Log); waiting for his verdict on a laptop and his phone. His verdict on the untextured version: "smooth but still not how I wanted".
+- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added, then reframed as the hero with golden hour, ridges, the title overlay and wind-blown snow (2026-10-22, see Log); he likes the detail and the blowing snow (2026-10-22). Next: cloud quality. His verdict on the untextured version: "smooth but still not how I wanted".
 - Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - The photographic day intro (photo cut-out, giant "BEYOND", frosted card, 01–04 index, altitude readout) was reverted on 2026-10-21 at Puli's request. It is kept in git: commit `5a0617b` (branch `claude/eager-lovelace-ub440d`) and the merge `78fa3cc`; the frosted card and labels could be brought back on top of the 3D mountain if he asks.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
@@ -23,6 +23,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-22: blowing snow finer and fainter
+- Puli likes the detail and how the snow blows with the wind; asked for it finer and fainter. Next he wants to improve the clouds.
+- Summit puffs: 1,500 (was 900), smaller (0.015–0.027, growing ×5 over their life, was 0.026–0.046 ×6), about half the opacity. Crest grains: 2,000 × 6 trail copies (was 1,400), smaller (0.004–0.012), overall opacity 0.40 (was 0.55).
 
 ### 2026-10-22: a lot more snow; summit banner from particles
 - Puli: add a lot more snow; the wind blowing snow off the peak looked odd (the volumetric plume read as a floating lens).

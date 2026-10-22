@@ -870,10 +870,10 @@ void main(){
   float z=max(p.z,0.5);
   vec2 uv=vec2(1.25*p.x/z, 1.25*(p.y-uCamY)/z-uPitch);
   gl_Position=vec4(uv.x*2.0/uAsp, uv.y*2.0, 0.0, 1.0);
-  float size=aR.y*uPx*uMK/z*mix(1.0+age*1.8,1.0+age*6.0,puff);
+  float size=aR.y*uPx*uMK/z*mix(1.0+age*1.5,1.0+age*5.0,puff);
   gl_PointSize=clamp(size,1.0,uMaxPt);
   float fade=smoothstep(0.0,mix(0.12,0.05,puff),age)*(1.0-smoothstep(mix(0.45,0.25,puff),1.0,age));
-  vA=uA*fade*step(0.0,age)*mix(g*(1.0-tr*0.14)/max(1.0,size*0.25)*0.6, (0.13+0.10*g)*pow(1.0-age,0.7), puff);
+  vA=uA*fade*step(0.0,age)*mix(g*(1.0-tr*0.14)/max(1.0,size*0.25)*0.6, (0.065+0.05*g)*pow(1.0-age,0.8), puff);
 }
 </script>
 <script id="fsP" type="x-shader">
@@ -2018,18 +2018,18 @@ window.PuliChar=function(gl,mainBuf){
       pts.push([(c+0.5)/N*5.6-2.8, h, 2.8-(r+0.5)/N*5.6, drop*hn*hn]); }
     if(!pts.length) return;
     let tot=0; for(const q of pts){ tot+=q[3]; q[4]=tot; }
-    const M=1400, T=6, arr=new Float32Array(M*T*6); let k=0;
+    const M=2000, T=6, arr=new Float32Array(M*T*6); let k=0;
     const rnd=(()=>{ let x=12345; return ()=>{ x=(x*1664525+1013904223)>>>0; return x/4294967296; }; })();
     for(let m=0;m<M;m++){
       const u=rnd()*tot; let lo=0, hi=pts.length-1; while(lo<hi){ const mid=(lo+hi)>>1; if(pts[mid][4]<u) lo=mid+1; else hi=mid; }
-      const q=pts[lo], sd=rnd(), sz=0.006+0.014*rnd()*rnd(), jx=(rnd()-0.5)*0.03, jz=(rnd()-0.5)*0.03;
+      const q=pts[lo], sd=rnd(), sz=0.004+0.008*rnd()*rnd(), jx=(rnd()-0.5)*0.03, jz=(rnd()-0.5)*0.03;
       for(let t=0;t<T;t++){ arr.set([q[0]+jx,q[1]+0.005,q[2]+jz,sd,sz,t],k); k+=6; } }
     // summit banner: puffs from just downwind of the top
     let mi=0, mh=-9; for(let r=0;r<N;r+=2) for(let c=0;c<N;c+=2){ const h=H(c,r); if(h>mh){ mh=h; mi=r*N+c; } }
-    const sr=(mi/N)|0, sc=mi-sr*N, sx=(sc+0.5)/N*5.6-2.8, sz0=2.8-(sr+0.5)/N*5.6, MP=900, all=new Float32Array(arr.length+MP*6);
+    const sr=(mi/N)|0, sc=mi-sr*N, sx=(sc+0.5)/N*5.6-2.8, sz0=2.8-(sr+0.5)/N*5.6, MP=1500, all=new Float32Array(arr.length+MP*6);
     all.set(arr);
     for(let m=0;m<MP;m++){ const sd=rnd();
-      all.set([sx+0.02+(rnd()-0.5)*0.03, mh-0.015-rnd()*0.03, sz0-0.005+(rnd()-0.5)*0.04, sd, 0.026+0.020*rnd(), -1],arr.length+m*6); }
+      all.set([sx+0.02+(rnd()-0.5)*0.03, mh-0.015-rnd()*0.03, sz0-0.005+(rnd()-0.5)*0.04, sd, 0.015+0.012*rnd(), -1],arr.length+m*6); }
     driftBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,driftBuf); gl.bufferData(gl.ARRAY_BUFFER,all,gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER,buf); driftN=M*T+MP;
   }
@@ -2236,7 +2236,7 @@ window.PuliChar=function(gl,mainBuf){
       gl.enableVertexAttribArray(lP); gl.vertexAttribPointer(lP,3,gl.FLOAT,false,24,0);
       gl.enableVertexAttribArray(lR); gl.vertexAttribPointer(lR,3,gl.FLOAT,false,24,12);
       gl.uniform3f(UP.uOff,mountX,0,zM); gl.uniform1f(UP.uMK,MK); gl.uniform1f(UP.uTime,simT); gl.uniform1f(UP.uCamY,camY); gl.uniform1f(UP.uPitch,pitch);
-      gl.uniform1f(UP.uAsp,cv.width/cv.height); gl.uniform1f(UP.uMaxPt,maxPt); gl.uniform1f(UP.uPx,1.25*cv.height); gl.uniform1f(UP.uA,0.55*mountW*hiA);
+      gl.uniform1f(UP.uAsp,cv.width/cv.height); gl.uniform1f(UP.uMaxPt,maxPt); gl.uniform1f(UP.uPx,1.25*cv.height); gl.uniform1f(UP.uA,0.40*mountW*hiA);
       gl.uniform3f(UP.uCol,mix(1.0,0.62,night),mix(0.95,0.68,night),mix(0.88,0.82,night));
       gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,dst.tex); gl.uniform1i(UP.uScene,2); gl.uniform2f(UP.uRes,cv.width,cv.height); gl.activeTexture(gl.TEXTURE0);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
