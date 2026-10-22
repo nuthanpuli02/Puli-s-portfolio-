@@ -14,11 +14,13 @@ export default function ThemeSwitch({ theme, onToggle }) {
       <span className="dn-switch__track" aria-hidden="true">
         <span className="dn-switch__sky dn-switch__sky--day" />
         <span className="dn-switch__sky dn-switch__sky--night" />
-        <span className="dn-switch__rings" />
+        <span className="dn-switch__rings dn-switch__rings--day" />
+        <span className="dn-switch__rings dn-switch__rings--night" />
         <span className="dn-switch__stars">
           <i className="s1" /><i className="s2" /><i className="s3" />
-          <b style={{ left: '12%', top: '46%' }} /><b style={{ left: '30%', top: '30%' }} /><b style={{ left: '46%', top: '60%' }} />
-          <b style={{ left: '22%', top: '74%' }} /><b style={{ left: '52%', top: '36%' }} />
+          <b style={{ left: '9%', top: '52%' }} /><b style={{ left: '35%', top: '54%' }} /><b style={{ left: '43%', top: '24%' }} />
+          <b style={{ left: '54%', top: '54%' }} /><b style={{ left: '22%', top: '22%' }} />
+          <u style={{ left: '27%', top: '76%' }} /><u style={{ left: '47%', top: '40%' }} />
         </span>
         <span className="dn-switch__clouds"><span className="c-back" /><span className="c-front" /></span>
         <span className="dn-switch__knob">

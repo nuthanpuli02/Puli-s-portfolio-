@@ -26,6 +26,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: hero smaller, smoke lower and wispier, night switch redone, badge in the corner
+- Puli: everything too big (name, ridge, the role line, the switch); clouds and smoke looked like two separate things, sat too high and covered the ridge; the night side of the switch didn't match his reference; badge to the bottom-right corner.
+- Sizes: NUTHAN clamp(58px, 11.5vw, 178px) (phone 17vw); role line 14–19 px; ridge 86% of the width (max 1500 px), in a wrapper (`.hero__ridges`) whose mask fades the photo's own left/right edges and its base, so it floats without hard edges; it starts at 9% so the peaks still cover the bottom of "HAN". Switch 84×36 (phone 72×31).
+- Smoke: one new wispy texture (`src/assets/smoke.png`, domain-warped, tileable) used for a soft base plus three copies that rise and fade in turn (18 s loop, staggered), height 24vh (phone 20vh). The separate round puffs are gone.
+- Night switch: flat dark sky with stepped grey rings that get lighter toward the moon (right), 4-point sparkles, dots and ringed dots, flat moon #D3D8DF with three #A3AEC2 craters, shadow falling left. Day rings now stay on the left with the sun.
+- Badge: bottom-right corner (22 px from the bottom; slightly smaller on phones), 116 px.
+
 ### 2026-10-22: hero tweaks (layout, smoke, switch)
 - Puli: "Portfolio" up on the header line; name higher; ridge higher with part of the name behind it for depth; badge text "PSST ✦ THERE'S A GAME HIDDEN DOWN HERE ✦"; smoke that rises instead of sliding sideways; night clouds grey/white, not navy; a day/night switch like his Pinterest reference (Freepik, by "whyt": sun on a blue sky with rings and clouds / moon with craters on a dark sky with stars).
 - Done: header holds logo · PORTFOLIO · Contact; "Machine learning · Security · Web" moved above the name; layer order waves → name → ridge, the ridge starts at 11% (phone 12%), so the peaks cover the lower part of NUTHAN; badge text changed; smoke = a breathing mist bank plus 18 puffs (`src/assets/puff.png`) that rise, swell and fade; `--smoke` is #E6E7DE by day and moonlit grey #9EA2AE at night; `ThemeSwitch` redrawn in CSS in the reference's style (our own drawing, not the Freepik file).
