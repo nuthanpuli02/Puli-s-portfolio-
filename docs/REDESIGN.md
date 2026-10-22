@@ -62,8 +62,16 @@ Transitions between sections are designed last, once each section exists.
 9. Contact page restyle to the new system, if needed.
 10. Polish the game.
 
+## Decisions (2026-10-22, evening)
+
+- **Palette:** Puli's three sets: (1) midnight navy `#1B1E4A`, warm stone grey `#AFAEA2`, crimson red `#D21319`; (2) soft white `#E8E9DF`, sage green `#A9B887`, deep olive `#2E3D28`; (3) charcoal grey `#2A2A2A`, moonlit silver `#C0C0C0`, signal red `#E10600`. Proposed mapping (to confirm): light mode = soft white ground, deep olive text, sage and warm stone as secondary tones, crimson as the accent; dark mode = midnight navy ground with charcoal surfaces, moonlit silver text, signal red as the accent. One red accent across both modes.
+- **Hero:** built from Puli's demo in `C:\Users\Vidhya Harini\Desktop\test port` (React + Vite + Tailwind template "Lithos": full-screen photo that zooms in on load, a second photo revealed under a soft spotlight that follows the cursor, a two-line serif/sans headline, two short paragraphs, a pill button, a glass nav pill). To be rebuilt as plain HTML/CSS/JS in the site (no framework), with light and dark versions. Its two photos are hosted on images.higgs.ai, which neither the cloud workspace nor Puli's device shell can reach; Puli to save them into the folder.
+  - Speed note: the demo redraws a full-screen canvas and encodes it with `toDataURL` on every frame, plus a React re-render per frame; that alone can make the page stutter. The rebuild moves a CSS radial-gradient mask with CSS variables instead.
+  - Phones have no cursor: the spotlight follows the finger while touching and otherwise drifts slowly on its own.
+- **Game lives:** start with 3 lives (no birds).
+- **My work:** vertical scrolling drives a horizontal track: the section pins to the screen and its cards move right to left as the visitor scrolls down, then the page continues.
+
 ## Open questions for Puli
 
-- Palette: a direction to start from (for example "summit": deep ink, warm snow white, granite grey, gold accent / violet at night), or references.
-- Hero: does it keep the mountain/sky theme (it leads into the clouds), or something else?
-- Game lives without birds: fixed 3 lives, or another way to earn them.
+- Confirm the palette mapping above.
+- The two hero photos from the demo (and what the light and dark versions of the scene should be).
