@@ -14,7 +14,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added 2026-10-22 (see Log); waiting for his verdict. His verdict on the untextured version: "smooth but still not how I wanted".
+- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added, then reframed as the hero with golden hour, ridges, the title overlay and wind-blown snow (2026-10-22, see Log); waiting for his verdict on a laptop and his phone. His verdict on the untextured version: "smooth but still not how I wanted".
 - Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - The photographic day intro (photo cut-out, giant "BEYOND", frosted card, 01–04 index, altitude readout) was reverted on 2026-10-21 at Puli's request. It is kept in git: commit `5a0617b` (branch `claude/eager-lovelace-ub440d`) and the merge `78fa3cc`; the frosted card and labels could be brought back on top of the 3D mountain if he asks.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
@@ -23,6 +23,16 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-22: Kailash as the hero: reframed, golden hour, ridges, title overlay, wind-blown snow
+- Puli sent his references again (misty monochrome, SEPTEMBER, Notion mock, WILDLIFE, MOUNTAIN MAN), chose golden hour, and asked for wind that blows snow off the summit and cliffs.
+- Framing: the mountain is centred and scaled ×1.36 (new uniform `uMK`; both shaders use `HM_SPAN`/`SPAN` as `3.30/3.35*uMK`, and `fsM` keeps rock detail in the mountain's own units). Depth `zM` = 8 on a laptop (the cloud deck covers its base a quarter of the way up), pushed back on narrow screens until it fits 95% of the width. Summit about a third of the way down in the opening view.
+- Golden hour by day: sun low from the front-left (`(-0.66,0.27,-0.70)`, same vector for clouds and mountain), warm horizon to blue zenith sky with a glow on the sun's side (the same sky in pass 1 and pass 2), warm cloud lit/shadow/haze colours, warmer sun and bounce on the mountain; low haze near the cloud deck takes the deck's colour so gaps read as mist.
+- Distant ranges: three hazy ridgelines at 26/40/58 units in pass 1 (left out where the sharp mountain is drawn), lower straight behind Kailash.
+- Title and overlay ported from the reverted photo intro (`5a0617b`) onto the 3D scene, in both themes: the text plane (depth 19, behind the mountain, covered by clouds and the mountain) now shows a giant "BEYOND" in Six Caps, capitals from 11% to 36% of the screen (narrowed to 94% width), rising from behind the peak during the intro. Overlay `#hud`: kicker, coordinates, altitude readout, summit marker (projected from the 3D summit), "the clouds" on the near cloud deck, glass card (darker glass at night), 01–04 index. The old "BEYOND the CLOUDS" lockup and the "Scroll down" note are gone.
+- Wind-blown snow (pass 1, so it animates every frame while the sharp mountain stays cached): `spindrift()` = a thin plume streaming east off the summit plus wisps on the lee side of high crests (terrain upwind higher than here), streaky noise travelling with the wind, gusts from `gust()`; `marchSnow()` marches 14 steps through a box around the upper mountain and is laid into the cloud march at its depth, so clouds in front cover it and it covers the mountain.
+- Headless shows Arial for Six Caps (Google Fonts is blocked here); in a browser the word is tall and condensed.
+- Not checked: the snow in motion (headless runs at well under 1 fps), and phone speed.
 
 ### 2026-10-22: Poly Haven rock and snow on the 3D mountain
 - Puli downloaded the CC0 Poly Haven maps (2K JPG) to his computer: Cliff Side (diffuse, normal GL, rough) and Snow 02 (diffuse, normal GL, rough). Poly Haven's download host is blocked from the cloud session.

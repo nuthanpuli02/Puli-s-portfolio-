@@ -11,7 +11,7 @@ This is Nuthan Puli's interactive portfolio. Write his name as "Puli" in convers
 
 The main page is one continuous scroll that a single camera follows:
 
-1. Mt. Kailash intro above the clouds ("Beyond the clouds").
+1. Mt. Kailash intro above the clouds: the 3D mountain centred at golden hour (moonlit at night) with snow blowing off the summit and crests, a giant "BEYOND" behind the summit, and a glass card, labels and a 01–04 index (`#hud`).
 2. Into the clouds: "Puli's Portfolio" and the short intro.
 3. Below the clouds: the Selected Work section (HTML over the sky).
 4. Only after Selected Work has scrolled fully off-screen, the jetpack malfunctions.
