@@ -26,6 +26,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: v2 foundations and section 1 (hero)
+- Palette agreed: light mode = moonlit silver `#C0C0C0` ground, charcoal `#2A2A2A` text, crimson `#D21319` accent; dark mode = midnight navy ground, soft white `#E8E9DF` text, signal red `#E10600` accent; sage/olive as small highlights. All in `v2/styles/tokens.css` as CSS variables, with the button set (`.btn-primary`, `.btn-secondary`, `.btn-text`, `.btn-icon`; 44 px touch targets, hover/press/focus/disabled). Fonts: Playfair Display italic + Inter (from Puli's demo).
+- Hero built from Puli's demo ("Lithos", React/Vite/Tailwind, in his `Desktop\test port` folder) as plain HTML/CSS/JS in `v2/index.html`: bare ridge with red-lit edges; a soft spotlight reveals the same ridge grown over with moss and flowers. The spotlight follows the cursor or finger and drifts along the ridge on its own when idle; only two CSS variables change per frame (the demo re-encoded a full-screen canvas with `toDataURL` every frame plus a React re-render). Headline "Look beneath / the surface", intro text on glass panels, "See my work" + "Get in touch", glass nav pill, theme button (remembered as `puli-theme`, passed to the contact page as `?theme=day|night`), phone menu sheet.
+- Images: Puli's two demo photos (he says they come from an open-source link he downloaded from; the exact source and licence are still to record). Cut out of their black background (`v2/assets/ridge-stone*.webp`, `ridge-bloom*.webp`, 1920 and 1080 wide, 73–263 KB), with the orange rim light pulled toward the palette's red.
+- Checked headless at 1280×800 and 412×915, light and dark. A tiny notch is left at the ridge's right edge in light mode.
+- Next: Puli's review; then section 2 (into the clouds).
+
 ### 2026-10-22: redesign agreed (v2)
 - Puli: better, but still not good enough, and the page lags on load on his PC and phone. He decided to redesign the whole concept.
 - Plan in `docs/REDESIGN.md`: keep the into-the-clouds reveal, the game and its assets, and the contact page; drop the current landing page, the 3D mountain and clouds, the current Selected Work section, the sky birds and the jetpack flight. New design system first (palette, type, custom buttons), then sections built one by one (1 hero, 2 into the clouds, 3 my work with the contact call-to-action, 4 contact page as is, 5 game teaser with Puli standing by the text and falling through a hole into the forest), then transitions.

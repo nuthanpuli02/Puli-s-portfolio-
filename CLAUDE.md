@@ -24,7 +24,8 @@ The contact page (`contact.html`) is a separate page: a photographic jungle with
 
 | Path | What it is | How it's edited |
 |---|---|---|
-| `index.html` | Main page: WebGL1 ray-marched clouds and mountain, Selected Work, and an inlined copy of `src/puli3d.js` | Edit HTML/CSS/scene code directly. For the character, forest or game, edit `src/puli3d.js`, then run `python3 tools/inline_puli3d.py` |
+| `v2/` | The redesign (see `docs/REDESIGN.md`), built section by section in plain HTML/CSS/JS: `v2/index.html` (section 1, hero, so far), `v2/styles/tokens.css` (palette, type, spacing, motion, buttons for every section), `v2/assets/` (hero ridge cut-outs). Live at `/v2/` on GitHub Pages until it replaces the old page | Edit directly |
+| `index.html` | Main page (old v1, to be replaced by `v2/`): WebGL1 ray-marched clouds and mountain, Selected Work, and an inlined copy of `src/puli3d.js` | Edit HTML/CSS/scene code directly. For the character, forest or game, edit `src/puli3d.js`, then run `python3 tools/inline_puli3d.py` |
 | `src/puli3d.js` | Voxel Puli (built from the pixel character sheet), birds and laser, moss forest, fall choreography, runner game | Source of truth for that code |
 | `contact.html` | Built contact page | Never edit by hand; build it from the source |
 | `src/contact.src.html` | Contact page source, with `__IMPORTMAP__`, `__FISH_YAW__` and `__BIRD_YAW__` placeholders | Edit this, then run `python3 tools/build_contact.py` (writes `contact.html`); `python3 tools/build_contact.py local` writes `contact.test.html` that loads three.js from `./node_modules` for offline tests |
