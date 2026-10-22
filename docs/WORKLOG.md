@@ -12,6 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
+- **Section 2 (into the clouds), 2026-10-23:** first version live; waiting for Puli's feedback (speed/length of the scroll, cloud look by day, title style). Copy to be rewritten in the final review.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
@@ -25,6 +26,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-23: section 2, into the clouds (first version)
+Built `site/src/sections/Clouds.jsx` (+ styles in app.css under "section 2"). Text reused from the old page (Puli will edit all copy in the final review): "Puli's Portfolio" (Playfair italic + Inter 900 caps; stacked on phones) and the two intro lines. How it works: the section is 380vh tall with a sticky 100vh stage; scroll progress p (0→1) moves five cloud layers up past the camera (2 far: darker, slower; 3 near: lighter, faster) plus a slow sideways drift; the stage starts in `--smoke` (seamless with the hero's smoke), darkens to `--cloud-in`, the title fades in at p .25–.37 and out at .62–.72, then a tall exit cloud covers the screen; while it covers, the scene behind is swapped for `--bg`, and its billowy underside rises to reveal section 3's plain background. The exit cloud's height is sized per screen so its solid middle always covers the swap. Only transform/opacity change per frame; the loop runs only while the section is on screen; reduced motion = no drift. Cloud shape is one generated texture (`site/src/assets/cloudbank.webp` + `-flip`, from `tools/gen_cloudbank.py`), used as a CSS mask for the top and bottom edges with a solid middle; each cloud is shaded (lit top, darker underside) with new tokens `--cloud-in`, `--cloud-far(-hi/-lo)`, `--cloud-near(-hi/-lo)` in tokens.css. Section 3 placeholder (`#work`) now sits on `--bg`. Waiting for Puli's verdict.
 
 ### 2026-10-23: "PULI" beside the tiger logo
 Puli asked for his name next to the logo. `.logo__word` in the header link: Inter 900, 21 px (17 px on phones), 0.06em tracking, in `--text`. Checked at 1280, 412 and 360 px wide; on 360 px it still clears the centred "PORTFOLIO". Next: section 2 (into the clouds).

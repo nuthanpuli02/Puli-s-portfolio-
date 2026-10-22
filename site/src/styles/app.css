@@ -117,8 +117,38 @@ html{scroll-behavior:smooth}
   70%{opacity:.45}
   100%{transform:translateY(-16%) scaleY(1.15);opacity:0}}
 
-.next-placeholder{min-height:70vh;display:grid;place-items:center;background:var(--smoke);color:#2A2A2A;font:500 12px/1 var(--font-sans);letter-spacing:.24em;text-transform:uppercase;
+.next-placeholder{min-height:70vh;display:grid;place-items:center;background:var(--bg);color:var(--text-soft);font:500 12px/1 var(--font-sans);letter-spacing:.24em;text-transform:uppercase;
   transition:background-color var(--t-med) var(--ease-out)}
+
+/* ===== section 2: into the clouds ===== */
+/* a tall section whose stage stays pinned while the page scrolls; Clouds.jsx moves the layers */
+.clouds{position:relative;height:380vh;background:var(--bg)}
+.clouds__stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;isolation:isolate;background:var(--smoke);
+  transition:background-color var(--t-med) var(--ease-out)}
+.clouds__deep,.clouds__floor{position:absolute;inset:0;pointer-events:none}
+.clouds__deep{background:var(--cloud-in);opacity:0}
+.clouds__floor{background:var(--bg);opacity:0}
+/* one cloud = a billowy top edge, a solid middle and a billowy bottom edge (the same texture, flipped) */
+.cloud{--edge:clamp(170px,26vw,340px);position:absolute;left:-14%;width:128%;top:0;height:calc(var(--h) * 100lvh);pointer-events:none;
+  transform:translate3d(0,100lvh,0);will-change:transform;
+  --hi:var(--cloud-near-hi);--c:var(--cloud-near);--lo:var(--cloud-near-lo);
+  background:linear-gradient(180deg,var(--hi) 0,var(--c) calc(var(--edge) * 1.3),var(--c) calc(100% - var(--edge) * 1.2),var(--lo) 100%);
+  -webkit-mask-image:url(../assets/cloudbank.webp),linear-gradient(#000,#000),url(../assets/cloudbank-flip.webp);
+          mask-image:url(../assets/cloudbank.webp),linear-gradient(#000,#000),url(../assets/cloudbank-flip.webp);
+  -webkit-mask-size:auto var(--edge),100% calc(100% - 2 * var(--edge) + 4px),auto var(--edge);
+          mask-size:auto var(--edge),100% calc(100% - 2 * var(--edge) + 4px),auto var(--edge);
+  -webkit-mask-position:var(--mx) 0,0 calc(var(--edge) - 2px),calc(var(--mx) - 400px) 100%;
+          mask-position:var(--mx) 0,0 calc(var(--edge) - 2px),calc(var(--mx) - 400px) 100%;
+  -webkit-mask-repeat:repeat-x,no-repeat,repeat-x;mask-repeat:repeat-x,no-repeat,repeat-x}
+.cloud--far{--hi:var(--cloud-far-hi);--c:var(--cloud-far);--lo:var(--cloud-far-lo);opacity:.92}
+.cloud--near{opacity:.94}
+
+.clouds__copy{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  padding:0 var(--gutter);text-align:center;color:var(--text);opacity:0;will-change:transform,opacity}
+.clouds__title{margin:0 0 clamp(18px,2.6vw,30px);line-height:.95;font-weight:400;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;column-gap:clamp(12px,1.5vw,26px)}
+.clouds__script{font:italic 400 clamp(54px,8.4vw,128px)/1 var(--font-display);letter-spacing:-.01em}
+.clouds__caps{font:900 clamp(42px,6.6vw,100px)/1 var(--font-sans);text-transform:uppercase;letter-spacing:-.02em}
+.clouds__copy p{margin:0 0 12px;max-width:46ch;font:400 clamp(16px,1.35vw,19px)/1.65 var(--font-sans);color:var(--text)}
 
 /* ===== phones ===== */
 @media (max-width:760px){
@@ -140,6 +170,9 @@ html{scroll-behavior:smooth}
   .hero__badge{right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
   .hero__badge .circular-text{transform:scale(.86);transform-origin:100% 100%}
   .hero__smoke{height:34vh}
+  .clouds__title{flex-direction:column;align-items:center;row-gap:2px}
+  .clouds__caps{font-size:13vw}
+  .clouds__script{font-size:15vw}
 }
 @media (prefers-reduced-motion: reduce){ .hero__ridge{animation:none} .hero__smoke-rise{animation:none;opacity:.5;transform:none}
   .hero__role,.hero__badge,.site-header__title{animation:none;opacity:1} }

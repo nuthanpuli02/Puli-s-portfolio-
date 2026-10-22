@@ -1,5 +1,6 @@
 import Header from './components/Header.jsx';
 import Hero from './sections/Hero.jsx';
+import Clouds from './sections/Clouds.jsx';
 import { useTheme } from './theme.js';
 import './palettes.js'; // saved palettes; only used for ?day=/&night= previews
 
@@ -10,9 +11,9 @@ export default function App() {
       <Header theme={theme} onToggleTheme={toggleTheme} />
       <main>
         <Hero theme={theme} />
-        {/* Section 2 (into the clouds) is next; this placeholder is the smoke the hero hands over to */}
-        <section className="next-placeholder" id="about" aria-label="Into the clouds (coming next)">
-          <p>Section 2 · Into the clouds · coming next</p>
+        <Clouds />
+        <section className="next-placeholder" id="work" aria-label="My work (coming next)">
+          <p>Section 3 · My work · coming next</p>
         </section>
         <section className="next-placeholder" id="game" aria-label="Game (coming later)">
           <p>Game teaser · coming later</p>
