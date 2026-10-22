@@ -529,7 +529,7 @@ float spindrift(vec3 p){
   }
   // crest wisps: snow just above the terrain on the lee side of a high edge (the terrain upwind is higher)
   float hn=(p.y-HM_Y0)/HM_SPAN;
-  if(hn>0.55){
+  if(false){ // crest wisps now come from the spindrift particles (pass 2b)
     float hu=hm(p.xz-w.xz*0.10*uMK), h0=hm(p.xz);
     float lee=smoothstep(0.01,0.06,(hu-h0)/uMK)*smoothstep(0.10,0.0,(p.y-hu)/uMK)*smoothstep(-0.03,0.01,(p.y-hu)/uMK);
     d=max(d,lee*smoothstep(0.55,0.75,hn)*gust(2.0+floor(p.x*3.0))*0.8);
@@ -540,8 +540,8 @@ float spindrift(vec3 p){
 // the depth of the snow, so the cloud march can lay it in at the right place
 vec4 marchSnow(vec3 ro, vec3 rd, vec3 sun, float tmax, out float tS){
   tS=1e5;
-  vec3 bmin=vec3(uMount.x-uMount.z*0.55, HM_Y0+HM_SPAN*0.50, uMount.y-uMount.z*0.6);
-  vec3 bmax=vec3(uSummit.x+1.6*uMK, uSummit.y+0.45*uMK, uMount.y+uMount.z*0.6);
+  vec3 bmin=uSummit-vec3(0.12,0.40,0.60)*uMK;   // just the summit plume now
+  vec3 bmax=uSummit+vec3(1.60,0.30,0.60)*uMK;
   vec3 inv=1.0/rd; vec3 t0=(bmin-ro)*inv, t1=(bmax-ro)*inv; vec3 tl=min(t0,t1), th=max(t0,t1);
   float tn=max(max(tl.x,tl.y),max(tl.z,0.0)), tf=min(min(min(th.x,th.y),th.z),tmax);
   if(tn>=tf) return vec4(0.0);
@@ -762,31 +762,32 @@ void main(){
   vec2 sTn=sT.xy*2.0-1.0;
   vec3 ns=normalize(n+vec3(sTn.x,0.0,sTn.y)*0.35);
   float bed=noise(vec3(q.x*3.0,yb*150.0,q.z*3.0));
-  // snow: baked cover, broken up by the rock's own relief (snow sits in its hollows and on its ledges), shed from anything too steep
+  // snow: Kailash carries a lot of it. Baked cover plus a bias, broken up in broad patches (not salt-and-pepper),
+  // gathering on anything facing up in the rock's relief; it plasters even steep faces up high, and the dome is white
   float sm=texture2D(uS,muv).r;
-  float brk=fbm(q*38.0+vec3(3.0));
+  float brk=fbm(q*9.0+vec3(3.0)), brk2=fbm(q*26.0+vec3(8.0));
   float rl=dot(ra,vec3(0.3,0.5,0.2)); // the scan's brightness: lit ledge tops are bright, cracks dark
-  float snow=smoothstep(0.30,0.52,sm+(brk-0.5)*0.45+(nd.y-n.y)*0.9+(bed-0.5)*0.25*(1.0-sm));
-  snow*=smoothstep(0.08,0.32,nd.y+0.35*sm);
-  // high up nearly everything that isn't sheer holds snow; the dome is white
-  snow=max(snow,smoothstep(0.70,0.86,hn+(brk-0.5)*0.10+(bed-0.5)*0.06)*smoothstep(0.05,0.35,nd.y));
-  // rock: the scan's colour pulled from orange sandstone toward Kailash's dark brown-grey conglomerate,
-  // keeping its contrast; a little variation bed to bed
+  float hiF=smoothstep(0.40,0.80,hn);
+  float snow=smoothstep(0.22,0.40,sm*1.15+0.10+hiF*0.25+(brk-0.5)*0.45+(brk2-0.5)*0.12+(nd.y-n.y)*0.8+(bed-0.5)*0.15);
+  snow*=smoothstep(-0.10+0.25*(1.0-hiF),0.20+0.25*(1.0-hiF),nd.y+0.45*sm);
+  snow=max(snow,smoothstep(0.62,0.80,hn+(brk-0.5)*0.12)*smoothstep(-0.05,0.30,nd.y));
+  // rock: dark grey-brown conglomerate; the scan gives the grain and the light/dark structure, little of its orange
   float layer=noise(vec3(q.x*0.8,yb*42.0,q.z*0.8));
-  vec3 rock=mix(vec3(rl),ra,0.22)*vec3(0.84,0.80,0.78)*mix(0.60,1.0,layer);
-  rock=pow(rock/0.45,vec3(1.5))*0.50; // more of the scan's light/dark contrast
-  rock=mix(rock,rock*vec3(1.18,0.92,0.80),smoothstep(0.62,0.80,fbm(q*6.0+vec3(5.0)))*0.5);
+  vec3 rock=mix(vec3(rl),ra,0.14)*vec3(0.82,0.79,0.77)*mix(0.62,1.0,layer);
+  rock=pow(rock/0.45,vec3(1.45))*0.46;
   rock*=0.55+0.45*cav;
-  vec3 snowA=vec3(0.93,0.95,0.98)*(0.80+0.20*sT.b/0.80)*(0.88+0.12*cav);
+  // snow: near-white, its brightness varying gently with the scan's drifts; thin snow lets the rock show through
+  vec3 snowA=vec3(0.92,0.94,0.97)*(0.86+0.14*sT.b/0.80)*(0.90+0.10*cav);
+  snowA=mix(rock*1.6+0.25,snowA,smoothstep(0.0,0.6,snow));
   rock=mix(rock,rock*vec3(0.32,0.36,0.46),uNight*0.7);
   vec3 alb=mix(rock,snowA,snow);
-  vec3 N=normalize(mix(nd,ns,snow));
+  vec3 N=normalize(mix(nd,ns,snow*0.45)); // snow softens the rock's relief but keeps its ribs and flutings
   // light: low golden-hour sun from the right (south-east), moon at night
   vec3 L=normalize(mix(vec3(-0.66,0.27,-0.70),vec3(0.50,0.55,-0.65),uNight)); // same sun as the clouds
   float sh=shadow(p+n*0.004,L);
   float ndl=max(dot(N,L),0.0);
   float wrap=snow*max(dot(N,L)+0.35,0.0)/1.35*0.25; // light diffusing through the snowpack softens the terminator
-  vec3 sunc=mix(vec3(1.85,1.28,0.78),vec3(0.42,0.50,0.75),uNight);
+  vec3 sunc=mix(vec3(1.80,1.42,1.06),vec3(0.42,0.50,0.75),uNight);
   vec3 skyc=mix(vec3(0.26,0.36,0.56),vec3(0.035,0.055,0.11),uNight);
   vec3 cloudc=mix(vec3(0.90,0.80,0.70),vec3(0.06,0.08,0.13),uNight); // bounce from the sunlit cloud deck below
   float occ=cav*cav*mix(0.6+0.4*smoothstep(0.1,0.5,rl),1.0,snow); // the scan's dark cracks get less sky
@@ -796,10 +797,10 @@ void main(){
   // specular from roughness: the rock's own map, and snow that is matte except for wind-glazed icy patches
   vec3 hv=normalize(L-rd);
   float ice=smoothstep(0.62,0.75,fbm(q*14.0+vec3(11.0)))*snow;
-  float rough=mix(mix(rRough,0.85,snow),0.25,ice);
+  float rough=mix(mix(max(rRough,0.75),0.88,snow),0.22,ice);
   float gl2=(1.0-rough)*(1.0-rough), sp=mix(6.0,220.0,gl2);
   float fres=0.04+0.96*pow(1.0-max(dot(N,-rd),0.0),5.0);
-  c+=sunc*sh*pow(max(dot(N,hv),0.0),sp)*(sp+2.0)/8.0*fres*mix(0.25,1.0,snow)*0.35*ndl;
+  c+=sunc*sh*pow(max(dot(N,hv),0.0),sp)*(sp+2.0)/8.0*fres*mix(0.04,1.0,ice)*0.30*ndl;
   c+=sunc*snow*sh*pow(1.0-max(dot(N,-rd),0.0),5.0)*0.06;
   // atmosphere: distance haze plus denser haze low down, lit warmer toward the sun
   vec3 sun=normalize(mix(vec3(-0.66,0.27,-0.70),vec3(0.45,0.55,0.7),uNight));
@@ -812,6 +813,41 @@ void main(){
   c=c/(1.0+c*0.30)*1.22;
   c=mix(c,hazec,fog*0.85);
   gl_FragColor=vec4(pow(c,vec3(0.95)),1.0);
+}
+</script>
+<script id="vsP" type="x-shader">
+// spindrift particles: snow torn off Kailash's crests by the wind. Stateless: each particle's position is a function
+// of time. aP = its crest point (mountain-local, scale 1), aR = (seed, size, trail step 0..3).
+attribute vec3 aP; attribute vec3 aR;
+uniform vec3 uOff; uniform float uMK, uTime, uCamY, uPitch, uAsp, uPx, uA;
+varying float vA; varying vec2 vUv;
+float h1(float n){ return fract(sin(n*12.9898)*43758.5453); }
+void main(){
+  float sd=aR.x, life=1.8+1.6*h1(sd*3.1);
+  float age=fract(uTime/life+sd*7.13)-aR.z*0.007; // trail copies sit a little behind in time, so each grain draws a streak
+  float g=0.55+0.45*sin(uTime*0.55+sd*2.0)*sin(uTime*0.23+3.0*sd); // gusts, out of step along the ridge
+  vec3 W=normalize(vec3(0.97,0.06,-0.22)), S=normalize(cross(W,vec3(0.0,1.0,0.0)));
+  float run=(0.45+0.5*h1(sd*5.7))*g;
+  vec3 p=vec3(aP.x*uMK,-0.37+(aP.y+0.37)*uMK,aP.z*uMK);
+  p+=W*(age*0.55+age*age*0.30)*run*uMK;                          // carried downwind, speeding up
+  p.y+=(0.05*age-0.11*age*age)*uMK;                              // lifted off the edge, then sinking
+  p+=S*(h1(sd*9.3)-0.5)*0.10*age*uMK+vec3(0.0,sin(uTime*3.0+sd*40.0)*0.008*age*uMK,0.0); // spread and flutter
+  p+=uOff;
+  float z=max(p.z,0.5);
+  vec2 uv=vec2(1.25*p.x/z, 1.25*(p.y-uCamY)/z-uPitch);
+  gl_Position=vec4(uv.x*2.0/uAsp, uv.y*2.0, 0.0, 1.0);
+  float size=aR.y*uPx*uMK/z;
+  gl_PointSize=clamp(size*(1.0+age*1.8),1.0,40.0);
+  vA=uA*g*smoothstep(0.0,0.12,age)*(1.0-smoothstep(0.45,1.0,age))*(1.0-aR.z*0.14)*step(0.0,age)/max(1.0,size*0.25)*0.6;
+}
+</script>
+<script id="fsP" type="x-shader">
+precision mediump float;
+varying float vA; uniform vec3 uCol; uniform sampler2D uScene; uniform vec2 uRes;
+void main(){
+  vec2 d=gl_PointCoord-0.5; float a=exp(-dot(d,d)*14.0)*vA;
+  a*=texture2D(uScene,gl_FragCoord.xy/uRes).a; // clouds in front hide it (the scene pass's transmittance)
+  gl_FragColor=vec4(uCol*a,a);
 }
 </script>
 <script id="fs2" type="x-shader">
@@ -1915,8 +1951,38 @@ window.PuliChar=function(gl,mainBuf){
       out[2*(r*256+k)]=v>>8; out[2*(r*256+k)+1]=v&255; }
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,hmTex); gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE_ALPHA,256,256,0,gl.LUMINANCE_ALPHA,gl.UNSIGNED_BYTE,out);
+    buildDrift(d);
     gl.activeTexture(gl.TEXTURE0);
   }catch(e){} }
+  // spindrift: find the high edges with a drop on their downwind side, then give each particle one of them
+  const prP=gl.createProgram();
+  gl.attachShader(prP,sh(gl.VERTEX_SHADER,document.getElementById('vsP').textContent));
+  gl.attachShader(prP,sh(gl.FRAGMENT_SHADER,document.getElementById('fsP').textContent));
+  gl.linkProgram(prP);
+  const UP={}; for(const n of ['uOff','uMK','uTime','uCamY','uPitch','uAsp','uPx','uA','uCol','uScene','uRes']) UP[n]=gl.getUniformLocation(prP,n);
+  const lP=gl.getAttribLocation(prP,'aP'), lR=gl.getAttribLocation(prP,'aR');
+  let driftBuf=null, driftN=0;
+  function buildDrift(d){
+    const N=1024, H=(c,r)=>{ c=Math.max(0,Math.min(N-1,c|0)); r=Math.max(0,Math.min(N-1,r|0)); const i=(r*N+c)*4; return (d[i]*256+d[i+1])/65535*3.35-0.37; };
+    // wind in map coordinates: +x is east, map rows run north to south, so a wind toward -z points down the rows
+    const wx=0.975, wy=0.221, top=-0.37+3.35*0.83, pts=[];
+    for(let r=40;r<N-40;r+=6) for(let c=40;c<N-40;c+=6){
+      const h=H(c,r), hn=(h+0.37)/3.17; if(hn<0.52) continue;
+      const drop=h-H(c+wx*14,r+wy*14);                       // how far the ground falls away downwind
+      const rise=h-H(c-wx*14,r-wy*14);                       // upwind it should not be much higher (an edge, not a slope)
+      if(drop<0.035||rise<-0.02) continue;
+      pts.push([(c+0.5)/N*5.6-2.8, h, 2.8-(r+0.5)/N*5.6, drop*hn*hn]); }
+    if(!pts.length) return;
+    let tot=0; for(const q of pts){ tot+=q[3]; q[4]=tot; }
+    const M=1400, T=6, arr=new Float32Array(M*T*6); let k=0;
+    const rnd=(()=>{ let x=12345; return ()=>{ x=(x*1664525+1013904223)>>>0; return x/4294967296; }; })();
+    for(let m=0;m<M;m++){
+      const u=rnd()*tot; let lo=0, hi=pts.length-1; while(lo<hi){ const mid=(lo+hi)>>1; if(pts[mid][4]<u) lo=mid+1; else hi=mid; }
+      const q=pts[lo], sd=rnd(), sz=0.006+0.014*rnd()*rnd(), jx=(rnd()-0.5)*0.03, jz=(rnd()-0.5)*0.03;
+      for(let t=0;t<T;t++){ arr.set([q[0]+jx,q[1]+0.005,q[2]+jz,sd,sz,t],k); k+=6; } }
+    driftBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,driftBuf); gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf); driftN=M*T;
+  }
   const halton=(i,b)=>{ let f=1,r=0; while(i>0){ f/=b; r+=f*(i%b); i=Math.floor(i/b); } return r; };
   // name texture: red = sharp letters, green = soft halo that keeps it readable over white cloud
   const TW=2048, TH=1024, tex=gl.createTexture();
@@ -2114,6 +2180,20 @@ window.PuliChar=function(gl,mainBuf){
     gl.uniform1f(U2.uMtnA,mVis?mountW*hiA:0); gl.uniform1f(U2.uHiOn,mVis&&hiA>0?1:0);
     gl.enableVertexAttribArray(loc2); gl.vertexAttribPointer(loc2,2,gl.FLOAT,false,0,0);
     gl.drawArrays(gl.TRIANGLES,0,3);
+    // pass 2b: spindrift grains blowing off the crests, over the mountain, under the character
+    if(driftBuf&&mVis&&mountW*hiA>0.01){
+      gl.useProgram(prP); gl.bindBuffer(gl.ARRAY_BUFFER,driftBuf);
+      gl.enableVertexAttribArray(lP); gl.vertexAttribPointer(lP,3,gl.FLOAT,false,24,0);
+      gl.enableVertexAttribArray(lR); gl.vertexAttribPointer(lR,3,gl.FLOAT,false,24,12);
+      gl.uniform3f(UP.uOff,mountX,0,zM); gl.uniform1f(UP.uMK,MK); gl.uniform1f(UP.uTime,simT); gl.uniform1f(UP.uCamY,camY); gl.uniform1f(UP.uPitch,pitch);
+      gl.uniform1f(UP.uAsp,cv.width/cv.height); gl.uniform1f(UP.uPx,1.25*cv.height); gl.uniform1f(UP.uA,0.55*mountW*hiA);
+      gl.uniform3f(UP.uCol,mix(1.0,0.62,night),mix(0.95,0.68,night),mix(0.88,0.82,night));
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,dst.tex); gl.uniform1i(UP.uScene,2); gl.uniform2f(UP.uRes,cv.width,cv.height); gl.activeTexture(gl.TEXTURE0);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+      gl.drawArrays(gl.POINTS,0,driftN);
+      gl.disable(gl.BLEND); gl.disableVertexAttribArray(lP); gl.disableVertexAttribArray(lR); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+      gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0); // the full-screen passes share attribute 0
+    }
     }
     // pass 3: Puli, voxel character, lit like the scene
     if(PC){ try{ PC.draw({w:cv.width,h:cv.height,cssW:innerWidth,cssH:innerHeight,dt,night,camY,inside:sstep(1.15,0.82,camY)*sstep(-0.35,0.25,camY),ready:!introOn||k2>0.35,reduce,scrollY,maxY:document.documentElement.scrollHeight-innerHeight,pastWork,workBack}); }catch(err){ console.error(err); PC=null; } }

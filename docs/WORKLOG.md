@@ -24,6 +24,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: much more snow; spindrift as real grains
+- Puli: the blowing snow looked like a glow, not snow blowing off (the summit was fine); the mountain needs a lot more snow; still not realistic enough.
+- The glow was the crest wisps in the low-res cloud pass (at 0.32–0.5 resolution they can only be soft). They are switched off (`if(false)` in `spindrift()`); the summit plume stays, its march box now covers only the plume.
+- New spindrift particles (pass 2b, `vsP`/`fsP`): 1,400 grains × 6 trail copies (8,400 points), stateless (position from time and a seed). Spawn points are the high crests that drop away downwind, found from the baked height in `buildDrift()` when `kailash-h.webp` loads. Grains lift off the edge, speed up downwind, sink, spread and flutter, in gusts; trail copies 7 ms apart draw short streaks. Additive-premultiplied blend, hidden by clouds in front via the scene alpha. After drawing, attribute 0 is re-enabled (the full-screen passes rely on it; leaving it off turned the page black).
+- Snow: much more cover (baked cover ×1.15 + bias, more with height, broad patches instead of fine speckle, plastered onto steep faces up high, white dome from 62% height); thin snow lets the rock tone through; snow keeps 55% of the rock's relief so it shows ribs instead of smooth plastic.
+- Rock: almost no specular (it read as a wet sheen), greyer (14% of the scan's orange). Sunlight less yellow so snow reads white.
+- Not checked: the grains in motion and phone speed.
+
 ### 2026-10-22: Kailash as the hero: reframed, golden hour, ridges, title overlay, wind-blown snow
 - Puli sent his references again (misty monochrome, SEPTEMBER, Notion mock, WILDLIFE, MOUNTAIN MAN), chose golden hour, and asked for wind that blows snow off the summit and cliffs.
 - Framing: the mountain is centred and scaled ×1.36 (new uniform `uMK`; both shaders use `HM_SPAN`/`SPAN` as `3.30/3.35*uMK`, and `fsM` keeps rock detail in the mountain's own units). Depth `zM` = 8 on a laptop (the cloud deck covers its base a quarter of the way up), pushed back on narrow screens until it fits 95% of the width. Summit about a third of the way down in the opening view.
