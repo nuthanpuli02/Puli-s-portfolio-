@@ -24,6 +24,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: a lot more snow; summit banner from particles
+- Puli: add a lot more snow; the wind blowing snow off the peak looked odd (the volumetric plume read as a floating lens).
+- Snow: bigger bias (`sm*1.25+0.24`), more with height from 25% up, only the sheerest rock sheds it, the white upper cap starts at 55% height.
+- Summit banner: the volume plume in pass 1 is switched off (`snowP` is zero, `marchSnow` no longer called). Instead 900 particle puffs (`aR.z = -1` in the spindrift buffer) leave the lee of the summit (found from the baked height in `buildDrift`), stream downwind for 4.5–7 s, droop slightly, spread sideways, swirl in eddies and grow into a thinning veil. Each puff is a soft, ragged tuft (noise in the point sprite, `fsP`), not a round dot. Point size is capped by `ALIASED_POINT_SIZE_RANGE` (max 128).
+
 ### 2026-10-22: finer surface detail
 - Puli: "we need more detail".
 - `fsM`: fine relief below the height map's resolution (`microRelief`, three octaves of ridged noise over the ground plan, so on steep faces it runs down the fall line as gullies and ribs); it tilts the normal and darkens crevices (`microAO`, down to 0.78). A third, fine tiling of the Cliff Side scan (tiles of 0.085 units) adds cracks and pebbles to the rock colour and normal; a fine tiling of Snow 02 adds drifts and ripples.

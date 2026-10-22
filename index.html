@@ -597,7 +597,7 @@ void main(){
     if(!(tuv.x>-0.02&&tuv.x<1.02&&tuv.y>-0.02&&tuv.y<1.02)) textDone=true;
   }
   float Tf=(tp<tm)?1.0:0.0; bool gotTf=textDone, noText=textDone;
-  float tS; vec4 snowP=(uMount.w>0.01)?marchSnow(ro,rd,sun,tm,tS):vec4(0.0); bool snowDone=snowP.a<0.002;
+  float tS=1e5; vec4 snowP=vec4(0.0); bool snowDone=true; // the summit plume is now drawn as particles (pass 2b)
   snowP*=uMount.w;
   float t=0.02+0.08*fract(hash(vec3(gl_FragCoord.xy,1.0))+uFrame*0.6180339);
   for(int i=0;i<56;i++){
@@ -788,10 +788,10 @@ void main(){
   float sm=texture2D(uS,muv).r;
   float brk=fbm(q*9.0+vec3(3.0)), brk2=fbm(q*26.0+vec3(8.0));
   float rl=dot(ra,vec3(0.3,0.5,0.2)); // the scan's brightness: lit ledge tops are bright, cracks dark
-  float hiF=smoothstep(0.40,0.80,hn);
-  float snow=smoothstep(0.27,0.35,sm*1.15+0.10+hiF*0.25+(brk-0.5)*0.45+(brk2-0.5)*0.12+(nd.y-n.y)*0.8+(bed-0.5)*0.15);
-  snow*=smoothstep(-0.10+0.25*(1.0-hiF),0.20+0.25*(1.0-hiF),nd.y+0.45*sm);
-  snow=max(snow,smoothstep(0.62,0.80,hn+(brk-0.5)*0.12)*smoothstep(-0.05,0.30,nd.y));
+  float hiF=smoothstep(0.25,0.70,hn);
+  float snow=smoothstep(0.27,0.35,sm*1.25+0.24+hiF*0.30+(brk-0.5)*0.45+(brk2-0.5)*0.12+(nd.y-n.y)*0.8+(bed-0.5)*0.15);
+  snow*=smoothstep(-0.22+0.22*(1.0-hiF),0.08+0.22*(1.0-hiF),nd.y+0.50*sm); // only the sheerest rock sheds it
+  snow=max(snow,smoothstep(0.55,0.72,hn+(brk-0.5)*0.12)*smoothstep(-0.12,0.22,nd.y));
   // rock: dark grey-brown conglomerate; the scan gives the grain and the light/dark structure, little of its orange
   float layer=noise(vec3(q.x*0.8,yb*42.0,q.z*0.8));
   vec3 rock=mix(vec3(rl),ra,0.14)*vec3(0.82,0.79,0.77)*mix(0.62,1.0,layer);
@@ -842,12 +842,14 @@ void main(){
 // spindrift particles: snow torn off Kailash's crests by the wind. Stateless: each particle's position is a function
 // of time. aP = its crest point (mountain-local, scale 1), aR = (seed, size, trail step 0..3).
 attribute vec3 aP; attribute vec3 aR;
-uniform vec3 uOff; uniform float uMK, uTime, uCamY, uPitch, uAsp, uPx, uA;
-varying float vA; varying vec2 vUv;
+uniform vec3 uOff; uniform float uMK, uTime, uCamY, uPitch, uAsp, uPx, uA, uMaxPt;
+varying float vA, vSd, vPuff;
 float h1(float n){ return fract(sin(n*12.9898)*43758.5453); }
 void main(){
-  float sd=aR.x, life=1.8+1.6*h1(sd*3.1);
-  float age=fract(uTime/life+sd*7.13)-aR.z*0.007; // trail copies sit a little behind in time, so each grain draws a streak
+  float sd=aR.x, puff=step(aR.z,-0.5), tr=max(aR.z,0.0);
+  float life=mix(1.8+1.6*h1(sd*3.1),4.5+2.5*h1(sd*3.1),puff);
+  float age=fract(uTime/life+sd*7.13)-tr*0.007; // trail copies sit a little behind in time, so each grain draws a streak
+  vSd=sd; vPuff=puff;
   float g=0.55+0.45*sin(uTime*0.55+sd*2.0)*sin(uTime*0.23+3.0*sd); // gusts, out of step along the ridge
   vec3 W=normalize(vec3(0.97,0.06,-0.22)), S=normalize(cross(W,vec3(0.0,1.0,0.0)));
   float run=(0.45+0.5*h1(sd*5.7))*g;
@@ -855,20 +857,38 @@ void main(){
   p+=W*(age*0.55+age*age*0.30)*run*uMK;                          // carried downwind, speeding up
   p.y+=(0.05*age-0.11*age*age)*uMK;                              // lifted off the edge, then sinking
   p+=S*(h1(sd*9.3)-0.5)*0.10*age*uMK+vec3(0.0,sin(uTime*3.0+sd*40.0)*0.008*age*uMK,0.0); // spread and flutter
+  if(puff>0.5){
+    // summit banner: puffs leave the lee of the summit, stream downwind and spread into a long thinning veil
+    p=vec3(aP.x*uMK,-0.37+(aP.y+0.37)*uMK,aP.z*uMK);
+    float a2=age*(1.0+0.35*h1(sd*2.3));
+    p+=W*(0.03+a2*1.05+a2*a2*0.55)*uMK*(0.75+0.5*g);
+    p.y+=(0.04*a2-0.10*a2*a2+(h1(sd*4.1)-0.5)*0.10*a2)*uMK;
+    p+=S*(h1(sd*9.3)-0.5)*0.38*a2*uMK;
+    p+=vec3(sin(uTime*0.9+sd*31.0),sin(uTime*1.3+sd*17.0)*0.6,cos(uTime*0.7+sd*23.0))*0.035*a2*uMK; // eddies
+  }
   p+=uOff;
   float z=max(p.z,0.5);
   vec2 uv=vec2(1.25*p.x/z, 1.25*(p.y-uCamY)/z-uPitch);
   gl_Position=vec4(uv.x*2.0/uAsp, uv.y*2.0, 0.0, 1.0);
-  float size=aR.y*uPx*uMK/z;
-  gl_PointSize=clamp(size*(1.0+age*1.8),1.0,40.0);
-  vA=uA*g*smoothstep(0.0,0.12,age)*(1.0-smoothstep(0.45,1.0,age))*(1.0-aR.z*0.14)*step(0.0,age)/max(1.0,size*0.25)*0.6;
+  float size=aR.y*uPx*uMK/z*mix(1.0+age*1.8,1.0+age*6.0,puff);
+  gl_PointSize=clamp(size,1.0,uMaxPt);
+  float fade=smoothstep(0.0,mix(0.12,0.05,puff),age)*(1.0-smoothstep(mix(0.45,0.25,puff),1.0,age));
+  vA=uA*fade*step(0.0,age)*mix(g*(1.0-tr*0.14)/max(1.0,size*0.25)*0.6, (0.13+0.10*g)*pow(1.0-age,0.7), puff);
 }
 </script>
 <script id="fsP" type="x-shader">
 precision mediump float;
-varying float vA; uniform vec3 uCol; uniform sampler2D uScene; uniform vec2 uRes;
+varying float vA, vSd, vPuff; uniform vec3 uCol; uniform sampler2D uScene; uniform vec2 uRes;
+float hh(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+  return mix(mix(hh(i),hh(i+vec2(1,0)),f.x),mix(hh(i+vec2(0,1)),hh(i+vec2(1,1)),f.x),f.y); }
 void main(){
   vec2 d=gl_PointCoord-0.5; float a=exp(-dot(d,d)*14.0)*vA;
+  if(vPuff>0.5){ // a puff is a soft, ragged tuft, not a round dot
+    vec2 c=gl_PointCoord*3.0+vSd*37.0;
+    float n=vn(c)*0.65+vn(c*2.3)*0.35;
+    a=exp(-dot(d,d)*7.0)*smoothstep(0.30,0.75,n+0.25-length(d))*vA*1.6;
+  }
   a*=texture2D(uScene,gl_FragCoord.xy/uRes).a; // clouds in front hide it (the scene pass's transmittance)
   gl_FragColor=vec4(uCol*a,a);
 }
@@ -1982,9 +2002,10 @@ window.PuliChar=function(gl,mainBuf){
   gl.attachShader(prP,sh(gl.VERTEX_SHADER,document.getElementById('vsP').textContent));
   gl.attachShader(prP,sh(gl.FRAGMENT_SHADER,document.getElementById('fsP').textContent));
   gl.linkProgram(prP);
-  const UP={}; for(const n of ['uOff','uMK','uTime','uCamY','uPitch','uAsp','uPx','uA','uCol','uScene','uRes']) UP[n]=gl.getUniformLocation(prP,n);
+  const UP={}; for(const n of ['uOff','uMK','uTime','uCamY','uPitch','uAsp','uPx','uA','uCol','uScene','uRes','uMaxPt']) UP[n]=gl.getUniformLocation(prP,n);
   const lP=gl.getAttribLocation(prP,'aP'), lR=gl.getAttribLocation(prP,'aR');
   let driftBuf=null, driftN=0;
+  const maxPt=Math.min(128,(gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)||[1,64])[1]);
   function buildDrift(d){
     const N=1024, H=(c,r)=>{ c=Math.max(0,Math.min(N-1,c|0)); r=Math.max(0,Math.min(N-1,r|0)); const i=(r*N+c)*4; return (d[i]*256+d[i+1])/65535*3.35-0.37; };
     // wind in map coordinates: +x is east, map rows run north to south, so a wind toward -z points down the rows
@@ -2003,8 +2024,14 @@ window.PuliChar=function(gl,mainBuf){
       const u=rnd()*tot; let lo=0, hi=pts.length-1; while(lo<hi){ const mid=(lo+hi)>>1; if(pts[mid][4]<u) lo=mid+1; else hi=mid; }
       const q=pts[lo], sd=rnd(), sz=0.006+0.014*rnd()*rnd(), jx=(rnd()-0.5)*0.03, jz=(rnd()-0.5)*0.03;
       for(let t=0;t<T;t++){ arr.set([q[0]+jx,q[1]+0.005,q[2]+jz,sd,sz,t],k); k+=6; } }
-    driftBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,driftBuf); gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER,buf); driftN=M*T;
+    // summit banner: puffs from just downwind of the top
+    let mi=0, mh=-9; for(let r=0;r<N;r+=2) for(let c=0;c<N;c+=2){ const h=H(c,r); if(h>mh){ mh=h; mi=r*N+c; } }
+    const sr=(mi/N)|0, sc=mi-sr*N, sx=(sc+0.5)/N*5.6-2.8, sz0=2.8-(sr+0.5)/N*5.6, MP=900, all=new Float32Array(arr.length+MP*6);
+    all.set(arr);
+    for(let m=0;m<MP;m++){ const sd=rnd();
+      all.set([sx+0.02+(rnd()-0.5)*0.03, mh-0.015-rnd()*0.03, sz0-0.005+(rnd()-0.5)*0.04, sd, 0.026+0.020*rnd(), -1],arr.length+m*6); }
+    driftBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,driftBuf); gl.bufferData(gl.ARRAY_BUFFER,all,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf); driftN=M*T+MP;
   }
   const halton=(i,b)=>{ let f=1,r=0; while(i>0){ f/=b; r+=f*(i%b); i=Math.floor(i/b); } return r; };
   // name texture: red = sharp letters, green = soft halo that keeps it readable over white cloud
@@ -2209,7 +2236,7 @@ window.PuliChar=function(gl,mainBuf){
       gl.enableVertexAttribArray(lP); gl.vertexAttribPointer(lP,3,gl.FLOAT,false,24,0);
       gl.enableVertexAttribArray(lR); gl.vertexAttribPointer(lR,3,gl.FLOAT,false,24,12);
       gl.uniform3f(UP.uOff,mountX,0,zM); gl.uniform1f(UP.uMK,MK); gl.uniform1f(UP.uTime,simT); gl.uniform1f(UP.uCamY,camY); gl.uniform1f(UP.uPitch,pitch);
-      gl.uniform1f(UP.uAsp,cv.width/cv.height); gl.uniform1f(UP.uPx,1.25*cv.height); gl.uniform1f(UP.uA,0.55*mountW*hiA);
+      gl.uniform1f(UP.uAsp,cv.width/cv.height); gl.uniform1f(UP.uMaxPt,maxPt); gl.uniform1f(UP.uPx,1.25*cv.height); gl.uniform1f(UP.uA,0.55*mountW*hiA);
       gl.uniform3f(UP.uCol,mix(1.0,0.62,night),mix(0.95,0.68,night),mix(0.88,0.82,night));
       gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,dst.tex); gl.uniform1i(UP.uScene,2); gl.uniform2f(UP.uRes,cv.width,cv.height); gl.activeTexture(gl.TEXTURE0);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
