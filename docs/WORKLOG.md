@@ -14,7 +14,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 - **Phone check of the contact page:** the betta's rig has about 248 bones on its body mesh; check the night page stays smooth on Puli's Redmi (Brave, portrait). If it stutters, reduce `TAIL_RAYS`/`TAIL_SEGS` first. Tuning knobs for the betta are at the top of its section in `src/contact.src.html`.
 - Mixamo animations: six are now on voxel Puli (see Log, 2026-10-21). Not used yet: Idle, Falling To Landing, Hard Landing (could drive a landing after big game jumps). Elbows and knees now bend (2026-10-21).
-- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added, then reframed as the hero with golden hour, ridges, the title overlay and wind-blown snow (2026-10-22, see Log); he likes the detail and the blowing snow (2026-10-22). Next: cloud quality. His verdict on the untextured version: "smooth but still not how I wanted".
+- **Mt. Kailash, day and night (3D):** Puli chose to keep the mountain fully 3D, day and night, and add Poly Haven CC0 PBR textures (rock and snow: colour, normal, roughness), 2026-10-21. Textures added, then reframed as the hero with golden hour, ridges, the title overlay and wind-blown snow (2026-10-22, see Log); he likes the detail and the blowing snow (2026-10-22). Clouds reworked 2026-10-22 (billowy, better lit); waiting for his verdict. His verdict on the untextured version: "smooth but still not how I wanted".
 - Final quality pass: clouds, birds, vines and owls (proper models), rocky walls in the game's gaps, game physics feel, a proper fall animation for the gaps.
 - The photographic day intro (photo cut-out, giant "BEYOND", frosted card, 01–04 index, altitude readout) was reverted on 2026-10-21 at Puli's request. It is kept in git: commit `5a0617b` (branch `claude/eager-lovelace-ub440d`) and the merge `78fa3cc`; the frosted card and labels could be brought back on top of the 3D mountain if he asks.
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
@@ -23,6 +23,15 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-22: billowy, better-lit clouds
+- Puli chose a dense, billowy cloud sea (SEPTEMBER poster) over soft mist.
+- Shape (`density()`, upper deck): the cumulus envelope is eroded by `billow()` noise (|2n−1| over three octaves) at two scales plus a faint fine octave, gently at the base and more toward the tops (`er` 0.42→0.70 by height in the cloud), so the tops are rounded cauliflower puffs and the bases flatter. Threshold slope 5.5 (a steeper 7.5 turned noise into speckle).
+- Lighting (march loop): two-lobe Henyey-Greenstein phase computed once per pixel (bright silver lining toward the sun, softer back-glow), a multiple-scattering term (thick cloud glows inside), and a "powder" term that darkens thin edges and the creases between puffs; ambient by height.
+- Sampling: each sample sits at the same random fraction of its own step (jitter scales with the growing steps); while the camera moves the fraction is fixed (`uJitT` = 0) so the clouds don't shimmer; when still it changes every frame and the history blend averages it.
+- Sharpness: cloud resolution 0.6 (laptop) / 0.38 (phone), was 0.5 / 0.32; the adaptive ceiling 0.75 / 0.5. The pass-2 upscale filter samples at half-texel offsets (less smear).
+- Index labels got a stronger shadow (the brighter clouds made them hard to read).
+- Not checked: phone speed (the cloud pass now costs about 1.4× on the phone at the starting resolution; the adaptive scale lowers it if frames run long).
 
 ### 2026-10-22: blowing snow finer and fainter
 - Puli likes the detail and how the snow blows with the wind; asked for it finer and fainter. Next he wants to improve the clouds.
