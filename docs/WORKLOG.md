@@ -26,6 +26,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-22: hero tweaks (layout, smoke, switch)
+- Puli: "Portfolio" up on the header line; name higher; ridge higher with part of the name behind it for depth; badge text "PSST ✦ THERE'S A GAME HIDDEN DOWN HERE ✦"; smoke that rises instead of sliding sideways; night clouds grey/white, not navy; a day/night switch like his Pinterest reference (Freepik, by "whyt": sun on a blue sky with rings and clouds / moon with craters on a dark sky with stars).
+- Done: header holds logo · PORTFOLIO · Contact; "Machine learning · Security · Web" moved above the name; layer order waves → name → ridge, the ridge starts at 11% (phone 12%), so the peaks cover the lower part of NUTHAN; badge text changed; smoke = a breathing mist bank plus 18 puffs (`src/assets/puff.png`) that rise, swell and fade; `--smoke` is #E6E7DE by day and moonlit grey #9EA2AE at night; `ThemeSwitch` redrawn in CSS in the reference's style (our own drawing, not the Freepik file).
+- Logo: Puli is looking for a tiger logo; if none fits, we make a typographic tiger emblem in Figma.
+
 ### 2026-10-22: hero v2.1 in React with React Bits
 - Puli: NUTHAN in the centre (React Bits FoldText), the Waves background behind the ridge, a tiger logo drawn with his name top left, Contact top right with a custom day/night switch under the header, a smoky cloud at the bottom as the hand-over to section 2, and a CircularText badge inviting people to the game.
 - v2 is now a React + Vite app in `site/`, built into `v2/` (`npm run build`). React Bits components copied as source into `site/src/components/reactbits/` with their MIT + Commons Clause licence (use in a website is allowed; the components must not be sold or redistributed on their own); credited in the README.

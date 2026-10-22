@@ -9,6 +9,7 @@ export default function Header({ theme, onToggleTheme }) {
         <a className="logo" href="#top" aria-label="Nuthan Puli, home">
           <span className="logo__tiger" aria-hidden="true" dangerouslySetInnerHTML={{ __html: tigerSvg }} />
         </a>
+        <p className="site-header__title">Portfolio</p>
         <a className="btn btn-primary" href={contactHref(theme)}>Contact</a>
       </header>
       <div className="theme-switch-slot">

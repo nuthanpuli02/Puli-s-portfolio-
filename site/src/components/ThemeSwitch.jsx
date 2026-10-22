@@ -1,24 +1,29 @@
-// Day/night switch: a pill track with a sliding knob. By day the knob is a sun on a silver track;
-// by night it turns into a crescent moon on a navy track with a few stars.
+// Day/night switch, drawn in CSS: by day a sun on a blue sky with soft rings of light and clouds;
+// by night a cratered moon on a dark sky with rings and twinkling stars. The knob slides across and changes.
 export default function ThemeSwitch({ theme, onToggle }) {
   const dark = theme === 'dark';
   return (
     <button
       type="button"
-      className={`theme-switch${dark ? ' is-dark' : ''}`}
+      className={`dn-switch${dark ? ' is-night' : ''}`}
       role="switch"
       aria-checked={dark}
       aria-label="Night mode"
       onClick={onToggle}
     >
-      <span className="theme-switch__track" aria-hidden="true">
-        <span className="theme-switch__label theme-switch__label--day">Day</span>
-        <span className="theme-switch__label theme-switch__label--night">Night</span>
-        <span className="theme-switch__stars">
-          <i style={{ left: '22%', top: '30%' }} /><i style={{ left: '34%', top: '64%' }} /><i style={{ left: '14%', top: '58%' }} />
+      <span className="dn-switch__track" aria-hidden="true">
+        <span className="dn-switch__sky dn-switch__sky--day" />
+        <span className="dn-switch__sky dn-switch__sky--night" />
+        <span className="dn-switch__rings" />
+        <span className="dn-switch__stars">
+          <i className="s1" /><i className="s2" /><i className="s3" />
+          <b style={{ left: '12%', top: '46%' }} /><b style={{ left: '30%', top: '30%' }} /><b style={{ left: '46%', top: '60%' }} />
+          <b style={{ left: '22%', top: '74%' }} /><b style={{ left: '52%', top: '36%' }} />
         </span>
-        <span className="theme-switch__knob">
-          <span className="theme-switch__crater" />
+        <span className="dn-switch__clouds"><span className="c-back" /><span className="c-front" /></span>
+        <span className="dn-switch__knob">
+          <span className="dn-switch__sun" />
+          <span className="dn-switch__moon"><i /><i /><i /></span>
         </span>
       </span>
     </button>

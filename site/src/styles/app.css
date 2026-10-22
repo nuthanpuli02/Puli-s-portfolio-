@@ -1,100 +1,133 @@
 /* ===== shared ===== */
-:root{ --smoke:#E3E4DA; --header-h:76px; }
-:root[data-theme="dark"]{ --smoke:#2C3160; }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --smoke:#2C3160; } }
+/* smoke/cloud colour: soft white by day, moonlit grey at night */
+:root{ --smoke:#E6E7DE; --header-h:76px; }
+:root[data-theme="dark"]{ --smoke:#9EA2AE; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --smoke:#9EA2AE; } }
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
 
-/* ===== header ===== */
+/* ===== header: logo · PORTFOLIO · Contact on one line ===== */
 .site-header{position:fixed;inset:0 0 auto 0;z-index:30;height:calc(var(--header-h) + env(safe-area-inset-top,0px));
   display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) var(--gutter) 0;pointer-events:none}
 .site-header > *{pointer-events:auto}
+.site-header__title{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + var(--header-h) / 2);transform:translate(-50%,-50%);margin:0;
+  font:600 12px/1 var(--font-sans);letter-spacing:.34em;text-transform:uppercase;color:var(--text);pointer-events:none;
+  opacity:0;animation:fadeIn 1s var(--ease-out) .2s forwards}
+@keyframes fadeIn{to{opacity:1}}
 .logo{display:inline-flex;align-items:center;color:var(--text);border-radius:10px;min-height:44px}
 .logo:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .logo__tiger{display:block;width:50px;height:70px}
 .logo__tiger svg{display:block;width:100%;height:100%;overflow:visible}
 
-/* the day/night switch sits just under the header bar, on the right */
-.theme-switch-slot{position:fixed;z-index:30;top:calc(var(--header-h) + env(safe-area-inset-top,0px) - 6px);right:var(--gutter)}
-.theme-switch{appearance:none;border:0;padding:0;background:none;cursor:pointer;border-radius:999px;display:block}
-.theme-switch:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.theme-switch__track{position:relative;display:block;width:96px;height:38px;border-radius:999px;overflow:hidden;
-  background:linear-gradient(180deg,#D8D8D3,#B9B9B4);border:1px solid rgba(42,42,42,.18);
-  box-shadow:inset 0 2px 5px rgba(42,42,42,.18);transition:background .5s var(--ease-out),border-color .5s var(--ease-out)}
-.theme-switch__label{position:absolute;top:50%;transform:translateY(-50%);font:700 10px/1 var(--font-sans);letter-spacing:.16em;text-transform:uppercase;transition:opacity .35s var(--ease-out)}
-.theme-switch__label--day{right:13px;color:#2A2A2A}
-.theme-switch__label--night{left:13px;color:#E8E9DF;opacity:0}
-.theme-switch__stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#E8E9DF;opacity:0;transition:opacity .5s var(--ease-out) .1s}
-.theme-switch__knob{position:absolute;top:3px;left:3px;width:30px;height:30px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#FFE7A8,#F2B33A 62%,#D8891A);box-shadow:0 0 0 4px rgba(242,179,58,.22),0 2px 6px rgba(0,0,0,.25);
-  transition:transform .55s cubic-bezier(.6,-0.25,.3,1.35),background .5s var(--ease-out),box-shadow .5s var(--ease-out)}
-.theme-switch__crater{position:absolute;inset:0;border-radius:50%;opacity:0;transition:opacity .4s var(--ease-out);
-  background:radial-gradient(circle at 62% 38%,rgba(0,0,0,.14) 0 3px,transparent 3.5px),radial-gradient(circle at 38% 66%,rgba(0,0,0,.12) 0 2.5px,transparent 3px)}
-.theme-switch:hover .theme-switch__knob{box-shadow:0 0 0 6px rgba(242,179,58,.26),0 2px 6px rgba(0,0,0,.25)}
-.theme-switch.is-dark .theme-switch__track{background:linear-gradient(180deg,#14173A,#22265A);border-color:rgba(232,233,223,.18)}
-.theme-switch.is-dark .theme-switch__knob{transform:translateX(58px);background:radial-gradient(circle at 35% 35%,#F4F4EE,#C9CBC4 70%);box-shadow:0 0 0 4px rgba(232,233,223,.14),0 2px 6px rgba(0,0,0,.4)}
-.theme-switch.is-dark .theme-switch__crater{opacity:1}
-.theme-switch.is-dark .theme-switch__label--day{opacity:0}
-.theme-switch.is-dark .theme-switch__label--night{opacity:1}
-.theme-switch.is-dark .theme-switch__stars i{opacity:.9}
+/* ===== day/night switch (under the header, on the right) ===== */
+.theme-switch-slot{position:fixed;z-index:30;top:calc(var(--header-h) + env(safe-area-inset-top,0px) - 4px);right:var(--gutter)}
+.dn-switch{--w:112px;--h:48px;--k:38px;--pad:5px;--travel:calc(var(--w) - var(--k) - var(--pad) * 2);
+  appearance:none;border:0;padding:0;background:none;cursor:pointer;border-radius:999px;display:block;-webkit-tap-highlight-color:transparent}
+.dn-switch:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
+.dn-switch__track{position:relative;display:block;width:var(--w);height:var(--h);border-radius:999px;overflow:hidden;isolation:isolate;
+  box-shadow:inset 0 3px 7px rgba(10,20,40,.35),inset 0 -1px 2px rgba(255,255,255,.35),0 1px 0 rgba(255,255,255,.55),0 0 0 3px rgba(255,255,255,.35)}
+.dn-switch__sky{position:absolute;inset:0;transition:opacity .6s var(--ease-out)}
+.dn-switch__sky--day{background:linear-gradient(180deg,#2F8FE6,#5FB3F2 60%,#8CCBF6)}
+.dn-switch__sky--night{background:linear-gradient(180deg,#161B2A,#2A3040);opacity:0}
+/* rings of light around the knob; they slide with it */
+.dn-switch__rings{position:absolute;inset:0;
+  background:radial-gradient(circle at calc(var(--pad) + var(--k) / 2) 50%,
+    transparent 0 calc(var(--k) / 2 + 6px),rgba(255,255,255,.16) calc(var(--k) / 2 + 6px) calc(var(--k) / 2 + 16px),
+    rgba(255,255,255,.10) calc(var(--k) / 2 + 16px) calc(var(--k) / 2 + 27px),rgba(255,255,255,.06) calc(var(--k) / 2 + 27px) calc(var(--k) / 2 + 39px),transparent calc(var(--k) / 2 + 39px));
+  transition:transform .6s cubic-bezier(.6,-0.2,.3,1.25)}
+.dn-switch__clouds{position:absolute;inset:0;transition:transform .6s var(--ease-out),opacity .45s var(--ease-out)}
+.dn-switch__clouds span{position:absolute;border-radius:50%}
+.dn-switch__clouds .c-back{background:#BFE0F8;width:22px;height:22px;right:-4px;bottom:15px;
+  box-shadow:-16px 6px 0 0 #BFE0F8,-32px 12px 0 -2px #BFE0F8,-46px 18px 0 -3px #BFE0F8,4px -10px 0 6px #BFE0F8}
+.dn-switch__clouds .c-front{background:#EAF5FD;width:20px;height:20px;right:2px;bottom:-5px;
+  box-shadow:-15px 4px 0 1px #EAF5FD,-30px 8px 0 0 #EAF5FD,-44px 12px 0 -2px #EAF5FD,-58px 16px 0 -4px #EAF5FD,6px -10px 0 4px #EAF5FD}
+.dn-switch__stars{position:absolute;inset:0;opacity:0;transform:translateY(-6px);transition:opacity .5s var(--ease-out) .1s,transform .6s var(--ease-out)}
+.dn-switch__stars b{position:absolute;width:2px;height:2px;border-radius:50%;background:#E8E9DF;opacity:.8}
+.dn-switch__stars i{position:absolute;width:8px;height:8px;background:#F4F4EE;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
+  animation:twinkle 2.6s ease-in-out infinite}
+.dn-switch__stars .s1{left:16%;top:22%}.dn-switch__stars .s2{left:40%;top:56%;width:6px;height:6px;animation-delay:-1s}.dn-switch__stars .s3{left:28%;top:62%;width:7px;height:7px;animation-delay:-1.8s}
+@keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.7)}}
+.dn-switch__knob{position:absolute;top:calc((var(--h) - var(--k)) / 2);left:var(--pad);width:var(--k);height:var(--k);border-radius:50%;z-index:2;
+  box-shadow:0 4px 8px rgba(10,20,40,.35);transition:transform .6s cubic-bezier(.6,-0.2,.3,1.25),box-shadow .2s}
+.dn-switch__sun,.dn-switch__moon{position:absolute;inset:0;border-radius:50%;transition:opacity .45s var(--ease-out)}
+.dn-switch__sun{background:radial-gradient(circle at 40% 35%,#FFE36B,#FFD21F 55%,#F6B70E);box-shadow:inset 0 -3px 0 rgba(214,140,0,.55),inset 0 2px 1px rgba(255,255,255,.55)}
+.dn-switch__moon{opacity:0;background:radial-gradient(circle at 40% 35%,#E7EAEF,#CED3DC 65%,#B8BFCB);box-shadow:inset 0 -3px 0 rgba(90,100,120,.35),inset 0 2px 1px rgba(255,255,255,.6)}
+.dn-switch__moon i{position:absolute;border-radius:50%;background:#A4AEC0;box-shadow:inset 0 1px 1px rgba(60,70,90,.35)}
+.dn-switch__moon i:nth-child(1){width:34%;height:34%;left:18%;top:36%}
+.dn-switch__moon i:nth-child(2){width:20%;height:20%;left:52%;top:16%}
+.dn-switch__moon i:nth-child(3){width:24%;height:24%;left:58%;top:58%}
+.dn-switch:hover .dn-switch__knob{box-shadow:0 4px 8px rgba(10,20,40,.35),0 0 0 5px rgba(255,255,255,.18)}
+.dn-switch.is-night .dn-switch__sky--day{opacity:0}
+.dn-switch.is-night .dn-switch__sky--night{opacity:1}
+.dn-switch.is-night .dn-switch__knob,.dn-switch.is-night .dn-switch__rings{transform:translateX(var(--travel))}
+.dn-switch.is-night .dn-switch__sun{opacity:0}
+.dn-switch.is-night .dn-switch__moon{opacity:1}
+.dn-switch.is-night .dn-switch__clouds{transform:translateY(110%);opacity:0}
+.dn-switch.is-night .dn-switch__stars{opacity:1;transform:none}
 
 /* ===== hero ===== */
+/* layers, back to front: waves · NUTHAN · bare ridge · overgrown ridge (spotlight) · badge · smoke.
+   The name sits behind the ridge, so the peaks overlap the bottom of its letters. */
 .hero{position:relative;height:100vh;height:100dvh;min-height:600px;overflow:hidden;isolation:isolate;
   background:radial-gradient(120% 85% at 50% 0%,var(--bg) 0%,var(--bg) 45%,var(--bg-deep) 100%);
   --mx:-999px;--my:-999px;--r:260px}
 .hero__waves{z-index:0;opacity:.9}
-.hero__ridge{position:absolute;inset:30% 0 0 0;background-repeat:no-repeat;background-position:50% 0;background-size:cover;pointer-events:none;
+.hero__ridge{position:absolute;inset:11% 0 0 0;background-repeat:no-repeat;background-position:50% 0;background-size:cover;pointer-events:none;
   transform-origin:50% 30%;animation:heroZoom 1.8s var(--ease-out) both}
-.hero__ridge--stone{z-index:1;background-image:url(../assets/ridge-stone.webp)}
-.hero__ridge--bloom{z-index:2;background-image:url(../assets/ridge-bloom.webp);
+.hero__ridge--stone{z-index:3;background-image:url(../assets/ridge-stone.webp)}
+.hero__ridge--bloom{z-index:4;background-image:url(../assets/ridge-bloom.webp);
   -webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 0,#000 40%,rgba(0,0,0,.75) 60%,rgba(0,0,0,.4) 75%,rgba(0,0,0,.12) 88%,transparent 100%);
           mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 0,#000 40%,rgba(0,0,0,.75) 60%,rgba(0,0,0,.4) 75%,rgba(0,0,0,.12) 88%,transparent 100%)}
 @keyframes heroZoom{from{transform:scale(1.12)}to{transform:scale(1)}}
 
-.hero__title{position:absolute;z-index:5;left:0;right:0;top:20%;text-align:center;padding:0 var(--gutter);pointer-events:none}
+.hero__title{position:absolute;z-index:2;left:0;right:0;top:15%;text-align:center;padding:0 var(--gutter);pointer-events:none}
 .hero__name{margin:0;line-height:.9;letter-spacing:-0.045em;pointer-events:auto}
 .hero__name .fold-text{font-family:var(--font-sans);letter-spacing:-0.06em}
-.hero__kicker{margin:0 0 var(--s3);font:500 11px/1 var(--font-sans);letter-spacing:.32em;text-transform:uppercase;color:var(--text-soft);
-  opacity:0;animation:fadeUp 1s var(--ease-out) .2s forwards}
-.hero__role{margin:var(--s4) 0 0;font:italic 400 clamp(18px,2.2vw,26px)/1.2 var(--font-display);color:var(--text-soft);
-  opacity:0;animation:fadeUp 1s var(--ease-out) .9s forwards}
+.hero__role{position:absolute;z-index:5;left:0;right:0;top:calc(15% - 34px);margin:0;text-align:center;
+  font:italic 400 clamp(18px,2.2vw,26px)/1.2 var(--font-display);color:var(--text);text-shadow:0 1px 14px var(--bg);
+  opacity:0;animation:fadeUp 1s var(--ease-out) .9s forwards;pointer-events:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
-.hero__badge{position:absolute;z-index:7;right:calc(var(--gutter) + 8px);bottom:clamp(110px,18vh,170px);color:var(--text);text-decoration:none;border-radius:50%;
+.hero__badge{position:absolute;z-index:7;right:calc(var(--gutter) + 8px);bottom:clamp(120px,20vh,190px);color:var(--text);text-decoration:none;border-radius:50%;
   opacity:0;animation:fadeUp 1s var(--ease-out) 1.3s forwards}
 .hero__badge .circular-text{background:var(--surface);border:1px solid var(--surface-line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .hero__badge:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .hero__badge-icon{width:34px;height:34px;color:var(--accent)}
 
-/* smoke: one soft texture used as a mask over the next section's colour, two copies drifting apart */
-.hero__smoke{position:absolute;z-index:6;left:0;right:0;bottom:-2px;height:clamp(150px,26vh,260px);pointer-events:none}
-.hero__smoke-layer{position:absolute;inset:0 -50% 0 -50%;background:var(--smoke);
-  -webkit-mask-image:url(../assets/smoke.png);mask-image:url(../assets/smoke.png);
-  -webkit-mask-size:1100px 100%;mask-size:1100px 100%;-webkit-mask-repeat:repeat-x;mask-repeat:repeat-x;
-  transition:background-color var(--t-med) var(--ease-out)}
-.hero__smoke-layer--a{animation:smokeA 70s linear infinite}
-.hero__smoke-layer--b{opacity:.7;transform:scaleY(.8);transform-origin:50% 100%;-webkit-mask-size:1600px 100%;mask-size:1600px 100%;animation:smokeB 95s linear infinite}
-@keyframes smokeA{from{-webkit-mask-position:0 0;mask-position:0 0}to{-webkit-mask-position:1100px 0;mask-position:1100px 0}}
-@keyframes smokeB{from{-webkit-mask-position:0 0;mask-position:0 0}to{-webkit-mask-position:-1600px 0;mask-position:-1600px 0}}
+/* smoke: a low bank of mist, and puffs that rise out of it, swell and thin away (masks over --smoke) */
+.hero__smoke{position:absolute;z-index:6;left:0;right:0;bottom:0;height:clamp(200px,34vh,340px);pointer-events:none}
+.hero__smoke-bank{position:absolute;left:-10%;right:-10%;bottom:-2px;height:72%;background:var(--smoke);transform-origin:50% 100%;
+  -webkit-mask-image:url(../assets/smoke.png);mask-image:url(../assets/smoke.png);-webkit-mask-size:1300px 100%;mask-size:1300px 100%;-webkit-mask-repeat:repeat-x;mask-repeat:repeat-x;
+  animation:bankBreathe 9s ease-in-out infinite alternate}
+@keyframes bankBreathe{from{transform:translateY(6%) scaleY(.94)}to{transform:translateY(0) scaleY(1.06)}}
+.hero__puff{position:absolute;left:var(--x);bottom:calc(var(--s) * -0.42);width:var(--s);height:var(--s);margin-left:calc(var(--s) / -2);background:var(--smoke);
+  -webkit-mask-image:url(../assets/puff.png);mask-image:url(../assets/puff.png);-webkit-mask-size:100% 100%;mask-size:100% 100%;
+  opacity:0;animation:puffRise var(--t) cubic-bezier(.25,.6,.4,1) var(--d) infinite;will-change:transform,opacity}
+@keyframes puffRise{
+  0%{transform:translate3d(0,26%,0) scale(.6) rotate(0deg);opacity:0}
+  22%{opacity:.62}
+  65%{opacity:.38}
+  100%{transform:translate3d(var(--dx),-30%,0) scale(1.35) rotate(12deg);opacity:0}}
+.hero__smoke-bank,.hero__puff{transition:background-color var(--t-med) var(--ease-out)}
 
-.next-placeholder{min-height:70vh;display:grid;place-items:center;background:var(--smoke);color:var(--text-soft);font:500 12px/1 var(--font-sans);letter-spacing:.24em;text-transform:uppercase;
+.next-placeholder{min-height:70vh;display:grid;place-items:center;background:var(--smoke);color:#2A2A2A;font:500 12px/1 var(--font-sans);letter-spacing:.24em;text-transform:uppercase;
   transition:background-color var(--t-med) var(--ease-out)}
 
 /* ===== phones ===== */
 @media (max-width:760px){
   :root{ --header-h:68px; }
   .logo__tiger{width:42px;height:60px}
-  .hero__name .fold-text{--fold-text-font-size:22vw!important}
-  .theme-switch__track{width:84px;height:34px}
-  .theme-switch__knob{width:26px;height:26px}
-  .theme-switch.is-dark .theme-switch__knob{transform:translateX(50px)}
+  .site-header__title{font-size:10px;letter-spacing:.28em}
+  .dn-switch{--w:92px;--h:40px;--k:31px;--pad:4.5px}
   .hero{--r:150px}
-  .hero__ridge{inset:44% 0 0 0;background-size:auto 100%;background-position:42% 0}
+  .hero__ridge{inset:12% 0 0 0;background-size:auto 66%;background-position:42% 0}
   .hero__ridge--stone{background-image:url(../assets/ridge-stone-s.webp)}
-  .hero__ridge--bloom{background-image:url(../assets/ridge-bloom-s.webp);
-    -webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 0,#000 40%,rgba(0,0,0,.75) 60%,rgba(0,0,0,.4) 75%,rgba(0,0,0,.12) 88%,transparent 100%);
-            mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 0,#000 40%,rgba(0,0,0,.75) 60%,rgba(0,0,0,.4) 75%,rgba(0,0,0,.12) 88%,transparent 100%)}
-  .hero__title{top:24%}
-  .hero__badge{right:var(--gutter);bottom:clamp(120px,20vh,180px)}
+  .hero__ridge--bloom{background-image:url(../assets/ridge-bloom-s.webp)}
+  .hero__title{top:21%}
+  .hero__name .fold-text{--fold-text-font-size:20.5vw!important}
+  .hero__role{top:calc(21% - 28px);font-size:16px}
+  .hero__badge{right:var(--gutter);bottom:clamp(130px,22vh,200px)}
+  .hero__smoke{height:30vh}
 }
-@media (prefers-reduced-motion: reduce){ .hero__ridge{animation:none} .hero__smoke-layer{animation:none} .hero__kicker,.hero__role,.hero__badge{animation:none;opacity:1} }
+@media (prefers-reduced-motion: reduce){ .hero__ridge,.hero__smoke-bank{animation:none} .hero__puff{animation:none;opacity:.5;transform:none}
+  .hero__role,.hero__badge,.site-header__title{animation:none;opacity:1} }
