@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Section 3 tree (2026-10-23):** Originkit "Moonlit Petals" study published privately (see Log); waiting for Puli to confirm Originkit's licence allows use on his public site/repo, and for his verdict on colours and layout. Then integrate into `#work` (end of section 2's pan).
+- **Section 3 tree (2026-10-23):** Originkit "Moonlit Petals" study published privately (see Log); licence checked 2026-10-23 (originkit.dev/docs/licensing, updated 19 Aug 2026): allowed, its own table lists "an open-source portfolio site with a modified component: Yes"; no attribution required; don't republish it as a standalone component/snippet/template. Waiting for Puli's verdict on colours and layout. Then integrate into `#work` (end of section 2's pan).
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
 
