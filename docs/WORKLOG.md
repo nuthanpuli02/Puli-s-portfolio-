@@ -12,6 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
+- **Section 3 tree (2026-10-23):** Originkit "Moonlit Petals" study published privately (see Log); waiting for Puli to confirm Originkit's licence allows use on his public site/repo, and for his verdict on colours and layout. Then integrate into `#work` (end of section 2's pan).
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
 
@@ -26,6 +27,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-23: clouds lift off before section 3; blossom tree study for section 3
+Puli asked for the clouds to be fully gone before section 3 settles: during the pan (p .6→.86) both ceilings now rise off the top of the screen (`lift` in Clouds.jsx). Section 3 plan from Puli: a blossom tree on the left, content on the right, using Originkit's "Moonlit Petals" component (originkit.dev/components/moonlit-petals, React/TSX, canvas 2D + a small WebGL warp), red petals by day and deep green by night. I ported it to a plain mount function (configurable flower-centre colour and bottom fade, pixel ratio capped at 1.5, paused off-screen) and published a private study page: https://claude.ai/artifact/DVGYBsMBWUuqKWQBnnVfDF (day: blossoms #C41E2A on #BDBDB8, no glow; night: #1F7A52 with mint petals #9FE3C1, gold centres, glow 60, on #1E1E21). **Not in the repo yet:** Originkit's licence terms couldn't be found (site has a free tier of 3 copies/day and paid plans; terms page not reachable from here), and the repo is public, so Puli should confirm the terms allow using it on his site before it's committed.
 
 ### 2026-10-23: section 2 reworked: clouds rise, text inside, then a sideways pan
 Puli's changes: (1) the hero's smoke is replaced by clouds that rise; "Puli's Portfolio" and the intro appear inside the clouds on a background darker than the clouds; title uses React Bits **ShinyText**, intro lines React Bits **TextType**, typing only once per page load (never replays on scroll; only a reload resets it); then the scene moves right into section 3. (2) Night clouds are now neutral soft grey (a darker version of the day clouds, no green tint), and the night background inside the clouds (#1E1E21) is darker than the day one (#BDBDB8). (3) No clouds beneath the text.
