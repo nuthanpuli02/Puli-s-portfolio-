@@ -12,6 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
+- **Section 5 / new character (2026-10-23):** waiting for Puli's Tripo model and Mixamo animations (see Log for the list); meanwhile section 5 can be built with the current voxel Puli as a stand-in.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -27,6 +28,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-23: section 5 (game teaser) agreed; new character pipeline
+Decided with Puli (not built yet):
+- **Copy:** "Okay, enough serious projects. Plot twist: I also make games. Small ones, but they count. Bet you can't catch the button first." Button text while it dodges: "Catch me", "Nope", "Alright, alright", then "Play" when it gives in.
+- **Scene:** scrolling into the section brings the text in and Puli walks from the left to the centre, next to the button (scroll-synced). The button is a React Bits DodgeField (on touch screens, where DodgeField doesn't dodge, it hops away on the first taps instead); once it gives in it becomes a React Bits FlyingButton. On click: Puli jumps and grabs it, it flies up off the screen with him, a short pause, he falls from the top, the camera follows him down into the forest (existing fall), and he lands at the start of the game. Scroll is held still during that sequence. FlyingButton needs changing to fly off-screen instead of landing; its smoke is a WebGL2 fluid sim, so load it only near the section and keep it small (simpler smoke on phones if needed).
+- **Outfit:** his own adventurer look (not a copy of any game character): worn olive field shirt with rolled sleeves, leather satchel strap across the chest, canvas utility belt, dusty cargo trousers, scuffed hiking boots, fingerless gloves; keeps his beard, hair and black round watch.
+- **Model:** a proper 3D model, rendered pixelated, animated with Mixamo; Puli plans to raise the quality of the forest and game too. Pipeline: concept image (Puli, Gemini) → image-to-3D (Tripo free tier = CC BY 4.0, credit "Tripo" on the site and in the README) → Mixamo auto-rig + animations (Puli) → I combine, compress and add the pixel-art render. Mixamo terms forbid redistributing raw Mixamo files, so only the final combined model goes in the repo, never the raw FBX downloads.
 
 ### 2026-10-23: petals on their own layer, section 3 enters/leaves every time, scroll-synced section badge, cleaner menu
 - **Petals:** `mountMoonlitPetals` takes an optional 4th argument (a canvas) and draws the falling petals there; Work.jsx gives it `.work__petals`, covering the right 40% of the screen, in front of the tree and behind the content, so petals drift behind the "01 / 08" counter. Pointer push still works (client coordinates mapped to that canvas).
