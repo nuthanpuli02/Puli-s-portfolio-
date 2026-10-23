@@ -5,7 +5,7 @@ import { contactHref } from '../theme.js';
 import { scrollToSection } from '../nav.js';
 
 // Header: the tiger logo and PULI on the left, PORTFOLIO in the middle, and on the right the day/night switch next to
-// the menu button (React Bits StaggeredMenu). The menu lists the four sections; the game stays a surprise.
+// the menu button (React Bits StaggeredMenu). The menu lists the four sections (no numbers); the game stays a surprise.
 const go = name => e => {
   if (scrollToSection(name)) e.preventDefault();
 };
@@ -33,7 +33,7 @@ export default function Header({ theme, onToggleTheme }) {
         items={items}
         socialItems={[{ label: 'GitHub', link: 'https://github.com/nuthanpuli02' }]}
         displaySocials
-        displayItemNumbering
+        displayItemNumbering={false}
         colors={['var(--accent)', 'var(--menu-layer)']}
         accentColor="var(--accent)"
         menuButtonColor="var(--text)"

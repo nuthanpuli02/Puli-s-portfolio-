@@ -1,6 +1,7 @@
 import Header from './components/Header.jsx';
 import Hero from './sections/Hero.jsx';
 import Clouds from './sections/Clouds.jsx';
+import SectionBadge from './components/SectionBadge.jsx';
 import { useTheme } from './theme.js';
 import './palettes.js'; // saved palettes; only used for ?day=/&night= previews
 
@@ -16,6 +17,7 @@ export default function App() {
           <p>Game teaser · coming later</p>
         </section>
       </main>
+      <SectionBadge />
     </>
   );
 }

@@ -28,6 +28,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-23: petals on their own layer, section 3 enters/leaves every time, scroll-synced section badge, cleaner menu
+- **Petals:** `mountMoonlitPetals` takes an optional 4th argument (a canvas) and draws the falling petals there; Work.jsx gives it `.work__petals`, covering the right 40% of the screen, in front of the tree and behind the content, so petals drift behind the "01 / 08" counter. Pointer push still works (client coordinates mapped to that canvas).
+- **Section 3 intro/outro every time:** `revealed` is now true only while s is between the end of the pan (3.0) and 0.3 screen after the last card; Clouds.jsx toggles it both ways, so scrolling down or back up replays the entrance (BlurText remounts with a new key) and the exit (title blurs out, counter and carousel sink and fade). Hold after the last card is 0.75 screen (section 2 is now 1000vh).
+- **Section badge** (`site/src/components/SectionBadge.jsx`, replaces the hero's game badge): fixed bottom-right on every section, opacity 0.72, ring reads "SECTION 01 ✦ HOMEPAGE ✦" (×2) with the number in the middle; 02 About, 03 Projects, and 05 "???" for the game (04 is the contact page, a separate page). It turns only with the scroll, 0.09° per px, so scrolling up turns it back exactly; no auto-spin (CircularText `spinDuration={0}`). The words cross-fade when the section changes. Section boundaries come from `nav.js` (`aboutStart`, `panMid`, `end`, registered by Clouds.jsx). Phone: scaled to 78%.
+- **Menu:** numbers removed, names shifted left and sized to fit the panel (clamp(36px, 3.9vw, 56px)) so "PROJECTS" no longer clips.
+
 ### 2026-10-23: wider cards, smaller title, whole tree
 Puli: cards wider, title a little smaller, and the tree shown whole instead of cut/faded at its edge (shift it partly off-screen if it takes too much room). Cards: desktop height 58% of the screen (380–540 px), width ×1.12 (max 44vw); phone up to 420 px wide, height ×1.12 (max 48% of the screen). Title clamp(34px, 4vw, 62px), phone 10vw. Tree: the edge mask is gone; its canvas is 0.78 × screen height wide (enough for the whole crown at crownReach 80) and pushed off the right edge so about 34vw of it shows (`right:min(0px, 34vw - 78lvh)`); haze, vignette, fade and grain are off so the canvas has no visible box. Phone: tree 30% of the height in the top-right, about 64vw visible. Next: Puli wants to repurpose the circular text badge.
 

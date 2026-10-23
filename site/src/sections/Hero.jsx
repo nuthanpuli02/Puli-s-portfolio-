@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import Waves from '../components/reactbits/Waves.jsx';
 import FoldText from '../components/reactbits/FoldText.jsx';
-import CircularText from '../components/reactbits/CircularText.jsx';
 
 // Section 1. Layers, back to front: Waves (React Bits, reacts to the cursor) → the bare ridge → the same ridge
-// overgrown, seen through a soft spotlight → "NUTHAN" (React Bits FoldText) → the game badge (CircularText) →
+// overgrown, seen through a soft spotlight → "NUTHAN" (React Bits FoldText) →
 // clouds rising from the bottom, which carry the page into section 2.
 export default function Hero({ theme }) {
   const heroRef = useRef(null);
@@ -112,13 +111,6 @@ export default function Hero({ theme }) {
       {/* in front of the ridge, so it stays readable where the peaks cover the name */}
       <p className="hero__role">Machine learning · Security · Web</p>
 
-      <a className="hero__badge" href="#game" aria-label="Psst, there's a game hidden down here. Go to the game.">
-        <CircularText text="PSST ✦ THERE'S A GAME HIDDEN DOWN HERE ✦ " spinDuration={22} onHover="speedUp" size={116} fontSize={10} fontWeight={700}>
-          <svg className="hero__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M7.5 9.5h3M9 8v3M15 9.25h.01M17 11h.01"/><path d="M6.5 6h11A3.5 3.5 0 0 1 21 9.5l.6 6.2a2.6 2.6 0 0 1-4.6 1.9L15.2 15H8.8L7 17.6a2.6 2.6 0 0 1-4.6-1.9L3 9.5A3.5 3.5 0 0 1 6.5 6z"/>
-          </svg>
-        </CircularText>
-      </a>
 
       {/* clouds: two banks (far = darker, higher; near = lighter, lower). They rise into place on load, drift
           sideways and rise faster than the page when scrolling; the near bank's flat base runs straight into

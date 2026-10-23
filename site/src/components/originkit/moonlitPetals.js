@@ -3,7 +3,8 @@
 // open-source portfolio site; do not republish it on its own as a component, snippet or template. No attribution required.
 // Changes for this site: the React wrapper is replaced by mountMoonlitPetals(root, canvas, propsRef); flower-centre colour
 // (advanced.eyeColor) and bottom fade (advanced.fade) are settable; pixel ratio is capped at 1.5; nothing is built or
-// drawn until the tree is on screen, and drawing pauses while it is off screen or the tab is hidden.
+// drawn until the tree is on screen, and drawing pauses while it is off screen or the tab is hidden; an optional 4th argument
+// (a canvas) gets the falling petals, so they can fall over a different area than the tree.
 
 const ADVANCED_DEFAULTS = {
   seed: 7,
@@ -658,8 +659,12 @@ function bakeScene(Wd, Hd, geo, P, adv) {
   b.fillRect(0, 0, Wd, Hd);
   return { core, coreBlur, sprites, halo, bloom: hCan, bg, field };
 }
-function mountMoonlitPetals(root, canvas, propsRef) {
+function mountMoonlitPetals(root, canvas, propsRef, petalCanvas = null) {
   const ctx = canvas.getContext("2d");
+  // optional: the falling petals are drawn on their own canvas (its own size and place on the page) instead of the tree's
+  const pctx = petalCanvas ? petalCanvas.getContext("2d") : null;
+  let Wp = 0;
+  let Hp = 0;
   if (!ctx) return () => {
   };
   let Wd = 0;
@@ -671,9 +676,16 @@ function mountMoonlitPetals(root, canvas, propsRef) {
     Hd = Math.max(1, Math.round(root.offsetHeight * dpr));
     if (canvas.width !== Wd) canvas.width = Wd;
     if (canvas.height !== Hd) canvas.height = Hd;
+    if (pctx) {
+      Wp = Math.max(1, Math.round(petalCanvas.offsetWidth * dpr));
+      Hp = Math.max(1, Math.round(petalCanvas.offsetHeight * dpr));
+      if (petalCanvas.width !== Wp) petalCanvas.width = Wp;
+      if (petalCanvas.height !== Hp) petalCanvas.height = Hp;
+    }
   };
   const ro = new ResizeObserver(resize);
   ro.observe(root);
+  if (petalCanvas) ro.observe(petalCanvas);
   resize();
   const mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   const reduced = !!(mq && mq.matches);
@@ -681,6 +693,8 @@ function mountMoonlitPetals(root, canvas, propsRef) {
   const onMove = (e) => {
     ptr.x = e.offsetX;
     ptr.y = e.offsetY;
+    ptr.cx = e.clientX;
+    ptr.cy = e.clientY;
     ptr.inside = true;
   };
   const onLeave = () => {
@@ -736,7 +750,7 @@ function mountMoonlitPetals(root, canvas, propsRef) {
   let liveRng = mulberry32(1);
   let ev = null;
   let evKey = "";
-  const spawnX = (r) => r() < 0.22 ? 0.2 + 0.42 * r() : 0.5 + 0.5 * ((r() + r()) / 2);
+  const spawnX = (r) => pctx ? (r() < 0.35 ? r() : 0.3 + 0.7 * r()) : r() < 0.22 ? 0.2 + 0.42 * r() : 0.5 + 0.5 * ((r() + r()) / 2);
   const pv = { x: 0, y: 0 };
   let lastPx = -1;
   let lastPy = -1;
@@ -988,6 +1002,18 @@ function mountMoonlitPetals(root, canvas, propsRef) {
     const fall = num(adv.fallSpeed, 100) / 100;
     const drift = num(adv.drift, -5) / 1e3;
     const wobK = windMul * (num(adv.wobble, 100) / 100);
+    const pc2 = pctx || ctx;
+    const PW = pctx ? Wp : Wd;
+    const PH = pctx ? Hp : Hd;
+    let ppx = pxd;
+    let ppy = pyd;
+    if (pctx) {
+      pctx.setTransform(1, 0, 0, 1, 0, 0);
+      pctx.clearRect(0, 0, Wp, Hp);
+      const pr = petalCanvas.getBoundingClientRect();
+      ppx = ((ptr.cx ?? -1e4) - pr.left) * dpr;
+      ppy = ((ptr.cy ?? -1e4) - pr.top) * dpr;
+    }
     const Rp = 0.14 * Wd;
     const push = 0.05 * Wd * pAmt * (1 + ptr.press);
     const kE = 1 - Math.exp(-dt * 5);
@@ -1001,14 +1027,14 @@ function mountMoonlitPetals(root, canvas, propsRef) {
       }
       if (p.x < -0.06) p.x += 1.12;
       else if (p.x > 1.06) p.x -= 1.12;
-      const wx = Math.sin(p.wob * t + p.ph) * (6e-3 + 0.012 * p.z) * Wd * wobK;
-      const bx = p.x * Wd + wx;
-      const by = p.y * Hd;
+      const wx = Math.sin(p.wob * t + p.ph) * (6e-3 + 0.012 * p.z) * PW * wobK;
+      const bx = p.x * PW + wx;
+      const by = p.y * PH;
       let tx = 0;
       let ty = 0;
       if (push > 0.01) {
-        const dx = bx - pxd;
-        const dy = by - pyd;
+        const dx = bx - ppx;
+        const dy = by - ppy;
         const d = Math.hypot(dx, dy);
         if (d < Rp) {
           const f = (1 - d / Rp) ** 2 * (0.5 + p.z);
@@ -1024,18 +1050,19 @@ function mountMoonlitPetals(root, canvas, propsRef) {
       const face = Math.abs(Math.cos(p.spin));
       const ang = p.rot + 0.5 * Math.sin(p.wob * t + p.ph);
       const al = p.a * (0.55 + 0.45 * face);
-      ctx.fillStyle = cols[p.ci];
+      pc2.fillStyle = cols[p.ci];
       if (p.z > 0.7) {
-        ctx.globalAlpha = al * 0.18;
-        ctx.beginPath();
-        ctx.ellipse(X, Y, r * 1.8, Math.max(0.6 * r, 1.4 * r * face), ang, 0, TAU);
-        ctx.fill();
+        pc2.globalAlpha = al * 0.18;
+        pc2.beginPath();
+        pc2.ellipse(X, Y, r * 1.8, Math.max(0.6 * r, 1.4 * r * face), ang, 0, TAU);
+        pc2.fill();
       }
-      ctx.globalAlpha = al;
-      ctx.beginPath();
-      ctx.ellipse(X, Y, r, Math.max(0.35 * r, 0.8 * r * face), ang, 0, TAU);
-      ctx.fill();
+      pc2.globalAlpha = al;
+      pc2.beginPath();
+      pc2.ellipse(X, Y, r, Math.max(0.35 * r, 0.8 * r * face), ang, 0, TAU);
+      pc2.fill();
     }
+    pc2.globalAlpha = 1;
     ctx.globalAlpha = 1;
     if (!reduced) {
       const bop = num(adv.bokehOpacity, 85) / 100;

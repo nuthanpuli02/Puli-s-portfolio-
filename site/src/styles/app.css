@@ -71,7 +71,7 @@ html{scroll-behavior:smooth}
 .dn-switch.is-night .dn-switch__stars{opacity:1;transform:none}
 
 /* ===== hero ===== */
-/* layers, back to front: waves · NUTHAN · bare ridge · overgrown ridge (spotlight) · clouds · badge.
+/* layers, back to front: waves · NUTHAN · bare ridge · overgrown ridge (spotlight) · clouds.
    The name sits behind the ridge, so the peaks overlap the bottom of its letters. */
 .hero{position:relative;height:100vh;height:100dvh;min-height:600px;overflow:hidden;isolation:isolate;
   background:radial-gradient(120% 85% at 50% 0%,var(--bg) 0%,var(--bg) 45%,var(--bg-deep) 100%);
@@ -96,11 +96,13 @@ html{scroll-behavior:smooth}
   opacity:0;animation:fadeUp 1s var(--ease-out) .9s forwards;pointer-events:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
-.hero__badge{position:absolute;z-index:7;right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);color:var(--text);text-decoration:none;border-radius:50%;
-  opacity:0;animation:fadeUp 1s var(--ease-out) 1.3s forwards}
-.hero__badge .circular-text{background:var(--surface);border:1px solid var(--surface-line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.hero__badge:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
-.hero__badge-icon{width:34px;height:34px;color:var(--accent)}
+/* section badge (SectionBadge.jsx): fixed bottom-right on every section, turns with the scroll */
+.sbadge{position:fixed;z-index:35;right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);width:116px;height:116px;
+  color:var(--text);opacity:.72;pointer-events:none;transition:opacity .22s var(--ease-out)}
+.sbadge.is-fading{opacity:0}
+.sbadge__spin{position:absolute;inset:0;will-change:transform}
+.sbadge .circular-text{background:var(--surface);border:1px solid var(--surface-line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);cursor:default}
+.sbadge__num{position:absolute;inset:0;display:grid;place-items:center;font:800 24px/1 var(--font-sans);letter-spacing:-.01em;color:var(--text);font-variant-numeric:tabular-nums}
 
 /* clouds at the bottom of the hero: they rise into place on load; Hero.jsx moves them with the scroll */
 .hero__clouds{position:absolute;z-index:6;inset:0;pointer-events:none;animation:cloudsIn 2.2s var(--ease-out) .2s both}
@@ -161,6 +163,10 @@ html{scroll-behavior:smooth}
 .work__head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-right:4%}
 .work__title{margin:0;font:900 clamp(34px,4vw,62px)/.95 var(--font-sans);letter-spacing:-.02em;text-transform:uppercase;color:var(--text)}
 .work__title--wait{opacity:0}
+.work .work__title{transition:opacity .5s var(--ease-out),filter .5s var(--ease-out),transform .6s var(--ease-out)}
+.work:not(.is-revealed) .work__title{opacity:0;filter:blur(10px);transform:translateY(-14px)}
+/* falling petals: their own layer over the right 40% of the screen, in front of the tree and behind the content */
+.work__petals{position:absolute;top:0;right:0;width:40%;height:100%;display:block;pointer-events:none}
 .work__count{margin:0 0 .4em;font:500 13px/1 var(--font-sans);letter-spacing:.12em;color:var(--text-soft);font-variant-numeric:tabular-nums}
 .work__count b{color:var(--text);font-weight:700}
 .work__carousel{position:relative;flex:1 1 auto;min-height:0;max-height:calc(var(--card-h, 560px) + 90px);min-width:0}
@@ -194,11 +200,9 @@ html{scroll-behavior:smooth}
   justify-content:flex-end;gap:clamp(14px,1.6vw,22px)}
 .site-menu .sm-toggle{font:700 13px/1 var(--font-sans);letter-spacing:.16em;text-transform:uppercase;gap:8px;min-height:44px;padding:0 2px}
 .site-menu .sm-toggle:focus-visible{outline:2px solid var(--focus)}
-.site-menu .staggered-menu-panel{background:var(--menu-bg);padding:calc(var(--header-h) + 48px) clamp(24px,3vw,44px) 36px;-webkit-backdrop-filter:none;backdrop-filter:none}
-.site-menu .sm-panel-item{font:900 clamp(40px,4.6vw,64px)/1 var(--font-sans);letter-spacing:-.02em;color:var(--text)}
+.site-menu .staggered-menu-panel{background:var(--menu-bg);padding:calc(var(--header-h) + 48px) 24px 36px clamp(22px,2.4vw,34px);-webkit-backdrop-filter:none;backdrop-filter:none}
+.site-menu .sm-panel-item{font:900 clamp(36px,3.9vw,56px)/1.02 var(--font-sans);letter-spacing:-.02em;color:var(--text);padding-right:0}
 .site-menu .sm-panel-item:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
-.site-menu .sm-panel-item{padding-right:1.7em}
-.site-menu .sm-panel-list[data-numbering] .sm-panel-item::after{font:500 13px/1 var(--font-sans);right:0}
 .site-menu .sm-socials-title{font:600 11px/1 var(--font-sans);letter-spacing:.18em;text-transform:uppercase}
 .site-menu .sm-socials-link{font:600 16px/1.2 var(--font-sans);color:var(--text)}
 
@@ -223,8 +227,7 @@ html{scroll-behavior:smooth}
   .hero__title{top:25%}
   .hero__name .fold-text{--fold-text-font-size:18vw!important}
   .hero__role{top:calc(25% - 24px);font-size:13px}
-  .hero__badge{right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
-  .hero__badge .circular-text{transform:scale(.86);transform-origin:100% 100%}
+  .sbadge{bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:scale(.78);transform-origin:100% 100%}
   .hero__cloud--far{top:62%} .hero__cloud--near{top:70%}
   .clouds__title .shiny-text{flex-direction:column;align-items:center;row-gap:2px}
   .clouds__copy{top:24%}
@@ -239,5 +242,5 @@ html{scroll-behavior:smooth}
   .clouds__script{font-size:15vw}
 }
 @media (prefers-reduced-motion: reduce){ .hero__ridge{animation:none} .hero__clouds{animation:none}
-  .hero__role,.hero__badge,.site-header__title{animation:none;opacity:1} }
+  .hero__role,.site-header__title{animation:none;opacity:1} }
 

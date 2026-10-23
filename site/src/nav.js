@@ -10,3 +10,5 @@ export function scrollToSection(name) {
   window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   return true;
 }
+
+export const getTarget = name => targets[name]?.() ?? null;

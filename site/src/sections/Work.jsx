@@ -8,7 +8,7 @@ import { PROJECTS } from '../data/projects.js';
 // Section 3, my work. It sits at the end of section 2's sideways pan. Left: the title (React Bits BlurText) over the
 // projects in a React Bits DepthCarousel whose cards are React Bits PixelCards. Right: the blossom tree (Originkit
 // Moonlit Petals), mirrored and narrow, so the work is the highlight. Nothing here appears until the pan has finished
-// (Clouds.jsx sets `revealed`); after that the page's scroll moves the carousel card by card (Clouds.jsx calls
+// (Clouds.jsx sets `revealed`), and it all leaves again before the page scrolls on (outro), every time; in between the page's scroll moves the carousel card by card (Clouds.jsx calls
 // controlRef.current.setPosition), forwards and back. The dots jump the page to a card.
 
 // tree settings: red blossoms in both modes, mirrored (direction 'right'); at night they glow softly. No haze, vignette,
@@ -32,16 +32,22 @@ const PIXELS = {
   night: { colors: '#E8361F,#6C6C70,#45454A', glow: '#E8361F' },
 };
 
+// the tree, plus its falling petals on a separate layer that covers the right 40% of the screen and sits behind the
+// content (so petals drift behind the 01 / 08 counter)
 function Tree({ theme }) {
   const rootRef = useRef(null);
   const canvasRef = useRef(null);
+  const petalsRef = useRef(null);
   const propsRef = useRef(TREE.day);
   propsRef.current = theme === 'dark' ? TREE.night : TREE.day;
-  useEffect(() => mountMoonlitPetals(rootRef.current, canvasRef.current, propsRef), []);
+  useEffect(() => mountMoonlitPetals(rootRef.current, canvasRef.current, propsRef, petalsRef.current), []);
   return (
-    <div className="work__tree" ref={rootRef} aria-hidden="true">
-      <canvas ref={canvasRef} />
-    </div>
+    <>
+      <div className="work__tree" ref={rootRef} aria-hidden="true">
+        <canvas ref={canvasRef} />
+      </div>
+      <canvas className="work__petals" ref={petalsRef} aria-hidden="true" />
+    </>
   );
 }
 
@@ -84,6 +90,9 @@ function useCardSize() {
 
 export default function Work({ theme, revealed, controlRef, onDotClick }) {
   const [front, setFront] = useState(0);
+  // every time section 3 comes into view the title plays again (a fresh BlurText each time)
+  const [entry, setEntry] = useState(0);
+  useEffect(() => { if (revealed) setEntry(n => n + 1); }, [revealed]);
   const items = useMemo(
     () => PROJECTS.map((p, i) => ({ content: <Card p={p} front={i === front} theme={theme} />, alt: p.title })),
     [front, theme]
@@ -94,8 +103,8 @@ export default function Work({ theme, revealed, controlRef, onDotClick }) {
       <Tree theme={theme} />
       <div className="work__content">
         <div className="work__head">
-          {revealed ? (
-            <BlurText as="h2" className="work__title" text="My work" delay={110} animateBy="letters" direction="top" blur={12} trigger="load" />
+          {entry > 0 ? (
+            <BlurText key={entry} as="h2" className="work__title" text="My work" delay={110} animateBy="letters" direction="top" blur={12} trigger="load" />
           ) : (
             <h2 className="work__title work__title--wait">My work</h2>
           )}

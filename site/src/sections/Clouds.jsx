@@ -11,10 +11,10 @@ import { registerTarget } from '../nav.js';
 //             leaving the darker inside of the cloud with no clouds in view
 //   .6 → .95  "Puli's Portfolio" (React Bits ShinyText) fades in; at .8 the intro lines start typing (React Bits TextType)
 //   1.9 → 3.0 the whole scene pans sideways, as if the camera moves right, into section 3 (Work.jsx)
-//   3.0       section 3 appears (title, counter, carousel), once
+//   3.0       section 3 appears (title, counter, carousel), every time it is reached, from either side
 //   3.35 →    each further 0.7 screen of scrolling brings the next project card to the front; scrolling back goes back
-//   then a short hold on the last card, and the page scrolls on
-// The typing and section 3's entrance play once per page load. Only transforms and opacity change per frame, and the
+//   .3 screen after the last card section 3 leaves again (outro), then a short hold and the page scrolls on
+// The typing plays once per page load; section 3's entrance and exit play each time. Only transforms and opacity change per frame, and the
 // loop runs only while the section is on screen.
 
 const LINE1 = "I'm a student working in machine learning. My thesis teaches transformer models to find security flaws in source code.";
@@ -23,7 +23,7 @@ const TYPE_MS = 24; // per character
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
-const T = { rise: 0.8, farRise: 0.95, show: [0.6, 0.95], type: 0.8, pan: [1.9, 3.0], reveal: 3.0, cards: 3.35, step: 0.7, hold: 0.45 };
+const T = { rise: 0.8, farRise: 0.95, show: [0.6, 0.95], type: 0.8, pan: [1.9, 3.0], reveal: 3.0, cards: 3.35, step: 0.7, outro: 0.3, hold: 0.75 };
 const LAST = PROJECTS.length - 1;
 const SCREENS = T.cards + T.step * LAST + T.hold; // pinned length, in screens
 // card position from scroll: each step dwells on a card and moves to the next in its middle part
@@ -83,6 +83,10 @@ export default function Clouds({ theme }) {
   useEffect(() => {
     registerTarget('about', () => at(T.show[1]));
     registerTarget('work', () => at(T.cards));
+    // for the section badge: where section 2 starts, where the pan is half done, and where this section ends
+    registerTarget('aboutStart', () => at(0));
+    registerTarget('panMid', () => at((T.pan[0] + T.pan[1]) / 2));
+    registerTarget('end', () => at(SCREENS));
   }, []);
   const goToCard = i => window.scrollTo({ top: at(T.cards + i * T.step), behavior: 'smooth' });
 
@@ -123,7 +127,9 @@ export default function Clouds({ theme }) {
       copy.style.opacity = show.toFixed(3);
       copy.style.transform = `translate3d(0,${((1 - show) * 28).toFixed(1)}px,0)`;
       if (!started && s >= T.type) { started = true; startTyping.current(); }
-      if (!shown && s >= T.reveal) { shown = true; setRevealed(true); }
+      // section 3 enters once the pan has finished and leaves shortly after the last card, each time it is passed
+      const inView = s >= T.reveal && s < T.cards + T.step * LAST + T.outro;
+      if (inView !== shown) { shown = inView; setRevealed(inView); }
       const pos = cardPos(s);
       if (Math.abs(pos - lastPos) > 0.0005) { lastPos = pos; carousel.current?.setPosition(pos); }
       if (visible && !reduce) raf = requestAnimationFrame(frame);
