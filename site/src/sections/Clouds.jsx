@@ -2,16 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 import ShinyText from '../components/reactbits/ShinyText.jsx';
 import TextType from '../components/reactbits/TextType.jsx';
 import Work from './Work.jsx';
+import { PROJECTS } from '../data/projects.js';
+import { registerTarget } from '../nav.js';
 
 // Section 2, inside the clouds, and the way into section 3. The hero's clouds rise and cover the screen; the section's
-// stage then stays pinned while you scroll. Progress is measured in screens scrolled (s):
-//   0   → .66  the covering cloud keeps rising until it hangs as a ceiling, revealing the darker inside of the cloud
-//   .42 → .78  "Puli's Portfolio" (React Bits ShinyText) fades in; at .6 the intro lines start typing (React Bits TextType)
-//   1.8 → 2.9  the whole scene pans sideways, as if the camera moves right, into section 3 (Work.jsx),
-//              while the clouds lift off the top (gone by 2.6)
-//   2.9 → 3.4  section 3 stays pinned for a moment, then the page scrolls on
-// The typing plays once per page load: once started it never resets, even if you scroll back up.
-// Only transforms and opacity change per frame, and the loop runs only while the section is on screen.
+// stage then stays pinned while you scroll. Progress is measured in screens scrolled (s), timings in T below:
+//   0  → .8   the covering cloud keeps rising and passes completely off the top (the darker bank behind it by .95),
+//             leaving the darker inside of the cloud with no clouds in view
+//   .6 → .95  "Puli's Portfolio" (React Bits ShinyText) fades in; at .8 the intro lines start typing (React Bits TextType)
+//   1.9 → 3.0 the whole scene pans sideways, as if the camera moves right, into section 3 (Work.jsx)
+//   3.0       section 3 appears (title, counter, carousel), once
+//   3.35 →    each further 0.7 screen of scrolling brings the next project card to the front; scrolling back goes back
+//   then a short hold on the last card, and the page scrolls on
+// The typing and section 3's entrance play once per page load. Only transforms and opacity change per frame, and the
+// loop runs only while the section is on screen.
 
 const LINE1 = "I'm a student working in machine learning. My thesis teaches transformer models to find security flaws in source code.";
 const LINE2 = 'I also freelance, building models, dashboards and websites. Small projects, done carefully.';
@@ -19,6 +23,15 @@ const TYPE_MS = 24; // per character
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const T = { rise: 0.8, farRise: 0.95, show: [0.6, 0.95], type: 0.8, pan: [1.9, 3.0], reveal: 3.0, cards: 3.35, step: 0.7, hold: 0.45 };
+const LAST = PROJECTS.length - 1;
+const SCREENS = T.cards + T.step * LAST + T.hold; // pinned length, in screens
+// card position from scroll: each step dwells on a card and moves to the next in its middle part
+const cardPos = s => {
+  const x = Math.min(LAST, Math.max(0, (s - T.cards) / T.step));
+  const i = Math.floor(x);
+  return i >= LAST ? LAST : i + smooth(0.25, 0.75, x - i);
+};
 const edgePx = () => Math.min(340, Math.max(170, 0.26 * window.innerWidth)); // same as --edge in app.css
 
 // ShinyText takes real colours (it blends them in JS), so read them from the tokens when the theme changes
@@ -46,7 +59,9 @@ function TypedLine({ text, start, cursor }) {
 
 export default function Clouds({ theme }) {
   const ref = useRef(null);
+  const carousel = useRef(null);
   const [typing, setTyping] = useState(0); // 0 = not yet, 1 = first line, 2 = second line
+  const [revealed, setRevealed] = useState(false);
   const shine = useShine(theme);
 
   // start typing once, when the title is in view
@@ -58,6 +73,19 @@ export default function Clouds({ theme }) {
     return () => clearTimeout(id);
   }, [typing]);
 
+  // page position (px) at a given number of screens into this section; used by the menu and the carousel dots
+  const at = screens => {
+    const section = ref.current;
+    if (!section) return null;
+    const vh = section.querySelector('.clouds__stage').clientHeight || window.innerHeight;
+    return window.scrollY + section.getBoundingClientRect().top + screens * vh;
+  };
+  useEffect(() => {
+    registerTarget('about', () => at(T.show[1]));
+    registerTarget('work', () => at(T.cards));
+  }, []);
+  const goToCard = i => window.scrollTo({ top: at(T.cards + i * T.step), behavior: 'smooth' });
+
   useEffect(() => {
     const section = ref.current;
     if (!section) return undefined;
@@ -67,36 +95,37 @@ export default function Clouds({ theme }) {
     const far = section.querySelector('.clouds__ceiling--far');
     const copy = section.querySelector('.clouds__copy');
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    let raf = 0, visible = false, started = false;
+    let raf = 0, visible = false, started = false, shown = false, lastPos = -1;
     const t0 = performance.now();
 
     const frame = now => {
       raf = 0;
       const r = section.getBoundingClientRect();
       const vh = stage.clientHeight || window.innerHeight, vw = stage.clientWidth || window.innerWidth;
-      const p = Math.min(Math.max(0, -r.top), Math.max(0, r.height - vh)) / vh; // screens scrolled into the section
-      const edge = edgePx(), phone = vw < 760;
+      const s = Math.min(Math.max(0, -r.top), Math.max(0, r.height - vh)) / vh; // screens scrolled into the section
+      const edge = edgePx();
       const t = reduce ? 0 : (now - t0) * 0.00008, w = Math.min(1, vw / 1280);
 
-      // the covering cloud: tall enough to fill the screen at p = 0, then it rises until its underside hangs at the top
+      // the covering cloud fills the screen at s = 0 and rises until even its underside has passed off the top
       const hc = vh + edge * 1.6;
-      cover.style.height = `${hc.toFixed(0)}px`;
-      const rest = vh * (phone ? 0.25 : 0.27);
-      const rise = smooth(0, 0.66, p);
-      const pan = smooth(1.8, 2.9, p) * vw;
-      // as the scene pans, the clouds lift off the top of the screen, gone well before section 3 settles
-      const lift = smooth(1.8, 2.58, p) * (vh * 0.45 + edge);
-      cover.style.transform = `translate3d(${(Math.sin(t * 1.3) * -30 * w).toFixed(1)}px,${(-rise * (hc - rest) - lift).toFixed(1)}px,0)`;
-      // a darker bank behind it hangs a little lower, rises less and pans a little slower: depth
-      far.style.height = `${hc.toFixed(0)}px`;
-      const restFar = rest + vh * 0.07;
-      far.style.transform = `translate3d(${(pan * 0.18 + Math.sin(t + 1.3) * 26 * w).toFixed(1)}px,${(vh * 0.25 * (1 - rise) - rise * (hc - restFar) - lift * 1.05).toFixed(1)}px,0)`;
+      cover.style.height = far.style.height = `${hc.toFixed(0)}px`;
+      const rise = smooth(0, T.rise, s), riseFar = smooth(0, T.farRise, s);
+      cover.style.transform = `translate3d(${(Math.sin(t * 1.3) * -30 * w).toFixed(1)}px,${(-rise * (hc + 40)).toFixed(1)}px,0)`;
+      // a darker bank behind it starts a little lower and rises a little later: depth
+      far.style.transform = `translate3d(${(Math.sin(t + 1.3) * 26 * w).toFixed(1)}px,${(vh * 0.25 * (1 - riseFar) - riseFar * (hc + 40)).toFixed(1)}px,0)`;
+      const hidden = rise >= 1 && riseFar >= 1;
+      cover.style.visibility = far.style.visibility = hidden ? 'hidden' : '';
+
+      const pan = smooth(T.pan[0], T.pan[1], s) * vw;
       track.style.transform = `translate3d(${(-pan).toFixed(1)}px,0,0)`;
 
-      const show = smooth(0.42, 0.78, p);
+      const show = smooth(T.show[0], T.show[1], s);
       copy.style.opacity = show.toFixed(3);
       copy.style.transform = `translate3d(0,${((1 - show) * 28).toFixed(1)}px,0)`;
-      if (!started && p >= 0.6) { started = true; startTyping.current(); }
+      if (!started && s >= T.type) { started = true; startTyping.current(); }
+      if (!shown && s >= T.reveal) { shown = true; setRevealed(true); }
+      const pos = cardPos(s);
+      if (Math.abs(pos - lastPos) > 0.0005) { lastPos = pos; carousel.current?.setPosition(pos); }
       if (visible && !reduce) raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
@@ -110,7 +139,7 @@ export default function Clouds({ theme }) {
   }, []);
 
   return (
-    <section className="clouds" id="about" ref={ref} aria-labelledby="cloudsTitle">
+    <section className="clouds" id="about" ref={ref} aria-labelledby="cloudsTitle" style={{ height: `${((1 + SCREENS) * 100).toFixed(0)}vh` }}>
       <div className="clouds__stage">
         <div className="clouds__track">
           <div className="clouds__panel">
@@ -126,7 +155,7 @@ export default function Clouds({ theme }) {
           </div>
           {/* section 3 */}
           <section className="clouds__panel clouds__panel--work" id="work" aria-label="My work">
-            <Work theme={theme} />
+            <Work theme={theme} revealed={revealed} controlRef={carousel} onDotClick={goToCard} />
           </section>
           <div className="cbank cbank--bottom clouds__ceiling clouds__ceiling--far" style={{ '--mx': '-610px' }} aria-hidden="true" />
           <div className="cbank cbank--bottom clouds__ceiling clouds__ceiling--near" style={{ '--mx': '-170px' }} aria-hidden="true" />

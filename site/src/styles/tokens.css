@@ -23,6 +23,7 @@
   --cloud-in:#BDBDB8;           /* inside the clouds (section 2), darker than the clouds */
   --shine:#A3A39F;              /* the sweep of light across shiny text */
   --card:#F2F2EF; --card-line:rgba(31,31,31,.12); --card-shadow:.28;   /* project cards (section 3) */
+  --menu-bg:#ECECE8; --menu-layer:#1F1F1F;                           /* the menu panel and the layer that sweeps in before it */
   --cloud-far-hi:#E6E6E2; --cloud-far:#D0D0CB; --cloud-far-lo:#B9B9B4;       /* far cloud layers: lit top, body, underside */
   --cloud-near-hi:#FFFFFF; --cloud-near:#F1F1EE; --cloud-near-lo:#DADAD5;    /* near cloud layers */
 
@@ -48,6 +49,7 @@
   --highlight:#A9B887; --focus:#A9B887; --smoke:#7F8C80;
   --cloud-in:#1E1E21; --shine:#FFFFFF;
   --card:#2A2A2E; --card-line:rgba(226,232,214,.12); --card-shadow:.6;
+  --menu-bg:#141416; --menu-layer:#2A2A2E;
   --cloud-far-hi:#7A7A7E; --cloud-far:#5F5F63; --cloud-far-lo:#4A4A4E;
   --cloud-near-hi:#B2B2B6; --cloud-near:#949498; --cloud-near-lo:#6C6C70;
 }}
@@ -59,6 +61,7 @@
   --highlight:#A9B887; --focus:#A9B887; --smoke:#7F8C80;
   --cloud-in:#1E1E21; --shine:#FFFFFF;
   --card:#2A2A2E; --card-line:rgba(226,232,214,.12); --card-shadow:.6;
+  --menu-bg:#141416; --menu-layer:#2A2A2E;
   --cloud-far-hi:#7A7A7E; --cloud-far:#5F5F63; --cloud-far-lo:#4A4A4E;
   --cloud-near-hi:#B2B2B6; --cloud-near:#949498; --cloud-near-lo:#6C6C70;
 }

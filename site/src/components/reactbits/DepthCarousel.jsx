@@ -1,6 +1,9 @@
 // From React Bits (https://reactbits.dev, github.com/DavidHDev/react-bits), (c) 2026 David Haz, MIT + Commons Clause. See LICENSE-react-bits.md.
 // Changes for this site: a card can carry its own content (item.content) instead of an image; only sideways wheel or
-// trackpad swipes move it (vertical scrolling scrolls the page); aria-label comes from the label prop.
+// trackpad swipes move it (vertical scrolling scrolls the page); aria-label comes from the label prop; controlRef lets the
+// page set the position directly (scroll-driven), interactive={false} turns off drag/wheel/keys/card clicks, edgePad sets
+// the room kept beside the stack when scaling to fit, onDotClick replaces the dots' own action, exitFade > 1 makes a card
+// leaving the front fade out faster.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
@@ -41,6 +44,11 @@ const DepthCarousel = ({
   showIndicators = true,
   onChange,
   label = 'Depth carousel',
+  controlRef,
+  interactive = true,
+  edgePad = 120,
+  exitFade = 1,
+  onDotClick,
   className = ''
 }) => {
   const data = useMemo(() => (Array.isArray(items) ? items : []).map(normalizeItem), [items]);
@@ -79,7 +87,10 @@ const DepthCarousel = ({
     ease,
     loop,
     cardWidth,
-    autoplayDelay
+    autoplayDelay,
+    interactive,
+    edgePad,
+    exitFade
   };
 
   const layout = useCallback(pos => {
@@ -107,7 +118,7 @@ const DepthCarousel = ({
       const tx = dir * cfg.spread * d;
       const ry = dir * cfg.tilt * clamp(d, 0, 1);
 
-      let opacity = d < 0 ? Math.max(0, 1 + d) : 1;
+      let opacity = d < 0 ? Math.max(0, 1 + d * cfg.exitFade) : 1;
       if (!shown) opacity = 0;
 
       const brightness = Math.max(0.15, 1 - back * cfg.falloff);
@@ -185,7 +196,7 @@ const DepthCarousel = ({
     const ro = new ResizeObserver(entries => {
       const w = entries[0].contentRect.width;
       const cfg = cfgRef.current;
-      const needed = cfg.cardWidth + Math.abs(cfg.spread) * 2 + 120;
+      const needed = cfg.cardWidth + Math.abs(cfg.spread) * 2 + cfg.edgePad;
       scaleRef.current = clamp(w / needed, 0.4, 1);
       layout(posRef.current);
     });
@@ -198,7 +209,7 @@ const DepthCarousel = ({
     if (!el) return;
     const onWheel = e => {
       const cfg = cfgRef.current;
-      if (cfg.count < 2) return;
+      if (cfg.count < 2 || !cfg.interactive) return;
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
       e.preventDefault();
       tweenRef.current?.kill();
@@ -219,7 +230,7 @@ const DepthCarousel = ({
 
   const onPointerDown = useCallback(e => {
     const cfg = cfgRef.current;
-    if (cfg.count < 2) return;
+    if (cfg.count < 2 || !cfg.interactive) return;
     tweenRef.current?.kill();
     dragRef.current = {
       x: e.clientX,
@@ -268,6 +279,7 @@ const DepthCarousel = ({
 
   const onKeyDown = useCallback(
     e => {
+      if (!cfgRef.current.interactive) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         navigateBy(-1);
@@ -281,7 +293,7 @@ const DepthCarousel = ({
 
   const onCardClick = useCallback(
     index => {
-      if (dragRef.current?.moved) return;
+      if (dragRef.current?.moved || !cfgRef.current.interactive) return;
       setFocus(index, true);
     },
     [setFocus]
@@ -331,6 +343,22 @@ const DepthCarousel = ({
       root?.removeEventListener('focusout', onFocusOut);
     };
   }, [autoplay, autoplayDelay, count, navigateBy]);
+
+  if (controlRef) {
+    controlRef.current = {
+      setPosition: p => {
+        tweenRef.current?.kill();
+        posRef.current = p;
+        layout(p);
+        const n = cfgRef.current.count;
+        const idx = clamp(Math.round(p), 0, Math.max(0, n - 1));
+        if (idx !== focusRef.current) {
+          focusRef.current = idx;
+          notify(idx);
+        }
+      }
+    };
+  }
 
   useEffect(() => {
     layout(posRef.current);
@@ -431,7 +459,7 @@ const DepthCarousel = ({
               aria-selected={active === i}
               aria-label={`Go to slide ${i + 1}`}
               className={`depth-carousel__dot${active === i ? ' is-active' : ''}`}
-              onClick={() => setFocus(i, true)}
+              onClick={() => (onDotClick ? onDotClick(i) : setFocus(i, true))}
             />
           ))}
         </div>
