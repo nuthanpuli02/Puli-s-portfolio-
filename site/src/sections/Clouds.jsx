@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import ShinyText from '../components/reactbits/ShinyText.jsx';
 import TextType from '../components/reactbits/TextType.jsx';
+import Work from './Work.jsx';
 
-// Section 2, inside the clouds. The hero's clouds rise and cover the screen; the section's stage then stays
-// pinned while you scroll, and scroll progress p (0 → 1) drives it:
-//   0 → .22  the covering cloud keeps rising until it hangs as a ceiling, revealing the darker inside of the cloud
-//   .14→ .26 "Puli's Portfolio" (React Bits ShinyText) fades in; at .2 the intro lines start typing (React Bits TextType)
-//   .60→ .97 the whole scene pans sideways, as if the camera moves right, into section 3,
-//            while the clouds lift off the top (gone by .86)
+// Section 2, inside the clouds, and the way into section 3. The hero's clouds rise and cover the screen; the section's
+// stage then stays pinned while you scroll. Progress is measured in screens scrolled (s):
+//   0   → .66  the covering cloud keeps rising until it hangs as a ceiling, revealing the darker inside of the cloud
+//   .42 → .78  "Puli's Portfolio" (React Bits ShinyText) fades in; at .6 the intro lines start typing (React Bits TextType)
+//   1.8 → 2.9  the whole scene pans sideways, as if the camera moves right, into section 3 (Work.jsx),
+//              while the clouds lift off the top (gone by 2.6)
+//   2.9 → 3.4  section 3 stays pinned for a moment, then the page scrolls on
 // The typing plays once per page load: once started it never resets, even if you scroll back up.
 // Only transforms and opacity change per frame, and the loop runs only while the section is on screen.
 
@@ -72,7 +74,7 @@ export default function Clouds({ theme }) {
       raf = 0;
       const r = section.getBoundingClientRect();
       const vh = stage.clientHeight || window.innerHeight, vw = stage.clientWidth || window.innerWidth;
-      const p = clamp01(-r.top / Math.max(1, r.height - vh));
+      const p = Math.min(Math.max(0, -r.top), Math.max(0, r.height - vh)) / vh; // screens scrolled into the section
       const edge = edgePx(), phone = vw < 760;
       const t = reduce ? 0 : (now - t0) * 0.00008, w = Math.min(1, vw / 1280);
 
@@ -80,10 +82,10 @@ export default function Clouds({ theme }) {
       const hc = vh + edge * 1.6;
       cover.style.height = `${hc.toFixed(0)}px`;
       const rest = vh * (phone ? 0.25 : 0.27);
-      const rise = smooth(0, 0.22, p);
-      const pan = smooth(0.6, 0.97, p) * vw;
+      const rise = smooth(0, 0.66, p);
+      const pan = smooth(1.8, 2.9, p) * vw;
       // as the scene pans, the clouds lift off the top of the screen, gone well before section 3 settles
-      const lift = smooth(0.6, 0.86, p) * (vh * 0.45 + edge);
+      const lift = smooth(1.8, 2.58, p) * (vh * 0.45 + edge);
       cover.style.transform = `translate3d(${(Math.sin(t * 1.3) * -30 * w).toFixed(1)}px,${(-rise * (hc - rest) - lift).toFixed(1)}px,0)`;
       // a darker bank behind it hangs a little lower, rises less and pans a little slower: depth
       far.style.height = `${hc.toFixed(0)}px`;
@@ -91,10 +93,10 @@ export default function Clouds({ theme }) {
       far.style.transform = `translate3d(${(pan * 0.18 + Math.sin(t + 1.3) * 26 * w).toFixed(1)}px,${(vh * 0.25 * (1 - rise) - rise * (hc - restFar) - lift * 1.05).toFixed(1)}px,0)`;
       track.style.transform = `translate3d(${(-pan).toFixed(1)}px,0,0)`;
 
-      const show = smooth(0.14, 0.26, p);
+      const show = smooth(0.42, 0.78, p);
       copy.style.opacity = show.toFixed(3);
       copy.style.transform = `translate3d(0,${((1 - show) * 28).toFixed(1)}px,0)`;
-      if (!started && p >= 0.2) { started = true; startTyping.current(); }
+      if (!started && p >= 0.6) { started = true; startTyping.current(); }
       if (visible && !reduce) raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
@@ -122,10 +124,10 @@ export default function Clouds({ theme }) {
               <TypedLine text={LINE2} start={typing >= 2} cursor={typing === 2} />
             </div>
           </div>
-          {/* section 3 starts here; Puli has its design in mind, so this is a placeholder for now */}
-          <div className="clouds__panel clouds__panel--next" id="work" aria-label="My work (coming next)">
-            <p>Section 3 · coming next</p>
-          </div>
+          {/* section 3 */}
+          <section className="clouds__panel clouds__panel--work" id="work" aria-label="My work">
+            <Work theme={theme} />
+          </section>
           <div className="cbank cbank--bottom clouds__ceiling clouds__ceiling--far" style={{ '--mx': '-610px' }} aria-hidden="true" />
           <div className="cbank cbank--bottom clouds__ceiling clouds__ceiling--near" style={{ '--mx': '-170px' }} aria-hidden="true" />
         </div>
