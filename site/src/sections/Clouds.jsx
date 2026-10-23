@@ -6,7 +6,8 @@ import TextType from '../components/reactbits/TextType.jsx';
 // pinned while you scroll, and scroll progress p (0 → 1) drives it:
 //   0 → .22  the covering cloud keeps rising until it hangs as a ceiling, revealing the darker inside of the cloud
 //   .14→ .26 "Puli's Portfolio" (React Bits ShinyText) fades in; at .2 the intro lines start typing (React Bits TextType)
-//   .60→ .97 the whole scene pans sideways, as if the camera moves right, into section 3
+//   .60→ .97 the whole scene pans sideways, as if the camera moves right, into section 3,
+//            while the clouds lift off the top (gone by .86)
 // The typing plays once per page load: once started it never resets, even if you scroll back up.
 // Only transforms and opacity change per frame, and the loop runs only while the section is on screen.
 
@@ -81,11 +82,13 @@ export default function Clouds({ theme }) {
       const rest = vh * (phone ? 0.25 : 0.27);
       const rise = smooth(0, 0.22, p);
       const pan = smooth(0.6, 0.97, p) * vw;
-      cover.style.transform = `translate3d(${(Math.sin(t * 1.3) * -30 * w).toFixed(1)}px,${(-rise * (hc - rest)).toFixed(1)}px,0)`;
+      // as the scene pans, the clouds lift off the top of the screen, gone well before section 3 settles
+      const lift = smooth(0.6, 0.86, p) * (vh * 0.45 + edge);
+      cover.style.transform = `translate3d(${(Math.sin(t * 1.3) * -30 * w).toFixed(1)}px,${(-rise * (hc - rest) - lift).toFixed(1)}px,0)`;
       // a darker bank behind it hangs a little lower, rises less and pans a little slower: depth
       far.style.height = `${hc.toFixed(0)}px`;
       const restFar = rest + vh * 0.07;
-      far.style.transform = `translate3d(${(pan * 0.18 + Math.sin(t + 1.3) * 26 * w).toFixed(1)}px,${(vh * 0.25 * (1 - rise) - rise * (hc - restFar)).toFixed(1)}px,0)`;
+      far.style.transform = `translate3d(${(pan * 0.18 + Math.sin(t + 1.3) * 26 * w).toFixed(1)}px,${(vh * 0.25 * (1 - rise) - rise * (hc - restFar) - lift * 1.05).toFixed(1)}px,0)`;
       track.style.transform = `translate3d(${(-pan).toFixed(1)}px,0,0)`;
 
       const show = smooth(0.14, 0.26, p);
