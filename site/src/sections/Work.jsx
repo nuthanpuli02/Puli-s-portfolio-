@@ -11,17 +11,18 @@ import { PROJECTS } from '../data/projects.js';
 // (Clouds.jsx sets `revealed`); after that the page's scroll moves the carousel card by card (Clouds.jsx calls
 // controlRef.current.setPosition), forwards and back. The dots jump the page to a card.
 
-// tree settings: red blossoms in both modes, mirrored (direction 'right'); at night they glow softly
+// tree settings: red blossoms in both modes, mirrored (direction 'right'); at night they glow softly. No haze, vignette,
+// fade or grain: the canvas background matches the section exactly, so the tree has no visible box around it
 const TREE = {
   day: {
     background: '#BDBDB8', blossomColor: '#C41E2A', glow: 0, petals: 90, wind: 30, speed: 100, scale: 100, direction: 'right',
     advanced: { branchColor: '#2B2728', petalColor: '#E9A3A9', eyeColor: '#4A0710', hazeColor: '#BDBDB8', hazeOpacity: 0,
-      vignette: 0, fade: 0, grain: 4, bokehOpacity: 0, highlight: 100 },
+      vignette: 0, fade: 0, grain: 0, bokehOpacity: 0, highlight: 100, crownReach: 80 },
   },
   night: {
     background: '#1E1E21', blossomColor: '#C41E2A', glow: 45, petals: 90, wind: 30, speed: 100, scale: 100, direction: 'right',
-    advanced: { branchColor: '#47423F', petalColor: '#E9A3A9', eyeColor: '#3A050C', hazeColor: '#3A2326', hazeOpacity: 30,
-      vignette: 18, fade: 18, grain: 5, bokehOpacity: 45, highlight: 100 },
+    advanced: { branchColor: '#47423F', petalColor: '#E9A3A9', eyeColor: '#3A050C', hazeColor: '#3A2326', hazeOpacity: 0,
+      vignette: 0, fade: 0, grain: 0, bokehOpacity: 45, highlight: 100, crownReach: 80 },
   },
 };
 
@@ -66,11 +67,11 @@ function useCardSize() {
   const get = () => {
     const vw = window.innerWidth, vh = window.innerHeight;
     if (vw < 760) {
-      const w = Math.min(320, vw - 72);
-      return { w, h: Math.round(Math.min(w * 1.3, vh * 0.5)), spread: 14, pad: 40 };
+      const w = Math.min(420, vw - 52);
+      return { w, h: Math.round(Math.min(w * 1.12, vh * 0.48)), spread: 10, pad: 20 };
     }
-    const h = Math.round(Math.max(380, Math.min(560, vh * 0.6)));
-    return { w: Math.round(h * 0.78), h, spread: 110, pad: 120 };
+    const h = Math.round(Math.max(380, Math.min(540, vh * 0.58)));
+    return { w: Math.round(Math.min(h * 1.12, vw * 0.44)), h, spread: 100, pad: 110 };
   };
   const [s, setS] = useState(get);
   useEffect(() => {

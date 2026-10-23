@@ -152,14 +152,14 @@ html{scroll-behavior:smooth}
 
 /* ===== section 3: my work (inside section 2's track, at the end of its pan) ===== */
 .work{position:absolute;inset:0}
-/* the tree: mirrored, on the right, 30% of the width; it fades out toward the content */
-.work__tree{position:absolute;right:0;top:0;bottom:0;width:30%;
-  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 72%,transparent 100%);mask-image:linear-gradient(270deg,#000 0,#000 72%,transparent 100%)}
+/* the tree: mirrored, on the right, drawn whole (its canvas is wide enough for the full crown, 0.78 × its height) and
+   pushed partly off the right edge so about a third of the screen shows it */
+.work__tree{position:absolute;top:0;bottom:0;width:78lvh;right:min(0px,calc(34vw - 78lvh))}
 .work__tree canvas{position:absolute;inset:0;width:100%;height:100%;display:block;transform:scaleX(-1)}
 .work__content{position:absolute;left:0;top:0;bottom:0;width:72%;display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.6vh,18px);
   padding:calc(var(--header-h) + 8px) 0 18px var(--gutter);min-width:0}
 .work__head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-right:4%}
-.work__title{margin:0;font:900 clamp(44px,5.6vw,88px)/.95 var(--font-sans);letter-spacing:-.02em;text-transform:uppercase;color:var(--text)}
+.work__title{margin:0;font:900 clamp(34px,4vw,62px)/.95 var(--font-sans);letter-spacing:-.02em;text-transform:uppercase;color:var(--text)}
 .work__title--wait{opacity:0}
 .work__count{margin:0 0 .4em;font:500 13px/1 var(--font-sans);letter-spacing:.12em;color:var(--text-soft);font-variant-numeric:tabular-nums}
 .work__count b{color:var(--text);font-weight:700}
@@ -228,11 +228,10 @@ html{scroll-behavior:smooth}
   .hero__cloud--far{top:62%} .hero__cloud--near{top:70%}
   .clouds__title .shiny-text{flex-direction:column;align-items:center;row-gap:2px}
   .clouds__copy{top:24%}
-  .work__tree{width:62%;bottom:auto;height:30%;
-    -webkit-mask-image:linear-gradient(225deg,#000 0,#000 45%,transparent 85%);mask-image:linear-gradient(225deg,#000 0,#000 45%,transparent 85%)}
+  .work__tree{bottom:auto;height:30%;width:calc(30lvh * .78);right:min(0px,calc(64vw - 30lvh * .78))}
   .work__content{width:100%;top:0;justify-content:flex-start;padding:calc(var(--header-h) + 14vh) var(--gutter) 16px}
   .work__head{padding-right:0}
-  .work__title{font-size:13vw}
+  .work__title{font-size:10vw}
   .work-card__body{padding:20px 18px 18px;gap:10px}
   .work-card__title{font-size:21px}
   .work-card__text{font-size:14px}
