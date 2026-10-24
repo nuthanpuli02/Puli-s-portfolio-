@@ -1,8 +1,10 @@
 // Puli's projects, shortened from the old page's Selected Work cards (index.html). Copy gets its final edit in the review.
-// status: 'building' = in progress (shown with a red dot), otherwise finished.
+// status: 'building' = in progress (shown with a red dot), otherwise finished. figure: name of an animated figure in
+// src/figures/ shown at the top of the card.
 export const PROJECTS = [
   {
     status: 'building', tag: "In progress · Bachelor's thesis",
+    figure: 'thesis', // an animated Anatomy figure on the card (src/figures/)
     title: 'Self-optimising code vulnerability detection',
     text: 'A fine-tuned transformer that flags vulnerable functions, wrapped in a loop of three AI agents that train it, test it and debate the next configuration. Benchmarked against Optuna.',
     chips: ['PyTorch', 'CodeBERT', 'Multi-agent AI', 'Optuna'],

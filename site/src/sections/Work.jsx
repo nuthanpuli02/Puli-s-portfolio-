@@ -4,6 +4,8 @@ import DepthCarousel from '../components/reactbits/DepthCarousel.jsx';
 import BlurText from '../components/reactbits/BlurText.jsx';
 import PixelCard from '../components/reactbits/PixelCard.jsx';
 import { PROJECTS } from '../data/projects.js';
+import { thesisFigure } from '../figures/thesisFigure.js';
+import '../components/anatomy/iso.css';
 
 // Section 3, my work. It sits at the end of section 2's sideways pan. Left: the title (React Bits BlurText) over the
 // projects in a React Bits DepthCarousel whose cards are React Bits PixelCards. Right: the blossom tree (Originkit
@@ -51,6 +53,21 @@ function Tree({ theme }) {
   );
 }
 
+// animated figures drawn with the Anatomy kit (src/figures/); each runs only on the card at the front
+const FIGURES = { thesis: thesisFigure };
+function Figure({ name, active }) {
+  const fig = useMemo(() => FIGURES[name](), [name]);
+  const stageRef = useRef(null);
+  const [label, setLabel] = useState('');
+  useEffect(() => (active ? fig.start(stageRef.current, setLabel) : undefined), [active, fig]);
+  return (
+    <div className="work-fig iso">
+      <div className="iso-stage work-fig__stage" ref={stageRef} dangerouslySetInnerHTML={{ __html: fig.svg }} />
+      <p className="work-fig__readout" aria-hidden="true">{label}</p>
+    </div>
+  );
+}
+
 function Card({ p, front, theme }) {
   const px = theme === 'dark' ? PIXELS.night : PIXELS.day;
   // the card at the front shimmers on its own; the others light up when hovered
@@ -58,7 +75,8 @@ function Card({ p, front, theme }) {
     <PixelCard className="work-card" trigger={front ? 'always' : 'hover'} colors={px.colors} glowColor={px.glow}
       gap={7} pixelSize={2} speed={28} opacity={0.75} fade={0.6} glow={0.35} spotlight={0.4} intro={false} noFocus
       theme={theme === 'dark' ? 'dark' : 'light'} radius={20}>
-      <div className={`work-card__body${p.status === 'building' ? ' work-card--live' : ''}`}>
+      <div className={`work-card__body${p.status === 'building' ? ' work-card--live' : ''}${p.figure ? ' has-figure' : ''}`}>
+        {p.figure && <Figure name={p.figure} active={front} />}
         <p className="work-card__tag">{p.status === 'building' && <i aria-hidden="true" />}{p.tag}</p>
         <h3 className="work-card__title">{p.title}</h3>
         <p className="work-card__text">{p.text}</p>

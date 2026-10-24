@@ -194,6 +194,18 @@ html{scroll-behavior:smooth}
 .work-card__text{margin:0;font:400 clamp(14px,1.1vw,16px)/1.6 var(--font-sans);color:var(--text-soft)}
 .work-card__chips{list-style:none;margin:auto 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
 .work-card__chips li{font:500 12px/1 var(--font-sans);padding:7px 10px;border-radius:999px;border:1px solid var(--card-line);background:var(--card);color:var(--text-soft)}
+/* a figure at the top of a card (Anatomy kit), in the site's colours: paper = the card, lit = the accent */
+.work-fig.iso{flex:0 1 54%;min-height:0;display:flex;flex-direction:column;align-items:center;margin:-10px -12px 0;
+  --anatomy-paper:var(--card);--anatomy-face:var(--fig-face);--anatomy-top:var(--fig-top);
+  --anatomy-shade-0:var(--fig-s0);--anatomy-shade-1:var(--fig-s1);--anatomy-shade-2:var(--fig-s2);--anatomy-shade-3:var(--fig-s3);
+  --anatomy-lit-top:var(--fig-lit-top);--anatomy-lit-shade:var(--fig-lit-shade);
+  --anatomy-hi:var(--fig-hi);--anatomy-mid:var(--fig-mid);--anatomy-lo:var(--fig-lo);--anatomy-faint:var(--fig-faint);--anatomy-lit:var(--accent);
+  --anatomy-halo:var(--fig-halo);--anatomy-halo-opacity:var(--fig-halo-o);--anatomy-dot:var(--fig-dot)}
+.work-fig__stage{flex:1 1 auto;min-height:0;width:100%;display:flex;justify-content:center}
+.work-fig__stage svg{height:100%;width:auto;max-width:100%}
+.work-fig__readout{margin:2px 0 0;min-height:1.3em;font:500 10.5px/1.3 var(--anatomy-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft);align-self:flex-end}
+.work-card__body.has-figure{gap:10px}
+.work-card__body.has-figure .work-card__text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
 /* ===== menu (React Bits StaggeredMenu) ===== */
 .site-menu .staggered-menu-header{height:calc(var(--header-h) + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) var(--gutter) 0;
@@ -238,6 +250,8 @@ html{scroll-behavior:smooth}
   .work-card__body{padding:20px 18px 18px;gap:10px}
   .work-card__title{font-size:21px}
   .work-card__text{font-size:14px}
+  .work-fig.iso{flex-basis:40%}
+  .work-card__body.has-figure .work-card__chips{display:none}
   .clouds__caps{font-size:13vw}
   .clouds__script{font-size:15vw}
 }

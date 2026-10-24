@@ -29,6 +29,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-24: Anatomy figure on the thesis card; character images; skills checked
+- Puli shared two repos. **Anatomy** (github.com/wheresryan22/anatomy, MIT): a skill for detailed isometric "machine" figures in SVG; it can't model people, so the character still goes Gemini → Tripo → Mixamo. **Agent Reach**: copies Chrome logins into its own browser to read login-walled sites; not used (most of those hosts are blocked here, and it handles his real logins).
+- **Thesis card figure** (`site/src/figures/thesisFigure.js`, kit copied to `site/src/components/anatomy/`): a three-station indexing table. A cartridge (the model) rides the turntable from the TRAIN press to the TEST dial gauge (needle vs a target mark) to the DISCUSS console (three knobs = next settings), four rounds, until the needle passes the mark and the stop lamp lights; then it winds back. The needle is illustrative, not results (the card's caption-free figure has a small live readout like "ROUND 2 · TEST"). Runs only on the front card and only while on screen; reduced motion shows the finished state. Colours follow the site (`--fig-*` tokens, paper = card, lit = accent). `projects.js` has `figure: 'thesis'`; cards with a figure clamp their text to 3 lines (chips hidden on phones).
+- **Character:** Puli made four Gemini images (front A-pose, back, left, right) in "Puli portfolio cloud images" on his Desktop: beige field shirt, satchel, belt, khaki cargos, boots, fingerless gloves, his face. He is generating the Tripo model from the front image only (Tripo free tier takes one image).
+- Next: figures for other cards if Puli likes this one (ideas: Artha = pressure line with a loss-guard valve; DEICMS = sealed evidence drawers with a tamper gauge; SQL vs NoSQL = five storage cabinets).
+
 ### 2026-10-23: section 5 (game teaser) agreed; new character pipeline
 Decided with Puli (not built yet):
 - **Copy:** "Okay, enough serious projects. Plot twist: I also make games. Small ones, but they count. Bet you can't catch the button first." Button text while it dodges: "Catch me", "Nope", "Alright, alright", then "Play" when it gives in.

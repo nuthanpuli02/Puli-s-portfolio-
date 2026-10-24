@@ -24,6 +24,10 @@
   --shine:#A3A39F;              /* the sweep of light across shiny text */
   --card:#F2F2EF; --card-line:rgba(31,31,31,.12); --card-shadow:.28;   /* project cards (section 3) */
   --menu-bg:#ECECE8; --menu-layer:#1F1F1F;                           /* the menu panel and the layer that sweeps in before it */
+  /* figures on the project cards (Anatomy kit tones; paper is the card) */
+  --fig-face:#ffffff; --fig-top:#ffffff; --fig-s0:#d9d9d5; --fig-s1:#e2e2de; --fig-s2:#eaeae6; --fig-s3:#f0f0ec;
+  --fig-lit-top:#ffffff; --fig-lit-shade:#eeeeeb; --fig-hi:#26262a; --fig-mid:#8a8a8f; --fig-lo:#b4b4b8; --fig-faint:#d4d4d6;
+  --fig-halo:#8a8a80; --fig-halo-o:.32; --fig-dot:#3a3a3e;
   --cloud-far-hi:#E6E6E2; --cloud-far:#D0D0CB; --cloud-far-lo:#B9B9B4;       /* far cloud layers: lit top, body, underside */
   --cloud-near-hi:#FFFFFF; --cloud-near:#F1F1EE; --cloud-near-lo:#DADAD5;    /* near cloud layers */
 
@@ -50,6 +54,9 @@
   --cloud-in:#1E1E21; --shine:#FFFFFF;
   --card:#2A2A2E; --card-line:rgba(226,232,214,.12); --card-shadow:.6;
   --menu-bg:#141416; --menu-layer:#2A2A2E;
+  --fig-face:#323236; --fig-top:#34343a; --fig-s0:#25252a; --fig-s1:#28282d; --fig-s2:#2c2c31; --fig-s3:#303035;
+  --fig-lit-top:#3c3c42; --fig-lit-shade:#35353a; --fig-hi:#d8d8d4; --fig-mid:#7c7c82; --fig-lo:#56565c; --fig-faint:#3e3e44;
+  --fig-halo:#000000; --fig-halo-o:.55; --fig-dot:#e6e6e6;
   --cloud-far-hi:#7A7A7E; --cloud-far:#5F5F63; --cloud-far-lo:#4A4A4E;
   --cloud-near-hi:#B2B2B6; --cloud-near:#949498; --cloud-near-lo:#6C6C70;
 }}
@@ -62,6 +69,9 @@
   --cloud-in:#1E1E21; --shine:#FFFFFF;
   --card:#2A2A2E; --card-line:rgba(226,232,214,.12); --card-shadow:.6;
   --menu-bg:#141416; --menu-layer:#2A2A2E;
+  --fig-face:#323236; --fig-top:#34343a; --fig-s0:#25252a; --fig-s1:#28282d; --fig-s2:#2c2c31; --fig-s3:#303035;
+  --fig-lit-top:#3c3c42; --fig-lit-shade:#35353a; --fig-hi:#d8d8d4; --fig-mid:#7c7c82; --fig-lo:#56565c; --fig-faint:#3e3e44;
+  --fig-halo:#000000; --fig-halo-o:.55; --fig-dot:#e6e6e6;
   --cloud-far-hi:#7A7A7E; --cloud-far:#5F5F63; --cloud-far-lo:#4A4A4E;
   --cloud-near-hi:#B2B2B6; --cloud-near:#949498; --cloud-near-lo:#6C6C70;
 }
