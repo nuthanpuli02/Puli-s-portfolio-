@@ -1,0 +1,28 @@
+<!doctype html><html><body style="margin:0;background:#777">
+<canvas id="c"></canvas>
+<script type="importmap">{"imports":{"three":"./r/node_modules/three/build/three.module.js","three/addons/":"./r/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const q=new URLSearchParams(location.search);
+const W=+(q.get('w')||800),H=+(q.get('h')||1400);
+const r=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,preserveDrawingBuffer:true});
+r.setSize(W,H);r.setClearColor(0x777777);
+r.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();
+const g=await new GLTFLoader().loadAsync(q.get('m')||'model.glb');
+const mesh=g.scene.getObjectByProperty('isMesh',true);
+const unlit=q.get('lit')!=='1';
+if(q.get('nomip')==='1'){for(const t of [mesh.material.map,mesh.material.normalMap,mesh.material.roughnessMap]){if(t){t.generateMipmaps=false;t.minFilter=THREE.LinearFilter;t.needsUpdate=true;}}}
+if(unlit){mesh.material=new THREE.MeshBasicMaterial({map:mesh.material.map});}
+else{scene.add(new THREE.HemisphereLight(0xffffff,0x555555,1.6));const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(1,2,3);scene.add(d);}
+scene.add(g.scene);
+window.render=(yaw,cx,cy,half)=>{ // yaw degrees, ortho window centred at (cx,cy) of half-height
+  const a=yaw*Math.PI/180, R=3;
+  const cam=new THREE.OrthographicCamera(-half*W/H,half*W/H,half,-half,0.1,10);
+  cam.position.set(Math.sin(a)*R+0,cy,Math.cos(a)*R);cam.lookAt(0,cy,0);
+  // shift horizontally for cx
+  cam.position.x+=Math.cos(a)*cx;cam.position.z-=Math.sin(a)*cx;
+  r.render(scene,cam);return true;};
+window.ready=true;
+</script></body></html>

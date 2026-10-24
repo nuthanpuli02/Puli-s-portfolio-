@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Section 5 / new character (2026-10-23):** waiting for Puli's Tripo model and Mixamo animations (see Log for the list); meanwhile section 5 can be built with the current voxel Puli as a stand-in.
+- **Section 5 / new character (2026-10-23):** the Tripo model is in and its texture is fixed (2026-10-25, see Log); next Puli rigs and animates it in Mixamo (upload `puli_fbx_for_mixamo.zip`; animation list in the Log); meanwhile section 5 can be built with the current voxel Puli as a stand-in.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -28,6 +28,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-25: Tripo character texture fixed
+- Puli's downloadable Tripo model had a smeared, wrong face, copper-shiny arms (the metal map marked skin as metal), grey boots and a white band on the neck.
+- Re-projected his Gemini reference images onto the model's texture: front and back photos on the whole body (silhouettes fitted to within ~5%), the right-side photo on the head (mirrored for the left side, because the left-side photo has a different, shorter hairstyle). Areas no photo sees are filled by spreading colour over the mesh. Metalness off, roughness matte, the head's normal map calmed (it carried grooves from the old face).
+- Output on Puli's computer, "Puli portfolio cloud images/Puli model fixed/": `puli_fixed.glb`, `puli_fbx_for_mixamo.zip` (the Tripo FBX with the fixed textures, same UV layout), `before_after.jpg`, `pixel_before_after.png`. Scripts in `tools/texture_bake/`.
+- Known leftovers: the geometry is unchanged (eyes are soft shapes, a hair lock sticks out over the right temple and shows as a dark ragged patch in 3/4 close-ups); a jagged seam on the glove fingers. Neither shows at pixel-art size.
+- Not in the repo yet; when it is used on the site it needs the Tripo credit (CC BY 4.0) on the site and in the README.
 
 ### 2026-10-24: Anatomy figure on the thesis card; character images; skills checked
 - Puli shared two repos. **Anatomy** (github.com/wheresryan22/anatomy, MIT): a skill for detailed isometric "machine" figures in SVG; it can't model people, so the character still goes Gemini → Tripo → Mixamo. **Agent Reach**: copies Chrome logins into its own browser to read login-walled sites; not used (most of those hosts are blocked here, and it handles his real logins).
