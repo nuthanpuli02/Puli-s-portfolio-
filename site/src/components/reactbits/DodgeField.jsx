@@ -1,7 +1,8 @@
 // From React Bits (https://reactbits.dev, github.com/DavidHDev/react-bits), (c) 2026 David Haz, MIT + Commons Clause. See LICENSE-react-bits.md.
 // Changes for this site (section 5): on touch screens (which can't hover) a tap before it gives up makes the button hop
-// somewhere else in the field and counts as a dodge; a keyboard press catches it straight away. Labels: the last taunt
-// shows once caught, the one before it once it gives up (e.g. Catch me -> Nope -> Alright, alright -> Play).
+// somewhere else in the field and counts as a dodge; after the last dodge it gives up and goes back to the middle; a
+// keyboard press catches it straight away. Labels: one per dodge, the last once it gives up (Catch me -> Nope ->
+// Alright, alright -> Play).
 // `stayCaught` keeps it caught (no reset); `onCatch` receives the button's screen rectangle.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -192,7 +193,7 @@ export default function DodgeField({
   useEffect(() => () => clearTimeout(hold.current), []);
 
   const hop = () => {
-    // somewhere else in the field, at least a third of the way across from where it is now
+    // somewhere else in the field, well away from where it is now
     const R = room.current;
     let tx = 0;
     let ty = 0;
@@ -210,8 +211,14 @@ export default function DodgeField({
     if (caught) return;
     const keyboard = e && e.detail === 0;
     if (!fine && !gave && !keyboard && !disabled && !reduce) {
+      const last = dodges + 1 >= Math.max(1, patience);
       setDodges(n => n + 1);
-      hop();
+      if (last) {
+        // it gives up: back to the middle, where it waits to be caught
+        const cfg = { type: 'spring', duration: 0.5, bounce: 0.2 };
+        animate(x, 0, cfg);
+        animate(y, 0, cfg);
+      } else hop();
       return;
     }
     setCaught(true);
@@ -226,11 +233,7 @@ export default function DodgeField({
   };
 
   const state = { dodges, gave, caught, fleeing: inside && !still };
-  const index = caught
-    ? taunts.length - 1
-    : gave
-      ? Math.max(0, taunts.length - 2)
-      : Math.min(dodges, Math.max(0, taunts.length - 3));
+  const index = gave || caught ? taunts.length - 1 : Math.min(dodges, Math.max(0, taunts.length - 2));
   const content =
     typeof children === 'function'
       ? children(state)

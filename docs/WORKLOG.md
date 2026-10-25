@@ -15,7 +15,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - **Section 5 / game teaser: where we left off (2026-10-25, paused at Puli's request).**
   - Character: blocky Tripo model, re-textured from Puli's picture, skin a little darker; 14 Mixamo clips combined (idle, walk, moonwalk, dance, jump, grab, hang, fallloop, fall, getup, run, runjump, slide). Files on Puli's computer in "Puli portfolio cloud images/Puli blocky fixed/": `puli_animated_small.glb` (1.45 MB, meshopt + webp, for the site), `puli_animated.glb` (11.5 MB, uncompressed). Raw Mixamo FBX files stay on his computer, never in the repo. Rebuild with `tools/texture_bake/blocky/anim/`.
   - Agreed sequence (test page https://claude.ai/artifact/5CeKdPZfKJuZx3DMVuPVo7, source `tools/texture_bake/blocky/anim/movetest.html`): moonwalk in from the left behind the button, hard cut into the dance's own moonwalk (moonwalk 0.40 s = dance 7.57 s), the dance's spin turns him to face the viewer; after the button is caught he turns side-on, jumps and hangs from the button's right end; carried off the top; fall loop, lands face-down (`fall`), gets up (`getup` trimmed at 5.3 s, ends before the fighting stance), then the game. Puli approved the moves, the character and the side grab.
-  - Built and live: section 5 copy + DodgeField button (touch hops, Catch me -> Nope -> Alright, alright -> Play) that turns into a FlyingButton and leaves through the top (`site/src/sections/Teaser.jsx`). Waiting for Puli's verdict on the dodging difficulty and take-off speed on his Redmi. Temporary: the button comes back 2.6 s after leaving.
+  - Built and live: section 5 copy + DodgeField button (touch hops, one label per dodge: Catch me -> Nope -> Alright, alright -> Play, back to the middle when it gives up) that turns into a FlyingButton and leaves through the top (`site/src/sections/Teaser.jsx`). Waiting for Puli's verdict on the dodging difficulty and take-off speed on his Redmi. Temporary: the button comes back 2.6 s after leaving.
   - Next: put Puli (three.js, `puli_animated_small.glb` with MeshoptDecoder, copied into `site/src/assets/`) behind the button in section 5, scroll-synced entrance, follow the FlyingButton via its `onFrame`, then the fall into the forest and the game start (default: wait for tap/Space with a "Tap to play" hint). Hold scroll during the flight and fall. Credit Tripo (CC BY 4.0) on the site and in the README once the model is in the repo.
   - Optional: let the take-off smoke spill below the button (the FlyingButton's floor is currently the bottom of its box).
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
@@ -32,6 +32,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-25: section 5 button: one label per dodge, centred
+- Puli tested on his phone: "Nope" showed twice, and the flying button wasn't centred.
+- Labels now go one per dodge: Catch me -> (dodge) Nope -> (dodge) Alright, alright -> (dodge) Play; tapping Play turns it into the flying button (back to React Bits' own label rule: the last label once it gives up after 3 dodges).
+- On touch, after the last dodge it springs back to the middle of the field, so it is caught there and takes off centred (checked at 393 px wide: centre 196 of 196.5).
 
 ### 2026-10-25: section 5 button: dodges, gives up, flies off the top
 - Puli: Puli should latch onto the button from the side (side-on, holding the end of the pill), not from the front or back. Done in the test page: he turns side-on, jumps, and the button meets his hands at the top of the jump; he hangs from its right end while it flies up.
