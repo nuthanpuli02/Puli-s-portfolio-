@@ -12,7 +12,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Section 5 / new character (2026-10-23):** the Tripo model is in and its texture is fixed (2026-10-25, see Log); next Puli rigs and animates it in Mixamo (upload `puli_fbx_for_mixamo.zip`; animation list in the Log); meanwhile section 5 can be built with the current voxel Puli as a stand-in.
+- **Section 5 / new character (2026-10-23):** the blocky Tripo model is the chosen character and its texture is fixed (2026-10-25, see Log); next Puli rigs and animates it in Mixamo (upload `Puli blocky fixed/puli_blocky_for_mixamo.zip`; animation list in the Log); meanwhile section 5 can be built with the current voxel Puli as a stand-in.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -28,6 +28,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
+
+### 2026-10-25: blocky character chosen and re-textured
+- Puli decided the character should be blocky (Minecraft-like but more detailed), not realistic and not voxelised. He made a reference picture ("Bearded Voxel Adventurer in Khaki Gear.png") and got a blocky Tripo model from it; its textures were off (smeared face, plain sides).
+- Re-textured it from the picture: silhouette fit IoU 0.95, the picture projected onto everything that faces the front (crisp pixel art), the back and sides of the head filled from the picture's colours, a pixel jitter on the unseen sides and back, metal off and matte. Scripts in `tools/texture_bake/blocky/`.
+- Output on Puli's computer, "Puli portfolio cloud images/Puli blocky fixed/": `puli_blocky_fixed.glb` (1 unit tall), `puli_blocky_for_mixamo.zip` (OBJ + MTL + texture, for Mixamo's auto-rigger), `blocky_before_after.jpg`.
+- Limits: only a front picture exists, so the back and sides are inferred; the hair geometry is smoother than the picture's chunky curls (geometry, not texture).
+- Dropped along the way: voxelising the realistic model, and my hand-built cube versions (Puli: "it wasn't getting any good").
+- Next: Puli rigs it in Mixamo and downloads the animations; then section 5. Tripo credit (CC BY 4.0) needed once it's on the site.
 
 ### 2026-10-25: Tripo character texture fixed
 - Puli's downloadable Tripo model had a smeared, wrong face, copper-shiny arms (the metal map marked skin as metal), grey boots and a white band on the neck.

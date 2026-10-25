@@ -17,3 +17,12 @@ Run inside a working folder holding `model.glb` (the Tripo GLB) and the textures
 `shot.py`/`cmp.py`/`view.html` render checks with three.js 0.169.0 in headless Chromium.
 
 The FBX from the same Tripo export uses the same UV layout, so the fixed texture also works there.
+
+## Blocky (voxel-style) model: `blocky/`
+
+The chosen character is the blocky Tripo model ("safari explorer 3d model (1).glb", scaled to 1 unit tall) re-textured
+from Puli's single front picture ("Bearded Voxel Adventurer in Khaki Gear.png"). In a folder with `model.glb`,
+`raster.py`, `export.py` and the extracted `tex_*` textures, with the picture at `../toon2/ref.png`:
+`pipeline.py` (UV raster, cut-out, silhouette fit, front projection with nearest-pixel sampling so the pixel art stays
+crisp, colour shift for the unseen parts), then `headfill.py` (back and sides of the head filled from the picture's
+colours), `noise.py` (Minecraft-style pixel jitter on the unseen sides and back), `export.py tex_final.png out.glb rmfix`.
