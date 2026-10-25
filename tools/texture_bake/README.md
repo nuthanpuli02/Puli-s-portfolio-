@@ -25,4 +25,4 @@ from Puli's single front picture ("Bearded Voxel Adventurer in Khaki Gear.png").
 `raster.py`, `export.py` and the extracted `tex_*` textures, with the picture at `../toon2/ref.png`:
 `pipeline.py` (UV raster, cut-out, silhouette fit, front projection with nearest-pixel sampling so the pixel art stays
 crisp, colour shift for the unseen parts), then `headfill.py` (back and sides of the head filled from the picture's
-colours), `noise.py` (Minecraft-style pixel jitter on the unseen sides and back), `export.py tex_final.png out.glb rmfix`.
+colours), `noise.py` (Minecraft-style pixel jitter on the unseen sides and back), `skin.py 0.13 tex_final.png tex_skin.png` (skin a little darker, as Puli asked), `export.py tex_skin.png out.glb rmfix`.

@@ -33,6 +33,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Puli decided the character should be blocky (Minecraft-like but more detailed), not realistic and not voxelised. He made a reference picture ("Bearded Voxel Adventurer in Khaki Gear.png") and got a blocky Tripo model from it; its textures were off (smeared face, plain sides).
 - Re-textured it from the picture: silhouette fit IoU 0.95, the picture projected onto everything that faces the front (crisp pixel art), the back and sides of the head filled from the picture's colours, a pixel jitter on the unseen sides and back, metal off and matte. Scripts in `tools/texture_bake/blocky/`.
 - Output on Puli's computer, "Puli portfolio cloud images/Puli blocky fixed/": `puli_blocky_fixed.glb` (1 unit tall), `puli_blocky_for_mixamo.zip` (OBJ + MTL + texture, for Mixamo's auto-rigger), `blocky_before_after.jpg`.
+- Skin darkened ~13% at Puli's request ("just a bit", to match his own tone): `skin.py 0.13` touches only skin-coloured texels (face, neck, forearms, fingers).
 - Limits: only a front picture exists, so the back and sides are inferred; the hair geometry is smoother than the picture's chunky curls (geometry, not texture).
 - Dropped along the way: voxelising the realistic model, and my hand-built cube versions (Puli: "it wasn't getting any good").
 - Next: Puli rigs it in Mixamo and downloads the animations; then section 5. Tripo credit (CC BY 4.0) needed once it's on the site.
