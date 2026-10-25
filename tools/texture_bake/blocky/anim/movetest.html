@@ -81,7 +81,7 @@ shadow.rotation.x=-Math.PI/2;scene.add(shadow);
 const bc=document.createElement('canvas');bc.width=256;bc.height=96;const bx=bc.getContext('2d');
 bx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#D21319';
 bx.beginPath();bx.roundRect(4,4,248,88,44);bx.fill();bx.fillStyle='#fff';bx.font='600 38px Inter, Arial, sans-serif';bx.textAlign='center';bx.textBaseline='middle';bx.fillText('Catch me',128,50);
-const btn=new THREE.Mesh(new THREE.PlaneGeometry(.42,.16),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(bc),transparent:true}));
+const btn=new THREE.Mesh(new THREE.PlaneGeometry(.36,.135),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(bc),transparent:true}));
 btn.material.map.colorSpace=THREE.SRGBColorSpace;btn.visible=false;scene.add(btn);
 
 let puli,mixer,clips={},cur=null,story=null,yaw=0.35,drag=null;
@@ -107,7 +107,7 @@ for(const [k,label] of MOVES){const b=document.createElement('button');b.classNa
 // The entrance is the Moonwalk clip, then a hard cut into the dance at 7.57 s, where the dance does the same moonwalk
 // (the two poses match almost exactly: moonwalk 0.40 s = dance 7.57 s). He glides in facing left, passes behind the
 // button, and the dance's spin (9.2-10.4 s of the dance) turns him to face the viewer.
-const BTN_X=-0.45, BTN_Z=0.7, MW_SPEED=0.46, MW_LEAD=0.40+3*1.0167, SWITCH_X=-0.18, DANCE_IN=7.57, SPIN=[9.2,10.4];
+const BTN_X=-0.55, BTN_Z=0.4, MW_SPEED=0.46, MW_LEAD=0.40+3*1.0167, SWITCH_X=-0.48, DANCE_IN=7.57, SPIN=[9.2,10.4];
 const hipsWorld=()=>{puli.updateMatrixWorld(true);return puli.getObjectByName('mixamorigHips').getWorldPosition(new THREE.Vector3())};
 function keepHips(change){const p0=hipsWorld();change();mixer.update(0);const p1=hipsWorld();puli.position.x+=p0.x-p1.x;puli.position.z+=p0.z-p1.z}
 function stopStory(){story=null;btn.visible=false;document.getElementById('story').textContent='Play the section 5 idea'}
@@ -132,14 +132,16 @@ function runStory(dt){
       keepHips(()=>{puli.rotation.y=target});
     }
     if(dt_>=clips.dance.duration-0.05){keepHips(()=>play('idle',0.4));S.phase='call';S.t0=S.t;S.bx=btn.position.x}
-  }else if(S.phase==='call'){     // the button floats over above his head, then he jumps for it
-    const u=Math.min(1,(S.t-S.t0)/1.0),hx=hipsWorld().x;btn.position.x=S.bx+(hx-S.bx)*u*u*(3-2*u);btn.position.y=0.85+0.35*u;
-    if(S.t-S.t0>1.4){keepHips(()=>play('grab',0.2,true));S.phase='grab';S.t0=S.t}
+  }else if(S.phase==='call'){     // he turns side-on to the viewer, then jumps; the button meets his hands at the top
+    const u=Math.min(1,(S.t-S.t0)/0.6);keepHips(()=>{puli.rotation.y=-Math.PI/2*u*u*(3-2*u)});
+    if(S.t-S.t0>0.9){keepHips(()=>play('grab',0.2,true));S.phase='grab';S.t0=S.t;S.bfrom=btn.position.clone();S.target=grabTarget()}
   }else if(S.phase==='grab'){
-    if(S.t-S.t0>1.05){play('hang',0.25);S.phase='fly';S.t0=S.t;S.y0=puli.position.y}
-  }else if(S.phase==='fly'){
-    const u=Math.max(0,(S.t-S.t0-0.4)/2.2);puli.position.y=S.y0+u*u*3.6;btn.position.y=1.2+u*u*3.6+0.0;
-    if(S.t-S.t0>2.6){btn.visible=false;play('fallloop',0.2);S.phase='drop';S.t0=S.t}
+    const v=Math.min(1,(S.t-S.t0)/0.95);btn.position.lerpVectors(S.bfrom,S.target,v*v*(3-2*v));
+    if(v>=1)holdButton();
+    if(S.t-S.t0>1.15){play('hang',0.25);S.phase='fly';S.t0=S.t;S.y0=puli.position.y}
+  }else if(S.phase==='fly'){      // he hangs from the button's end while it flies up
+    const u=Math.max(0,(S.t-S.t0-0.4)/2.2);puli.position.y=S.y0+u*u*3.6;holdButton();
+    if(S.t-S.t0>2.6){btn.visible=false;keepHips(()=>{puli.rotation.y=0});play('fallloop',0.2);S.phase='drop';S.t0=S.t}
   }else if(S.phase==='drop'){
     const u=Math.min(1,(S.t-S.t0)/1.5);puli.position.y=3.4*(1-u*u);
     if(u>=1){puli.position.y=0;play('fall',0.1,true);S.phase='land';S.t0=S.t}
@@ -150,18 +152,31 @@ function runStory(dt){
   }else if(S.phase==='end'&&S.t-S.t0>2.5){stopStory()}
 }
 
+// where his hands end up at the top of the grab, measured once in his own frame at load
+let GRAB_HANDS=null;
+const handsWorld=()=>{puli.updateMatrixWorld(true);const a=puli.getObjectByName('mixamorigLeftHand').getWorldPosition(new THREE.Vector3()),
+  b=puli.getObjectByName('mixamorigRightHand').getWorldPosition(new THREE.Vector3());return a.add(b).multiplyScalar(.5)};
+const BTN_GRIP=new THREE.Vector3(-0.15,0.02,-0.03);   // pill centre relative to his hands: he holds its right end
+function grabTarget(){const p=GRAB_HANDS.clone().applyEuler(puli.rotation).add(puli.position);
+  // the grab clip also moves his hips; include that so the button waits exactly where his hands arrive
+  return p.add(BTN_GRIP)}
+function holdButton(){btn.position.copy(handsWorld()).add(BTN_GRIP)}
+
 const clock=new THREE.Clock();
 function frame(){
   const dt=Math.min(clock.getDelta(),0.05);
   if(mixer){if(story)runStory(dt);mixer.update(dt);const hw=hipsWorld();shadow.position.set(hw.x,0.001,hw.z);
     const h=Math.max(0,hw.y-0.46);shadow.scale.setScalar(1/(1+h));shadow.material.opacity=1/(1+h*2)}
-  const d=3.4;cam.position.set(Math.sin(yaw)*d,0.62,Math.cos(yaw)*d);cam.lookAt(0,0.5,0);
+  const d=4.4;cam.position.set(Math.sin(yaw)*d,0.62,Math.cos(yaw)*d);cam.lookAt(0,0.5,0);
   R.render(scene,cam);requestAnimationFrame(frame)}
 
 size();
 new GLTFLoader().load('puli.wasm',g=>{  // a .glb under a .wasm name: the host only serves standard web file types
   puli=g.scene;puli.traverse(o=>{if(o.isMesh){o.frustumCulled=false}});scene.add(puli);
-  mixer=new THREE.AnimationMixer(puli);for(const c of g.animations)clips[c.name]=c;
+  for(const c of g.animations)clips[c.name]=c;
+  {const m=new THREE.AnimationMixer(puli),a=m.clipAction(clips.grab);a.play();a.time=clips.grab.duration-0.01;m.update(0);
+   GRAB_HANDS=handsWorld();a.stop();m.uncacheRoot(puli)}
+  mixer=new THREE.AnimationMixer(puli);
   document.getElementById('load').remove();play('idle',0);
 },undefined,()=>{document.getElementById('load').textContent='Puli did not load. Reload the page to try again.'});
 frame();

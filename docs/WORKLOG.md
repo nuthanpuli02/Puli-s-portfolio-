@@ -28,6 +28,14 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-25: section 5 button: dodges, gives up, flies off the top
+- Puli: Puli should latch onto the button from the side (side-on, holding the end of the pill), not from the front or back. Done in the test page: he turns side-on, jumps, and the button meets his hands at the top of the jump; he hangs from its right end while it flies up.
+- Built section 5 in the site (`site/src/sections/Teaser.jsx`, replaces the placeholder): the agreed copy ("Okay, enough serious projects." / "Plot twist: I also make games. Small ones, but they count." / "Bet you can't catch the button first.") and the button.
+- React Bits DodgeField and FlyingButton copied into `components/reactbits/` (headers list the changes). DodgeField: on touch screens a tap makes it hop elsewhere (counts as a dodge); keyboard presses catch it; labels Catch me -> Nope -> Alright, alright (gives up after 3 dodges) -> Play when caught; `stayCaught`; `onCatch` gets its rectangle. FlyingButton: `exit` keeps climbing off the top after hovering and calls `onExit` (stops its loop 2.5 s later); `autoLaunch`, `startX`, `interactive={false}`, `onFrame` (craft centre/tilt each frame, for Puli to hang from).
+- When caught, the dodging pill is swapped for the FlyingButton at the same spot (same size and colours): its box runs from the top of the screen down to the button, so it takes off from there (thruster pods, flame, smoke) and leaves through the top of the screen.
+- Temporary: after it leaves, the button comes back 2.6 s later for another go, until Puli and the forest are wired in.
+- Known: the smoke is cut flat at the take-off line (the FlyingButton's floor is the bottom of its box).
+
 ### 2026-10-25: section 5 entrance: moonwalk into the dance
 - Puli: he should moonwalk in all the way past the button, going behind it, and the moonwalk-to-dance change looked bad; use the dance's own moonwalk (around 6-7 s of Hip Hop Dancing) to get into the dance.
 - Measured it: the dance moonwalks backwards from 6.6 s to 9.2 s, then spins (9.2-10.4 s). Moonwalk clip at 0.40 s and the dance at 7.57 s are almost the same pose (summed rotation difference 0.008 over 24 bones; `match_probe.py`), so the change is a straight cut with his hips held in place, no crossfade.
@@ -41,7 +49,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Compressed with gltf-transform (`optimize --compress meshopt --texture-compress webp --texture-size 2048 --simplify false`): 11.5 MB -> 1.45 MB, no visible loss ("Puli blocky fixed/puli_animated_small.glb"; needs three's MeshoptDecoder). A 4.15 MB quantize-only copy (no decoder) drives the phone test page.
 - Phone test page with every move and a timed preview of the section 5 idea (moonwalk in, dance, jump-grab the button, fly up, fall, land face-down, get up): https://claude.ai/artifact/5CeKdPZfKJuZx3DMVuPVo7 (source: `tools/texture_bake/blocky/anim/movetest.html`; the model is served as `puli.wasm` because artifacts only serve standard web file types).
 - Puli's idea: bring him on screen dancing or moonwalking in section 5.
-- Next: Puli's verdict on the moves and the section 5 sequence, then build section 5 in `site/`.
+- Next: Puli's verdict on the button; then put Puli (three.js) into section 5 behind the button: moonwalk in, dance, side grab, carried off, fall into the forest.
 
 ### 2026-10-25: blocky character chosen and re-textured
 - Puli decided the character should be blocky (Minecraft-like but more detailed), not realistic and not voxelised. He made a reference picture ("Bearded Voxel Adventurer in Khaki Gear.png") and got a blocky Tripo model from it; its textures were off (smeared face, plain sides).
