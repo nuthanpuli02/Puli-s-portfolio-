@@ -31,9 +31,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 ### 2026-10-25: Puli's animations combined
 - Puli rigged the blocky model in Mixamo and downloaded 12 animations (more than asked): Breathing Idle, Walking, Moonwalk, Hip Hop Dancing, Jumping, Idle To Braced Hang, Hanging Idle, Falling Flat Impact (falls and lands face-down), Getting Up, Running, Running Jump, Running Slide. Raw FBX files stay on his computer.
 - Combined into one file, "Puli blocky fixed/puli_animated.glb" (11.5 MB, not yet compressed): clips idle, walk, moonwalk, dance, jump, grab, hang, fall, getup, run, runjump, slide; 25-bone skeleton, mesh welded 290k -> 67k vertices; sideways root motion removed except fall/getup/grab; Getting Up trimmed at 5.3 s because it ends in a fighting stance (Puli's note). Tools in `tools/texture_bake/blocky/anim/`.
-- Missing for the long fall into the forest: a looping "Falling Idle" (Falling Flat Impact starts mid-fall and hits the ground after ~0.5 s). Asked Puli to download it.
+- Puli added "Falling Idle" (Falling.fbx) as the clip `fallloop` (4.5 s loop) for the long drop; Falling Flat Impact (`fall`) is the landing.
+- Compressed with gltf-transform (`optimize --compress meshopt --texture-compress webp --texture-size 2048 --simplify false`): 11.5 MB -> 1.45 MB, no visible loss ("Puli blocky fixed/puli_animated_small.glb"; needs three's MeshoptDecoder). A 4.15 MB quantize-only copy (no decoder) drives the phone test page.
+- Phone test page with every move and a timed preview of the section 5 idea (moonwalk in, dance, jump-grab the button, fly up, fall, land face-down, get up): https://claude.ai/artifact/5CeKdPZfKJuZx3DMVuPVo7 (source: `tools/texture_bake/blocky/anim/movetest.html`; the model is served as `puli.wasm` because artifacts only serve standard web file types).
 - Puli's idea: bring him on screen dancing or moonwalking in section 5.
-- Next: compress the file for phones (target 2-3 MB), a phone test page with all the moves, then section 5.
+- Next: Puli's verdict on the moves and the section 5 sequence, then build section 5 in `site/`.
 
 ### 2026-10-25: blocky character chosen and re-textured
 - Puli decided the character should be blocky (Minecraft-like but more detailed), not realistic and not voxelised. He made a reference picture ("Bearded Voxel Adventurer in Khaki Gear.png") and got a blocky Tripo model from it; its textures were off (smeared face, plain sides).
