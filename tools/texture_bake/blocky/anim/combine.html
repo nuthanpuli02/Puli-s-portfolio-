@@ -30,7 +30,7 @@ window.run=async()=>{
     // remove sideways/forward drift of the hips: the page moves him; keep the up/down bounce
     for(const t of clip.tracks){
       if(t.name==='mixamorigHips.position'){const v=t.values;const x0=v[0],z0=v[2];
-        if(!['fall','getup','grab'].includes(name))for(let i=0;i<v.length;i+=3){v[i]=x0;v[i+2]=z0;}}
+        if(!['fall','getup','grab','dance'].includes(name))for(let i=0;i<v.length;i+=3){v[i]=x0;v[i+2]=z0;}}
     }
     if(trim){clip=THREE.AnimationUtils.subclip(clip,name,0,Math.round(trim*30),30);}
     clip.optimize();

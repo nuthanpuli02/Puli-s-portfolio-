@@ -104,38 +104,57 @@ for(const [k,label] of MOVES){const b=document.createElement('button');b.classNa
   b.setAttribute('aria-pressed','false');b.onclick=()=>{if(!puli)return;stopStory();puli.position.set(0,0,0);puli.rotation.y=0;play(k)};(GAME.has(k)?grid2:grid).append(b)}
 
 // ---- the section 5 idea, as a timed sequence ----
+// The entrance is the Moonwalk clip, then a hard cut into the dance at 7.57 s, where the dance does the same moonwalk
+// (the two poses match almost exactly: moonwalk 0.40 s = dance 7.57 s). He glides in facing left, passes behind the
+// button, and the dance's spin (9.2-10.4 s of the dance) turns him to face the viewer.
+const BTN_X=-0.45, BTN_Z=0.7, MW_SPEED=0.46, MW_LEAD=0.40+3*1.0167, SWITCH_X=-0.18, DANCE_IN=7.57, SPIN=[9.2,10.4];
+const hipsWorld=()=>{puli.updateMatrixWorld(true);return puli.getObjectByName('mixamorigHips').getWorldPosition(new THREE.Vector3())};
+function keepHips(change){const p0=hipsWorld();change();mixer.update(0);const p1=hipsWorld();puli.position.x+=p0.x-p1.x;puli.position.z+=p0.z-p1.z}
 function stopStory(){story=null;btn.visible=false;document.getElementById('story').textContent='Play the section 5 idea'}
 document.getElementById('story').onclick=()=>{
   if(!puli)return;
   if(story){stopStory();puli.position.set(0,0,0);puli.rotation.y=0;play('idle');return}
-  story={t:0,step:-1};document.getElementById('story').textContent='Stop';yaw=0;
+  story={t:0,phase:'enter'};document.getElementById('story').textContent='Stop';yaw=0;
+  puli.position.set(SWITCH_X-MW_SPEED*MW_LEAD,0,0);puli.rotation.y=-Math.PI/2;
+  btn.visible=true;btn.position.set(BTN_X,0.85,BTN_Z);play('moonwalk',0);
 };
-const STEPS=[ // [start time, action]
-  [0,()=>{puli.position.set(-1.6,0,0);puli.rotation.y=-Math.PI/2;btn.visible=true;btn.position.set(.45,.9,0);play('moonwalk',0)}],
-  [3.2,()=>{puli.rotation.y=0;play('idle',.3)}],
-  [3.9,()=>play('dance',.3)],
-  [8.4,()=>play('grab',.2,true)],
-  [9.5,()=>play('hang',.25)],
-  [12.0,()=>{play('fallloop',.2);puli.position.set(0,3.2,0)}],
-  [13.6,()=>{play('fall',.12,true);puli.position.set(0,0,0)}],
-  [15.2,()=>play('getup',.2,true)],
-  [20.3,()=>play('idle',.5)],
-  [23,()=>stopStory()]];
 function runStory(dt){
-  story.t+=dt;const t=story.t;
-  while(story&&story.step+1<STEPS.length&&t>=STEPS[story.step+1][0]){story.step++;STEPS[story.step][1]()}
-  if(!story)return;
-  if(t<3.2){puli.position.x=-1.6+Math.min(1,t/3.2)*1.25}                 // glides in backwards
-  if(t>=8.4&&t<9.5){btn.position.y=.9+(t-8.4)*.5}                       // the button lifts off as he grabs it
-  if(t>=9.5&&t<12){const u=(t-9.5)/2.5;puli.position.y=u*u*3.6;btn.position.y=1.45+u*u*3.6}  // flies up off screen
-  if(t>=12&&t<13.6){const u=(t-12)/1.6;puli.position.y=3.2-u*u*3.2;btn.visible=false}         // drops back down
+  const S=story;S.t+=dt;
+  if(S.phase==='enter'){
+    puli.position.x+=MW_SPEED*dt;
+    if(S.t>=MW_LEAD){            // same pose in both clips: cut straight into the dance and keep his hips where they are
+      keepHips(()=>{play('dance',0,true);cur.time=DANCE_IN});S.phase='dance';
+    }
+  }else if(S.phase==='dance'){
+    const dt_=cur.time;
+    if(dt_>=SPIN[0]&&dt_<=SPIN[1]+0.05){   // turn to face the viewer during his spin, pivoting on the hips
+      const u=Math.min(1,(dt_-SPIN[0])/(SPIN[1]-SPIN[0]));const target=-Math.PI/2*(1-u*u*(3-2*u));
+      keepHips(()=>{puli.rotation.y=target});
+    }
+    if(dt_>=clips.dance.duration-0.05){keepHips(()=>play('idle',0.4));S.phase='call';S.t0=S.t;S.bx=btn.position.x}
+  }else if(S.phase==='call'){     // the button floats over above his head, then he jumps for it
+    const u=Math.min(1,(S.t-S.t0)/1.0),hx=hipsWorld().x;btn.position.x=S.bx+(hx-S.bx)*u*u*(3-2*u);btn.position.y=0.85+0.35*u;
+    if(S.t-S.t0>1.4){keepHips(()=>play('grab',0.2,true));S.phase='grab';S.t0=S.t}
+  }else if(S.phase==='grab'){
+    if(S.t-S.t0>1.05){play('hang',0.25);S.phase='fly';S.t0=S.t;S.y0=puli.position.y}
+  }else if(S.phase==='fly'){
+    const u=Math.max(0,(S.t-S.t0-0.4)/2.2);puli.position.y=S.y0+u*u*3.6;btn.position.y=1.2+u*u*3.6+0.0;
+    if(S.t-S.t0>2.6){btn.visible=false;play('fallloop',0.2);S.phase='drop';S.t0=S.t}
+  }else if(S.phase==='drop'){
+    const u=Math.min(1,(S.t-S.t0)/1.5);puli.position.y=3.4*(1-u*u);
+    if(u>=1){puli.position.y=0;play('fall',0.1,true);S.phase='land';S.t0=S.t}
+  }else if(S.phase==='land'){
+    if(S.t-S.t0>1.6){keepHips(()=>play('getup',0.2,true));S.phase='up';S.t0=S.t}
+  }else if(S.phase==='up'){
+    if(S.t-S.t0>5.1){keepHips(()=>play('idle',0.5));S.phase='end';S.t0=S.t}
+  }else if(S.phase==='end'&&S.t-S.t0>2.5){stopStory()}
 }
 
 const clock=new THREE.Clock();
 function frame(){
   const dt=Math.min(clock.getDelta(),0.05);
-  if(mixer){if(story)runStory(dt);mixer.update(dt);shadow.position.set(puli.position.x,0.001,0);
-    const h=Math.max(0,puli.position.y);shadow.scale.setScalar(1/(1+h));shadow.material.opacity=1/(1+h*2)}
+  if(mixer){if(story)runStory(dt);mixer.update(dt);const hw=hipsWorld();shadow.position.set(hw.x,0.001,hw.z);
+    const h=Math.max(0,hw.y-0.46);shadow.scale.setScalar(1/(1+h));shadow.material.opacity=1/(1+h*2)}
   const d=3.4;cam.position.set(Math.sin(yaw)*d,0.62,Math.cos(yaw)*d);cam.lookAt(0,0.5,0);
   R.render(scene,cam);requestAnimationFrame(frame)}
 

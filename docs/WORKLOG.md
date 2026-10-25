@@ -28,6 +28,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-25: section 5 entrance: moonwalk into the dance
+- Puli: he should moonwalk in all the way past the button, going behind it, and the moonwalk-to-dance change looked bad; use the dance's own moonwalk (around 6-7 s of Hip Hop Dancing) to get into the dance.
+- Measured it: the dance moonwalks backwards from 6.6 s to 9.2 s, then spins (9.2-10.4 s). Moonwalk clip at 0.40 s and the dance at 7.57 s are almost the same pose (summed rotation difference 0.008 over 24 bones; `match_probe.py`), so the change is a straight cut with his hips held in place, no crossfade.
+- The dance now keeps its own travel in the model (sideways drift removed only for idle/walk/moonwalk/jump/hang/run clips). He glides in facing left (moonwalk 0.46 units/s, matched to the clip so his feet don't slide), cuts into the dance at x -0.18, ends the moonwalk at about +0.35 right of the button (button at x -0.45, in front of him), and the dance's spin turns him to face the viewer (pivoting on his hips). The dance then drifts him ~0.36 left and back.
+- Test page updated (same link). Puli said everything else looks good, the character included.
+
 ### 2026-10-25: Puli's animations combined
 - Puli rigged the blocky model in Mixamo and downloaded 12 animations (more than asked): Breathing Idle, Walking, Moonwalk, Hip Hop Dancing, Jumping, Idle To Braced Hang, Hanging Idle, Falling Flat Impact (falls and lands face-down), Getting Up, Running, Running Jump, Running Slide. Raw FBX files stay on his computer.
 - Combined into one file, "Puli blocky fixed/puli_animated.glb" (11.5 MB, not yet compressed): clips idle, walk, moonwalk, dance, jump, grab, hang, fall, getup, run, runjump, slide; 25-bone skeleton, mesh welded 290k -> 67k vertices; sideways root motion removed except fall/getup/grab; Getting Up trimmed at 5.3 s because it ends in a fighting stance (Puli's note). Tools in `tools/texture_bake/blocky/anim/`.
