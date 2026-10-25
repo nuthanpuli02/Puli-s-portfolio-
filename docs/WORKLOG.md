@@ -25,7 +25,6 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Licensed fonts (a Creative Fabrica bundle; check that its licence allows web embedding). The site currently uses Google Fonts stand-ins.
 - Optional: a public CV without birth date, phone or address, for a "Download CV" button.
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
-- Puli's computer has a `_claude_work` folder inside "Puli portfolio cloud images" from file transfers; it can be deleted.
 
 ## Log
 
@@ -36,6 +35,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Skin darkened ~13% at Puli's request ("just a bit", to match his own tone): `skin.py 0.13` touches only skin-coloured texels (face, neck, forearms, fingers).
 - Limits: only a front picture exists, so the back and sides are inferred; the hair geometry is smoother than the picture's chunky curls (geometry, not texture).
 - Dropped along the way: voxelising the realistic model, and my hand-built cube versions (Puli: "it wasn't getting any good").
+- Folder clean-up (2026-10-25, with Puli's OK): deleted `_claude_work`, `_frames`, the realistic model and its fixed copy ("Puli model fixed", both safari explorer originals) and the old voxel-Puli Mixamo FBX files. New animations go in "Puli blocky fixed/animations".
 - Next: Puli rigs it in Mixamo and downloads the animations; then section 5. Tripo credit (CC BY 4.0) needed once it's on the site.
 
 ### 2026-10-25: Tripo character texture fixed
