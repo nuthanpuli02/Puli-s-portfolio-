@@ -4,7 +4,20 @@ Written 2026-10-25 for a new Claude Code session. Read `CLAUDE.md`, then `docs/W
 "Section 5" open item), then this file. Talk to Puli in simple, step-by-step terms; he wants blunt feedback and tests on
 his Redmi Note 14 Pro 5G (Brave, portrait) first.
 
-## Where things stand
+## Progress (2026-10-25, second session)
+
+Steps 1-5 and 7 of the plan below are done, and step 6 up to the landing: `site/src/puli/stage.js` (the three.js stage,
+the moves ported from movetest.html) is wired into `Teaser.jsx`. He moonwalks in with the scroll, cuts into the dance,
+faces the viewer; on the catch the button glides into his hands, he is carried off the top, drops back in from the top
+onto his own spot, lands face-down, gets up, and the button returns for another go (scroll is held from the catch until
+he is up). Still open: **the forest and the game start** (ask Puli how the forest should appear), the "Tap to play" hint,
+and Puli's verdict on his phone. Notes for whoever continues:
+- Layout: his height in px is `V.px` (min of: button-to-section-bottom / 0.8, 46% of the screen, and what fits on the
+  right of the button with his arms); feet 0.8 heights below the button's resting centre. The dance only carries him
+  ~0.36 to the right (measured at load: `DANCE_RUN`), and its spin steps him ~0.36 towards the camera.
+- The smoke's flat cut is now hidden by a mask on the smoke canvas (`app.css`), not fixed in FlyingButton.
+- Headless test scripts used: scroll to the bottom with `?puli-debug`, poll `__puli.S.phase`, tap the pill 4 times.
+
 
 - **Live:** `site/src/sections/Teaser.jsx` (section 5, id `game`). Copy at the top; a React Bits **DodgeField** button
   (`site/src/components/reactbits/DodgeField.jsx`, modified, see its header) that dodges the mouse, hops on touch taps,

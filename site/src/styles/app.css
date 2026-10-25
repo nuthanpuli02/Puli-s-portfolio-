@@ -278,7 +278,17 @@ html{scroll-behavior:smooth}
 .teaser .dodge-field__mover[data-caught='true'] .dodge-field__pill{background:var(--accent);color:#fff}
 @media (hover:hover) and (pointer:fine){.teaser .dodge-field__pill:hover{color:#fff;background:var(--accent-hover)}}
 .teaser .dodge-field__notice{color:var(--text-soft);font:500 12px/1.3 var(--font-sans);letter-spacing:.06em;text-transform:uppercase}
-.teaser__flight{position:absolute;left:0;right:0;z-index:2;pointer-events:none}
+.teaser__flight{position:absolute;left:0;right:0;z-index:3;pointer-events:none}
+/* Puli: a see-through canvas fixed to the screen (so the flight and the fall can use all of it), behind the copy and
+   the button; src/puli/stage.js places him from the button's position */
+.teaser__puli{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.teaser__copy,.teaser__field{position:relative;z-index:2}
+.teaser__glide{position:absolute;inset:0}
+.teaser__credit{position:absolute;left:max(20px,env(safe-area-inset-left,0px));bottom:10px;z-index:2;margin:0;
+  color:var(--text-soft);font:400 11px/1.3 var(--font-sans);opacity:.75}
+.teaser__credit a{color:inherit}
 .teaser__flight .flying-button{height:100%}
 .teaser__flight .flying-button__craft{font-weight:500}
+/* its floor is the bottom of its box, which cut the smoke off in a straight line: let the smoke thin out above it */
+.teaser__flight .flying-button__smoke{-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 56px);mask-image:linear-gradient(0deg,transparent 0,#000 56px)}
 .teaser__status{position:absolute;left:0;right:0;bottom:24px;margin:0;text-align:center;color:var(--text-soft);font:500 13px/1 var(--font-sans)}

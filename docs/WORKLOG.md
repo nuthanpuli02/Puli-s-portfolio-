@@ -16,8 +16,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
   - Character: blocky Tripo model, re-textured from Puli's picture, skin a little darker; 14 Mixamo clips combined (idle, walk, moonwalk, dance, jump, grab, hang, fallloop, fall, getup, run, runjump, slide). Files on Puli's computer in "Puli portfolio cloud images/Puli blocky fixed/": `puli_animated_small.glb` (1.45 MB, meshopt + webp, for the site), `puli_animated.glb` (11.5 MB, uncompressed). Raw Mixamo FBX files stay on his computer, never in the repo. Rebuild with `tools/texture_bake/blocky/anim/`.
   - Agreed sequence (test page https://claude.ai/artifact/5CeKdPZfKJuZx3DMVuPVo7, source `tools/texture_bake/blocky/anim/movetest.html`): moonwalk in from the left behind the button, hard cut into the dance's own moonwalk (moonwalk 0.40 s = dance 7.57 s), the dance's spin turns him to face the viewer; after the button is caught he turns side-on, jumps and hangs from the button's right end; carried off the top; fall loop, lands face-down (`fall`), gets up (`getup` trimmed at 5.3 s, ends before the fighting stance), then the game. Puli approved the moves, the character and the side grab.
   - Built and live: section 5 copy + DodgeField button (touch hops, one label per dodge: Catch me -> Nope -> Alright, alright -> Play, back to the middle when it gives up) that turns into a FlyingButton and leaves through the top (`site/src/sections/Teaser.jsx`). Waiting for Puli's verdict on the dodging difficulty and take-off speed on his Redmi. Temporary: the button comes back 2.6 s after leaving.
-  - Next: put Puli (three.js, `puli_animated_small.glb` with MeshoptDecoder, copied into `site/src/assets/`) behind the button in section 5, scroll-synced entrance, follow the FlyingButton via its `onFrame`, then the fall into the forest and the game start (default: wait for tap/Space with a "Tap to play" hint). Hold scroll during the flight and fall. Credit Tripo (CC BY 4.0) on the site and in the README once the model is in the repo.
-  - Optional: let the take-off smoke spill below the button (the FlyingButton's floor is currently the bottom of its box).
+  - Puli is in (2026-10-25, see Log): scroll-synced moonwalk, dance, grab, carried off, falls back onto his spot, lands face-down, gets up, button returns. Tripo credited. Waiting for Puli's verdict on his phone.
+  - Next: the forest and the game start (ask Puli how the forest should appear), then "Tap to play" (tap/Space).
+  - Optional: a real fix for the take-off smoke's floor (now hidden with a fade at the bottom of the smoke canvas).
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -32,6 +33,19 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-25: Puli is in section 5: moonwalk, dance, grab, carried off, falls back, gets up
+- Followed `docs/HANDOFF-SECTION5.md` steps 1-5 (and 6 up to the landing, 7): three.js 0.169.0 added to `site/` (loaded as its own chunk only when section 5 is a screen away; the 1.45 MB model loads with it).
+- `site/src/puli/stage.js`: a see-through canvas fixed to the screen, behind the copy and the button, drawn only while the section is on screen or he is mid-sequence. The camera is placed from the button's position every frame, so he moves with the page while scrolling.
+  - Entrance: the moonwalk follows the scroll (scrolling back runs it backwards); at 97% in view the rest plays by itself, hard cut into the dance at 7.57 s with his hips held, turns to face the viewer in the spin, then idle. Scrolled fully away and back: the entrance plays again.
+  - Size: as big as fits between the button and the bottom of the section and still leaves his arms on screen right of the button (219 px tall on a 393×852 phone).
+  - Catch (`Teaser.jsx` onCatch): page scroll is held; he turns side-on and jumps (`grab`); the caught button glides into his hands (CSS transition); then the FlyingButton takes off from there and he hangs from its right end (`onFrame` → his hands follow it). Once it's gone he rises out of the top, 0.8 s pause, drops back in from the top onto his own spot (`fallloop`), lands face-down (`fall`), gets up (`getup`), idle; then the scroll is released and the button returns for another go (replaces the temporary 2.6 s reset, which stays only as the fallback without Puli: still loading, failed, or reduced motion).
+  - Reduced motion: he just stands beside the button; the button behaves as before.
+  - Night: softer, slightly green-tinted light to sit on the Moss background.
+- The take-off smoke was cut off in a straight line at the take-off height (very visible now that the smoke fills the screen): the smoke canvas now fades out over its bottom 56 px.
+- Credit "3D character made with Tripo" at the bottom-left of section 5 and in the README.
+- Checked headless (SwiftShader) at 393×852 touch, day, and 1440×900 mouse, night: entrance, catch, flight, fall, landing, scroll released; reduced motion.
+- Not done: the forest and the game start (how the forest appears is Puli's call); "Tap to play"; his verdict on his phone.
 
 ### 2026-10-25: section 5 button: one label per dodge, centred
 - Puli tested on his phone: "Nope" showed twice, and the flying button wasn't centred.
