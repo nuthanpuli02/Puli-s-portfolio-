@@ -1,0 +1,17 @@
+<!doctype html><html><body style="margin:0;background:#808080"><canvas id="c"></canvas>
+<script type="importmap">{"imports":{"three":"../r/node_modules/three/build/three.module.js","three/addons/":"../r/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const W=200,H=280;
+const r=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,preserveDrawingBuffer:true});
+r.setSize(W,H);r.setClearColor(0x808080);r.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xffffff,0x777777,2.2));
+const d=new THREE.DirectionalLight(0xffffff,1.6);d.position.set(1,2,3);scene.add(d);
+const g=await new GLTFLoader().loadAsync('puli_anim.glb');scene.add(g.scene);g.scene.traverse(c=>{if(c.isMesh)c.frustumCulled=false});
+const mixer=new THREE.AnimationMixer(g.scene);
+window.names=g.animations.map(a=>a.name);
+window.pose=(name,t)=>{mixer.stopAllAction();const a=mixer.clipAction(g.animations.find(x=>x.name===name));a.play();a.time=t;mixer.update(0);
+  const cam=new THREE.OrthographicCamera(-0.62*W/H,0.62*W/H,0.62,-0.62,0.01,50);cam.position.set(Math.sin(0.6)*5,0.5,Math.cos(0.6)*5);cam.lookAt(0,0.5,0);r.render(scene,cam);return true};
+window.ready=true;
+</script></body></html>

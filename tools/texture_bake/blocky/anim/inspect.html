@@ -1,0 +1,28 @@
+<!doctype html><html><body style="margin:0;background:#808080"><canvas id="c"></canvas>
+<script type="importmap">{"imports":{"three":"../r/node_modules/three/build/three.module.js","three/addons/":"../r/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+const q=new URLSearchParams(location.search);
+const W=+(q.get('w')||300),H=+(q.get('h')||400);
+const r=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,preserveDrawingBuffer:true});
+r.setSize(W,H);r.setClearColor(0x808080);r.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xffffff,0x777777,2.0));
+const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(1,2,3);scene.add(d);
+const loader=new FBXLoader();
+window.info={};
+window.load=async(name)=>{
+  const o=await loader.loadAsync(name+'.fbx');
+  if(window.cur)scene.remove(window.cur);
+  window.cur=o;scene.add(o);
+  let meshes=[],bones=[];o.traverse(c=>{if(c.isMesh)meshes.push({n:c.name,skinned:!!c.isSkinnedMesh,verts:c.geometry.attributes.position.count,map:!!(c.material&&c.material.map)});if(c.isBone)bones.push(c.name)});
+  const clip=o.animations[0];
+  window.mixer=new THREE.AnimationMixer(o);window.action=mixer.clipAction(clip);action.play();
+  const box=new THREE.Box3().setFromObject(o);
+  return {clips:o.animations.map(a=>[a.name,a.duration,a.tracks.length]),meshes,nb:bones.length,b0:bones.slice(0,4),box:[box.min.toArray(),box.max.toArray()]};
+};
+window.frame=(t,yaw,cy,half,cx=0)=>{action.time=t;mixer.update(0);cur.updateMatrixWorld(true);const hp=new THREE.Vector3();cur.getObjectByName('mixamorigHips').getWorldPosition(hp);if(cy<0){cy=hp.y;cx=hp.x;}window.lastHips=hp.toArray();
+  const a=yaw*Math.PI/180,R=10;const cam=new THREE.OrthographicCamera(-half*W/H,half*W/H,half,-half,0.01,50);
+  cam.position.set(cx+Math.sin(a)*R,cy,hp.z+Math.cos(a)*R);cam.lookAt(cx,cy,hp.z);r.render(scene,cam);return window.lastHips};
+window.ready=true;
+</script></body></html>

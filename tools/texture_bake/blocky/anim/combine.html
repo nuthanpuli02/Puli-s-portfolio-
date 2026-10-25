@@ -1,0 +1,45 @@
+<!doctype html><html><body>
+<script type="importmap">{"imports":{"three":"../r/node_modules/three/build/three.module.js","three/addons/":"../r/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
+// clip name -> [file, trim end seconds or null, keep root motion?]
+const CLIPS={idle:['Breathing_Idle',null],walk:['Walking',null],moonwalk:['Moonwalk',null],dance:['Hip_Hop_Dancing',null],
+  jump:['Jumping',null],grab:['Idle_To_Braced_Hang',null],hang:['Hanging_Idle',null],fall:['Falling_Flat_Impact',null],
+  getup:['Getting_Up',5.3],run:['Running',null],runjump:['Running_Jump',null],slide:['Running_Slide',null]};
+const L=new FBXLoader();
+window.run=async()=>{
+  const base=await L.loadAsync('Breathing_Idle.fbx');
+  const log=[];
+  let mesh;base.traverse(c=>{if(c.isSkinnedMesh)mesh=c});
+  // weld the vertices Mixamo split apart (same position, uv, normal, skin) so the phone draws far fewer
+  const before=mesh.geometry.attributes.position.count;
+  let g=mesh.geometry;g.deleteAttribute('color');
+  for(const k of Object.keys(g.attributes))if(!['position','normal','uv','skinIndex','skinWeight'].includes(k))g.deleteAttribute(k);
+  g=mergeVertices(g,1e-5);mesh.geometry=g;
+  log.push(['verts',before,'->',g.attributes.position.count]);
+  // plain, matte material with the texture
+  const map=mesh.material.map;map.colorSpace=THREE.SRGBColorSpace;
+  mesh.material=new THREE.MeshStandardMaterial({map,roughness:0.9,metalness:0});
+  const clips=[];
+  for(const [name,[file,trim]] of Object.entries(CLIPS)){
+    const o=await L.loadAsync(file+'.fbx');
+    let clip=o.animations[0].clone();clip.name=name;
+    // remove sideways/forward drift of the hips: the page moves him; keep the up/down bounce
+    for(const t of clip.tracks){
+      if(t.name==='mixamorigHips.position'){const v=t.values;const x0=v[0],z0=v[2];
+        if(!['fall','getup','grab'].includes(name))for(let i=0;i<v.length;i+=3){v[i]=x0;v[i+2]=z0;}}
+    }
+    if(trim){clip=THREE.AnimationUtils.subclip(clip,name,0,Math.round(trim*30),30);}
+    clip.optimize();
+    clips.push(clip);log.push([name,+clip.duration.toFixed(2),clip.tracks.length]);
+    o.traverse(c=>{if(c.geometry)c.geometry.dispose()});
+  }
+  const glb=await new GLTFExporter().parseAsync(base,{binary:true,animations:clips,onlyVisible:true,maxTextureSize:2048});
+  const b=new Uint8Array(glb);let s='';const CH=0x8000;for(let i=0;i<b.length;i+=CH)s+=String.fromCharCode.apply(null,b.subarray(i,i+CH));
+  window.out=btoa(s);return log;
+};
+window.ready=true;
+</script></body></html>

@@ -26,3 +26,11 @@ from Puli's single front picture ("Bearded Voxel Adventurer in Khaki Gear.png").
 `pipeline.py` (UV raster, cut-out, silhouette fit, front projection with nearest-pixel sampling so the pixel art stays
 crisp, colour shift for the unseen parts), then `headfill.py` (back and sides of the head filled from the picture's
 colours), `noise.py` (Minecraft-style pixel jitter on the unseen sides and back), `skin.py 0.13 tex_final.png tex_skin.png` (skin a little darker, as Puli asked), `export.py tex_skin.png out.glb rmfix`.
+
+### Animations: `blocky/anim/`
+Puli's Mixamo downloads (FBX, kept on his computer, never in this repo: Mixamo doesn't allow redistributing the raw
+files) are combined into one GLB by `combine.html` + `combine.py` (three.js FBXLoader -> GLTFExporter in headless
+Chromium): the mesh is welded back to 67k vertices, the material made matte, the hips' sideways drift removed (the page
+moves him; kept for fall, getup, grab), Getting Up trimmed at 5.3 s (it ends in a fighting stance). Clip names: idle,
+walk, moonwalk, dance, jump, grab, hang, fall, getup, run, runjump, slide. `inspect.html`/`grab_frames.py` and
+`check.html` make contact sheets of the frames.

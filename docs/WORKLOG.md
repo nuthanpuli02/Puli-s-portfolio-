@@ -28,6 +28,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-25: Puli's animations combined
+- Puli rigged the blocky model in Mixamo and downloaded 12 animations (more than asked): Breathing Idle, Walking, Moonwalk, Hip Hop Dancing, Jumping, Idle To Braced Hang, Hanging Idle, Falling Flat Impact (falls and lands face-down), Getting Up, Running, Running Jump, Running Slide. Raw FBX files stay on his computer.
+- Combined into one file, "Puli blocky fixed/puli_animated.glb" (11.5 MB, not yet compressed): clips idle, walk, moonwalk, dance, jump, grab, hang, fall, getup, run, runjump, slide; 25-bone skeleton, mesh welded 290k -> 67k vertices; sideways root motion removed except fall/getup/grab; Getting Up trimmed at 5.3 s because it ends in a fighting stance (Puli's note). Tools in `tools/texture_bake/blocky/anim/`.
+- Missing for the long fall into the forest: a looping "Falling Idle" (Falling Flat Impact starts mid-fall and hits the ground after ~0.5 s). Asked Puli to download it.
+- Puli's idea: bring him on screen dancing or moonwalking in section 5.
+- Next: compress the file for phones (target 2-3 MB), a phone test page with all the moves, then section 5.
+
 ### 2026-10-25: blocky character chosen and re-textured
 - Puli decided the character should be blocky (Minecraft-like but more detailed), not realistic and not voxelised. He made a reference picture ("Bearded Voxel Adventurer in Khaki Gear.png") and got a blocky Tripo model from it; its textures were off (smeared face, plain sides).
 - Re-textured it from the picture: silhouette fit IoU 0.95, the picture projected onto everything that faces the front (crisp pixel art), the back and sides of the head filled from the picture's colours, a pixel jitter on the unseen sides and back, metal off and matte. Scripts in `tools/texture_bake/blocky/`.
