@@ -4,8 +4,9 @@ import { shared } from '../puli/shared.js';
 // Section 6: the forest and the runner game, the existing WebGL1 code from the old page (`src/puli3d.js`) on its own
 // canvas. The character is the blocky 3D Puli from section 5: the forest code still moves him (fall path, landing, run
 // physics) and hides its old voxel Puli, and every frame hands his state and its camera to the 3D stage, which draws
-// him over the forest (`renderForest`). If the 3D Puli isn't available, the voxel one shows as before. Section 5 calls start() when Puli has fallen down to here: the forest's own fall plays (through
-// the canopy, onto the vines and branches, face-down on the moss), he gets up, and the game starts on tap or Space.
+// him over the forest (`renderForest`). If the 3D Puli isn't available, the voxel one shows as before.
+// Section 5 calls start() when Puli has fallen down to here: the forest's own fall plays (through the canopy, onto the
+// vines and branches, face-down on the moss), he gets up, and the game starts on tap or Space.
 // The section has a transform, so the game's fixed-position buttons and captions stay inside it. It has no height
 // until `open` (set when the Play button is pressed), so nobody scrolls into an empty forest before the fall.
 const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {

@@ -9,6 +9,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Can't spend money on assets. Use free CC BY / CC0 models and credit them.
 - Main test device: Redmi Note 14 Pro 5G, Brave, portrait.
 - Explanations: simple steps, in plain words, cause then effect.
+- Merge every change into `main` right away (2026-10-26, his standing request) so he can test it on his phone at https://nuthanpuli02.github.io/Puli-s-portfolio-/v2/ (GitHub Pages deploys `main` in about a minute).
 
 ## Open items
 
