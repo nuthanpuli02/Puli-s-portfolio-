@@ -35,6 +35,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-26: the jump really animates now (fix)
+- Puli: still frozen in the air. Cause (my bug): while he was airborne the stage set the jump clip's frame by hand and called `mixer.update(0)`, but three.js times the cross-fade from one clip to the next on the mixer's own clock, so the fade from `run` into `runjump` never progressed: the run pose stayed at full weight, stuck on its last frame, and the jump clip never showed. The previous check only logged the jump clip's time, not its weight.
+- Fix: the mixer always advances (`mixer.update(dt)`); the jump clip is paused, so only its hand-set frame applies. Checked the weights frame by frame: run 1 → 0 and runjump 0 → 1 within 0.2 s of take-off, then runjump alone through the landing stride.
+- Lesson: when a clip's time is driven by hand, still advance the mixer; check effective weights, not just clip times.
+
 ### 2026-10-26: the game's jump plays Puli's Running Jump all the way through
 - Puli: the character looked frozen in the air; his Running Jump animation looks right, the one in the game didn't. Cause: the game used the standing "Jumping" clip and held one pose, picked by his vertical speed.
 - Now `runjump` (0.9 s; measured: he pushes off at 0.06 s, lands at 0.60 s, runs on to 0.9 s) plays from take-off to landing in step with the jump itself: clip time follows how far his upward speed has turned into downward speed (`RJ` in `stage.js`), so a short tap and a held high jump both line up; a second jump in the air starts it again; after touching down its landing stride plays (feet on the ground) and blends back into the run. Checked frame by frame: 0.08 at take-off, 0.33 at the top, 0.60 on landing, then 0.63–0.77.

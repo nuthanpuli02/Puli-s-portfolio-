@@ -453,7 +453,9 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       else if (F.air) cur.time = RJ.off + (RJ.down - RJ.off) * clamp(0.5 * (1 - g.vy / F.vy0), 0, 1);
       else cur.time = clips.runjump.duration - F.land;
     }
-    mixer.update(name === 'runjump' ? 0 : dt);
+    // the mixer's clock must always run: blending from one animation into the next is timed on it (the paused jump
+    // clip itself doesn't move on; its frame is set above)
+    mixer.update(dt);
     // place him like the voxel rig: turned about his hips (pinned), or standing at the forest's point (feet down)
     _m.makeRotationZ(st.roll || 0).multiply(_p.makeRotationY(st.yaw || 0)).multiply(_p.makeRotationX(st.lean || 0));
     if (pinned && st.world) {
