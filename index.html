@@ -981,10 +981,13 @@ void main(){
 /* opts (all optional; the old page passes none): host = element for its buttons, captions and overlay (default body);
    pillClass = class for those buttons and captions; lives = lives per run (default: 1 + one per 5 birds banked);
    birds = false hides the birds-banked pill; onBack = what "Back to the sky" does, backLabel = its text. The caption,
-   score, back and laser buttons also get the classes pc-caption, pc-hud, pc-back and pc-laser for placing them. startFall() drops Puli straight into
+   score, back and laser buttons also get the classes pc-caption, pc-hud, pc-back and pc-laser for placing them.
+   Another renderer can draw the character instead: hideChar() true skips voxel Puli; onChar(state) gets, every frame,
+   the mode, where his hips are in the forest (world), his yaw/lean/roll, the camera's view and projection matrices and
+   the run's state; impactT() and getupT() set how long the landing and the getting up last (their animations). startFall() drops Puli straight into
    the forest fall without the jetpack (the redesign's section 6). */
 window.PuliChar=function(gl,mainBuf,opts={}){
-  const HOST=opts.host||document.body,PILL=opts.pillClass||'pill';
+  const HOST=opts.host||document.body,PILL=opts.pillClass||'pill',hideChar=()=>!!(opts.hideChar&&opts.hideChar());
   const P={skin:['#d29d73','#bb8159','#9a6643'],hair:'#141218',hairHi:'#3b3a52',hairMid:'#24222d',brow:'#1a1214',
    stub:'#432719',eyeW:'#d8cdc3',iris:'#0c0909',glint:'#d9d4d0',mouth:'#7a4636',
    olive:['#727d47','#59623a','#424a2b'],oliveP:'#4c5432',watch:'#0b0b0e',face:'#5f7088',
@@ -1577,8 +1580,8 @@ window.PuliChar=function(gl,mainBuf,opts={}){
     st.mt+=sec;st.shake=Math.max(0,st.shake-sec*2.2);
     if(st.mode==='glitch'&&st.mt>1.1)go('fall');
     if(st.mode==='fall'){st.fp=1;if(st.mt>=FALL_T){go('impact');st.shake=1;st.dustPending=true}}
-    if(st.mode==='impact'&&st.mt>0.9)go('getup');
-    if(st.mode==='getup'&&st.mt>2.7)go('landed');
+    if(st.mode==='impact'&&st.mt>(opts.impactT?opts.impactT():0.9))go('getup');
+    if(st.mode==='getup'&&st.mt>(opts.getupT?opts.getupT():2.7))go('landed');
     if(st.mode==='landed'&&st.mt>0.5&&inp.jump){inp.jump=false;go('game');st.g=newGame(0);st.fc=null;st.gs=o.scrollY}
     if(st.mode==='landed')inp.jump=false;
     // pause only on a real scroll up, measured from where the run started (phone toolbars shift the page height a little)
@@ -1760,6 +1763,9 @@ window.PuliChar=function(gl,mainBuf,opts={}){
     const camM=camMats(fcam?{...fcam,y:fcam.y+Math.sin(st.t*47)*5*st.shake}:forestCam(1),cssW/cssH);
     const sc=st.mode==='sky'?null:pose(o,cssW,cssH,D0,camM);
     if(sc&&sc.world){const ps=toScreen(camM.V,sc.world,cssW,cssH);sc.x=ps.x;sc.y=ps.y;sc.D=ps.d}
+    if(opts.onChar&&sc){const g=st.g;opts.onChar({mode:st.mode,mt:st.mt,t:st.t,world:sc.world||null,yaw:sc.yaw,lean:sc.lean||0,roll:sc.roll||0,
+      hidden:!!sc.hidden,kind:st.mode==='fall'?fallPath(st.mt).k:null,V:camM.V,P:camM.P,night,
+      g:st.mode==='game'&&g?{gnd:g.gnd,slideT:g.slideT,vy:g.vy,over:g.over,hover:g.hover,x:g.x,y:g.y,inv:g.inv}:null})}
     if(sc){sx=sc.x;sy=sc.y;D=sc.D;st.lastSc={x:sx,y:sy}}
     if(st.mode==='game'&&st.g)for(const o of st.g.obs)if(o.type==='wall'){const q=toScreen(camM.V,[o.x,95,0],cssW,cssH);o.sx=q.x;o.sy=q.y}
     st.cover=fcam?sstep(CANY+250,CANY-150,fcam.y):0;st.camY=fcam?fcam.y:1e9;
@@ -1838,13 +1844,13 @@ window.PuliChar=function(gl,mainBuf,opts={}){
         if(J.p[1]<=14){J.p[1]=14;if(Math.abs(J.v[1])>140){J.v[1]*=-0.3;J.v[0]*=0.5;J.v[2]*=0.5;J.av*=0.5;st.jetThud=true}else{J.rest=true;J.ang=Math.PI/2}}}
       mats.jet=mul(camM.V,mul(T(...J.p),mul(RY(0.8),RX(J.ang))))}
     else if(J.on){const ja=st.jetStage===1?0.45:st.jetStage===2?1.15+Math.sin(st.t*9)*0.25:0;mats.jet=ja?mul(root,mul(T(0,19,-10),mul(RX(ja),T(0,-19+(st.jetStage===2?-4:0),10)))):root}
-    for(const g of GROUPS){if(sc&&sc.hidden&&g!=='jet')continue;if(sc&&sc.hidden&&J.on)continue;if(g==='jet'&&!mats.jet)continue;if(g==='jet'&&!J.on&&sc&&!sc.world)continue;gl.bindBuffer(gl.ARRAY_BUFFER,M[g].bf);bindFmt();gl.uniformMatrix4fv(U.uM,false,mats[g]);gl.drawArrays(gl.TRIANGLES,0,M[g].n)}
+    for(const g of GROUPS){if(hideChar())break;if(sc&&sc.hidden&&g!=='jet')continue;if(sc&&sc.hidden&&J.on)continue;if(g==='jet'&&!mats.jet)continue;if(g==='jet'&&!J.on&&sc&&!sc.world)continue;gl.bindBuffer(gl.ARRAY_BUFFER,M[g].bf);bindFmt();gl.uniformMatrix4fv(U.uM,false,mats[g]);gl.drawArrays(gl.TRIANGLES,0,M[g].n)}
 
     if(st.mode==='game'&&st.g)for(const o of st.g.obs){if(o.type!=='bird'&&o.type!=='owl')continue;if(o.type==='bird'&&night>0.5)continue;const ow=o.type==='owl',fl=ow&&o.tilt<-0.25?0.25:Math.sin(st.t*(ow?9:14)+o.x*0.01)*0.9,bm=mul(camM.V,mul(T(o.x,o.y,10),mul(RY(Math.PI-0.3),mul(RZ(ow?o.tilt:0),S(ow?4.6:3)))));
       for(const[m,mm]of[[BIRD.body,bm],[BIRD.wingL,mul(bm,mul(T(0,0.6,1),RX(-fl)))],[BIRD.wingR,mul(bm,mul(T(0,0.6,-1),RX(fl)))]]){gl.bindBuffer(gl.ARRAY_BUFFER,m.bf);bindFmt();gl.uniformMatrix4fv(U.uM,false,mm);gl.drawArrays(gl.TRIANGLES,0,m.n)}}
     // jet exhaust: small glowing cubes from the two nozzles
     const down=norm(xd(R,[0,-1,-0.3]));
-    if(!reduce&&st.jet.on&&(!sc||sc.flame||sc.smoke))for(const nz of[[13.5,44,7.5],[33.5,44,7.5]]){const m=toM(...nz);const wp=xf(root,[m[0]-pvR[0],m[1]-pvR[1],m[2]-pvR[2]]);
+    if(!reduce&&!hideChar()&&st.jet.on&&(!sc||sc.flame||sc.smoke))for(const nz of[[13.5,44,7.5],[33.5,44,7.5]]){const m=toM(...nz);const wp=xf(root,[m[0]-pvR[0],m[1]-pvR[1],m[2]-pvR[2]]);
       if(!sc||sc.flame)for(let i=0;i<2;i++)st.parts.push({p:wp.map(v=>v+(Math.random()-0.5)*1.6),v:down.map((d,j)=>d*(70+Math.random()*50)+(j===1?0:(Math.random()-0.5)*14)),age:0,life:0.28+Math.random()*0.2,s:1.6+Math.random()*1.4});
       if(sc&&sc.smoke&&Math.random()<0.5){const g=0.35+Math.random()*0.25;st.parts.push({p:wp.map(v=>v+(Math.random()-0.5)*3),v:[(Math.random()-0.5)*30,30+Math.random()*40,(Math.random()-0.5)*30],age:0,life:0.6+Math.random()*0.5,s:2.4+Math.random()*2,col:[g,g,g*1.05]})}}
     st.parts=st.parts.filter(q=>(q.age+=sec)<q.life);

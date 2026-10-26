@@ -290,6 +290,9 @@ html{scroll-behavior:smooth}
 .teaser__flight .flying-button{height:100%}
 .teaser__flight .flying-button__craft{font-weight:500}
 .teaser__flight .flying-button__craft{pointer-events:auto}
+/* as the page follows Puli down into the forest, the bottom of the flying button's box (its floor) scrolls into view:
+   the smoke thins out towards it instead of ending in a straight line */
+.teaser__flight .flying-button__smoke{-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 48px);mask-image:linear-gradient(0deg,transparent 0,#000 48px)}
 /* section 6: the forest game (src/puli3d.js) on its own canvas; no height until the Play button opens it. The
    transform keeps the game's fixed-position buttons and captions inside the section */
 .forest{position:relative;height:100svh;overflow:hidden;transform:translateZ(0);background:var(--bg)}

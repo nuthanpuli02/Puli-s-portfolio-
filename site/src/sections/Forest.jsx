@@ -1,7 +1,10 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { shared } from '../puli/shared.js';
 
-// Section 6: the forest and the runner game, the existing WebGL1 code from the old page (`src/puli3d.js`, voxel Puli)
-// on its own canvas. Section 5 calls start() when Puli has fallen down to here: the forest's own fall plays (through
+// Section 6: the forest and the runner game, the existing WebGL1 code from the old page (`src/puli3d.js`) on its own
+// canvas. The character is the blocky 3D Puli from section 5: the forest code still moves him (fall path, landing, run
+// physics) and hides its old voxel Puli, and every frame hands his state and its camera to the 3D stage, which draws
+// him over the forest (`renderForest`). If the 3D Puli isn't available, the voxel one shows as before. Section 5 calls start() when Puli has fallen down to here: the forest's own fall plays (through
 // the canopy, onto the vines and branches, face-down on the moss), he gets up, and the game starts on tap or Space.
 // The section has a transform, so the game's fixed-position buttons and captions stay inside it. It has no height
 // until `open` (set when the Play button is pressed), so nobody scrolls into an empty forest before the fall.
@@ -26,6 +29,7 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
     let started = false;
     let landed = false;
     let dead = false;
+    let frameDt = 0;
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
     const load = () =>
@@ -43,6 +47,12 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
           lives: 3,
           birds: false,
           backLabel: 'Back up',
+          hideChar: () => !!(shared.stage && shared.stage.forestTimes()),
+          impactT: () => shared.stage?.forestTimes()?.impact ?? 0.9,
+          getupT: () => shared.stage?.forestTimes()?.getup ?? 2.7,
+          onChar: st => {
+            if (shared.stage) shared.stage.renderForest(st, root.getBoundingClientRect(), frameDt);
+          },
           onBack: () => document.getElementById('game')?.scrollIntoView({ behavior: 'smooth' })
         });
         return PC;
@@ -52,6 +62,7 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
       raf = 0;
       if (!PC || dead) return;
       const dt = last ? Math.min(now - last, 50) : 16;
+      frameDt = dt / 1000;
       last = now;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const cssW = canvas.clientWidth;
@@ -84,24 +95,35 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
       if (started && visible && !raf) raf = requestAnimationFrame(frame);
     };
 
-    api.current.start = () =>
+    api.current.start = skip =>
       load().then(pc => {
         if (!pc) {
           landedRef.current?.();
           return;
         }
-        pc.startFall(reduce);
+        pc.startFall(skip ?? reduce);
         started = true;
+        shared.stage?.setForestVisible(visible);
         landed = false;
         last = 0;
         kick();
       });
     api.current.preload = () => load();
+    // ?puli-debug: open the forest and start it (true: already landed) from the console, for headless tests
+    if (/[?&]puli-debug/.test(location.search)) {
+      window.__forestStart = skip => {
+        root.dataset.open = 'true';
+        root.scrollIntoView({ behavior: 'instant' });
+        return api.current.start(skip);
+      };
+    }
 
+    // on screen = at least a sliver of it shows (just touching the bottom edge of the screen doesn't count)
     const seen = new IntersectionObserver(([e]) => {
-      visible = e.isIntersecting;
+      visible = e.isIntersecting && e.intersectionRatio > 0.01;
+      shared.stage?.setForestVisible(visible && started);
       kick();
-    });
+    }, { threshold: [0, 0.02] });
     seen.observe(root);
     return () => {
       dead = true;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import DodgeField from '../components/reactbits/DodgeField.jsx';
 import FlyingButton from '../components/reactbits/FlyingButton.jsx';
 import { holdScroll } from '../scrollHold.js';
+import { shared } from '../puli/shared.js';
 
 // Section 5: the game teaser. A button that dodges you (on touch screens it hops away when tapped); after "Alright,
 // alright" it gives up and glides down to the bottom of the screen as the Play button. Pressing Play makes it grow
@@ -70,7 +71,10 @@ export default function Teaser({ theme, forestRef, onOpenForest }) {
             resetRound();
           },
           onReady: ok => {
-            if (ok) puliRef.current = api;
+            if (ok) {
+              puliRef.current = api;
+              shared.stage = api;
+            }
             api.setVisible(visible);
           }
         });
@@ -89,6 +93,7 @@ export default function Teaser({ theme, forestRef, onOpenForest }) {
       seen.disconnect();
       api?.dispose();
       puliRef.current = null;
+      shared.stage = null;
       holdScroll(false);
     };
   }, [forestRef, resetRound]);
