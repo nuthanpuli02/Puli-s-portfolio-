@@ -35,6 +35,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-26: the game's jump plays Puli's Running Jump all the way through
+- Puli: the character looked frozen in the air; his Running Jump animation looks right, the one in the game didn't. Cause: the game used the standing "Jumping" clip and held one pose, picked by his vertical speed.
+- Now `runjump` (0.9 s; measured: he pushes off at 0.06 s, lands at 0.60 s, runs on to 0.9 s) plays from take-off to landing in step with the jump itself: clip time follows how far his upward speed has turned into downward speed (`RJ` in `stage.js`), so a short tap and a held high jump both line up; a second jump in the air starts it again; after touching down its landing stride plays (feet on the ground) and blends back into the run. Checked frame by frame: 0.08 at take-off, 0.33 at the top, 0.60 on landing, then 0.63–0.77.
+- Debug additions (`?puli-debug`): `__puliStage.sample(clip)` (hips and toe heights over a clip), `__puliStage.F`/`cur`, and `window.__forestManual = true` + `__forestFrame(ms)` to step the forest by hand.
+
 ### 2026-10-26: blocky Puli in the forest and the game; carried off the top before he falls
 Puli tested the previous version on his phone:
 - **"He slips and falls from the middle of the screen; he should go out of the top with the button, slip off-screen, and fall."** He now hangs on until he is out of sight above the screen (following the button until it is off the top, then carrying on up at its speed), slips off up there, and 0.35 s later falls back in from the top; the page follows him down as before (`stage.js` phases `fly` → `slip` → `drop`).

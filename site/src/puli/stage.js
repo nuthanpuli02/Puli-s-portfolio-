@@ -353,7 +353,9 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   let forestOn = false;
   let forestVis = false;
   let K = 87;                           // his size in forest units (the voxel rig's hips stand 40 high)
-  const F = { clip: null, mode: null, off: new THREE.Vector3() };
+  const F = { clip: null, mode: null, off: new THREE.Vector3(), air: false, vy0: 780, pvy: 0, land: 0 };
+  // the Running Jump clip (0.9 s): he pushes off at 0.06 s, is in the air until he lands at 0.60 s, then runs on
+  const RJ = { off: 0.06, down: 0.6 };
   const _m = new THREE.Matrix4();
   const _p = new THREE.Matrix4();
   const _v = new THREE.Vector3();
@@ -390,7 +392,8 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     if (st.mode === 'getup') return ['getup', false];
     if (st.mode === 'game' && g) {
       if (g.over) return ['fall', false];
-      if (g.hover > 0 || !g.gnd) return ['jump', true];
+      if (g.hover > 0 || !g.gnd) return ['runjump', true];
+      if (F.land > 0) return ['runjump', false];
       if (g.slideT > 0) return ['slide', true];
       return ['run', false];
     }
@@ -407,6 +410,22 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     sun.color.set(L.sun);
     sun.intensity = L.sunI;
     sun.position.set(...L.dir);
+    // jumps in the run: note the take-off speed (a second jump in the air starts the clip again) and the landing
+    const g0 = st.g;
+    if (st.mode === 'game' && g0) {
+      if (!g0.gnd) {
+        if (!F.air || g0.vy > F.pvy + 60) F.vy0 = Math.max(g0.vy, 300);
+        F.air = true;
+        F.land = 0;
+      } else if (F.air) {
+        F.air = false;
+        F.land = clips.runjump.duration - RJ.down;
+      } else F.land = Math.max(0, F.land - dt);
+      F.pvy = g0.vy;
+    } else {
+      F.air = false;
+      F.land = 0;
+    }
     const [name, pinned] = forestClip(st);
     const moved = F.mode !== st.mode;
     F.mode = st.mode;
@@ -425,13 +444,16 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
         F.off.z += p0.z - p1.z;
       }
     }
-    if (name === 'jump') {
-      // the run's physics moves him; the clip only gives the pose: rising, then falling
-      cur.paused = true;
+    if (name === 'runjump') {
+      // the run's physics moves him up and down; the clip follows the jump from take-off to landing (by how far his
+      // upward speed has turned into downward speed), then plays its landing stride before he runs on
       const g = st.g;
-      cur.time = clips.jump.duration * (g && g.hover > 0 ? 0.45 : 0.42 - 0.12 * clamp(g ? g.vy / 780 : 0, -1, 1));
+      cur.paused = true;
+      if (g && g.hover > 0) cur.time = 0.33;
+      else if (F.air) cur.time = RJ.off + (RJ.down - RJ.off) * clamp(0.5 * (1 - g.vy / F.vy0), 0, 1);
+      else cur.time = clips.runjump.duration - F.land;
     }
-    mixer.update(name === 'jump' ? 0 : dt);
+    mixer.update(name === 'runjump' ? 0 : dt);
     // place him like the voxel rig: turned about his hips (pinned), or standing at the forest's point (feet down)
     _m.makeRotationZ(st.roll || 0).multiply(_p.makeRotationY(st.yaw || 0)).multiply(_p.makeRotationX(st.lean || 0));
     if (pinned && st.world) {
@@ -561,7 +583,25 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
 
   // ?puli-debug: inspect the layout and the move state from the console (headless tests)
   if (/[?&]puli-debug/.test(location.search)) {
-    window.__puliStage = { V, get S() { return S; }, get puli() { return puli; }, hipsWorld: () => hipsWorld(), toScreen };
+    window.__puliStage = { V, get S() { return S; }, get puli() { return puli; }, get F() { return F; }, get cur() { return cur; }, hipsWorld: () => hipsWorld(), toScreen,
+      // a clip's hips and feet heights over time, on a throwaway mixer (for timing moves against the game)
+      sample: (name, n = 40) => {
+        const m = new THREE.AnimationMixer(puli);
+        const a = m.clipAction(clips[name]);
+        a.play();
+        const lf = puli.getObjectByName('mixamorigLeftToeBase') || puli.getObjectByName('mixamorigLeftFoot');
+        const rf = puli.getObjectByName('mixamorigRightToeBase') || puli.getObjectByName('mixamorigRightFoot');
+        const out = [];
+        for (let i = 0; i <= n; i++) {
+          a.time = clips[name].duration * i / n;
+          m.update(0);
+          puli.updateMatrixWorld(true);
+          out.push([+a.time.toFixed(3), +hips.getWorldPosition(_v).y.toFixed(3), +lf.getWorldPosition(_v).y.toFixed(3), +rf.getWorldPosition(_v).y.toFixed(3)]);
+        }
+        a.stop();
+        m.uncacheRoot(puli);
+        return { duration: clips[name].duration, rows: out };
+      } };
   }
 
   return {

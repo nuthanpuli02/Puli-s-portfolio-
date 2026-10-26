@@ -59,10 +59,10 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
         return PC;
       });
 
-    const frame = now => {
+    const frame = (now, stepMs) => {
       raf = 0;
       if (!PC || dead) return;
-      const dt = last ? Math.min(now - last, 50) : 16;
+      const dt = stepMs || (last ? Math.min(now - last, 50) : 16);
       frameDt = dt / 1000;
       last = now;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -89,7 +89,7 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
         landed = true;
         landedRef.current?.();
       }
-      if (visible) raf = requestAnimationFrame(frame);
+      if (visible && !window.__forestManual) raf = requestAnimationFrame(frame);
       else last = 0;
     };
     const kick = () => {
@@ -117,6 +117,8 @@ const Forest = forwardRef(function Forest({ theme, onLanded, open }, ref) {
         root.scrollIntoView({ behavior: 'instant' });
         return api.current.start(skip);
       };
+      // with window.__forestManual = true the loop stops; __forestFrame(ms) draws one frame of that length
+      window.__forestFrame = (ms = 33) => frame(performance.now(), ms);
     }
 
     // on screen = at least a sliver of it shows (just touching the bottom edge of the screen doesn't count)
