@@ -978,7 +978,13 @@ void main(){
 /* Puli, voxel edition. Builds a 3D cube model from the pixel character sheet (front, back and side views),
    rigs it (body, head, two arms, two legs), lights it with the same sun or moon as the cloud scene,
    and flies it after the pointer. The left arm (with the watch) always points at the pointer; a click fires the laser. */
-window.PuliChar=function(gl,mainBuf){
+/* opts (all optional; the old page passes none): host = element for its buttons, captions and overlay (default body);
+   pillClass = class for those buttons and captions; lives = lives per run (default: 1 + one per 5 birds banked);
+   birds = false hides the birds-banked pill; onBack = what "Back to the sky" does, backLabel = its text. The caption,
+   score, back and laser buttons also get the classes pc-caption, pc-hud, pc-back and pc-laser for placing them. startFall() drops Puli straight into
+   the forest fall without the jetpack (the redesign's section 6). */
+window.PuliChar=function(gl,mainBuf,opts={}){
+  const HOST=opts.host||document.body,PILL=opts.pillClass||'pill';
   const P={skin:['#d29d73','#bb8159','#9a6643'],hair:'#141218',hairHi:'#3b3a52',hairMid:'#24222d',brow:'#1a1214',
    stub:'#432719',eyeW:'#d8cdc3',iris:'#0c0909',glint:'#d9d4d0',mouth:'#7a4636',
    olive:['#727d47','#59623a','#424a2b'],oliveP:'#4c5432',watch:'#0b0b0e',face:'#5f7088',
@@ -1448,20 +1454,20 @@ window.PuliChar=function(gl,mainBuf){
   function forestCam(fp){const e=fp*fp*(1.7-0.7*fp);return{x:0,y:4300+(135-4300)*e,z:300+(760-300)*sstep(0.35,1,fp),pitch:-1.3+(1.23)*sstep(0.45,0.97,fp)}}
   function camMats(c,asp){return{V:mul(RX(-c.pitch),T(-c.x,-c.y,-c.z)),P:persp(FOV,asp,4,7000)}}
   function toScreen(V,p,cssW,cssH){const v=xf(V,p),f=cssH/(2*Math.tan(FOV/2));return{x:cssW/2+v[0]/(-v[2])*f,y:cssH/2-v[1]/(-v[2])*f,d:-v[2]}}
-  const caption=document.createElement('div');caption.className='pill';caption.setAttribute('aria-live','polite');
+  const caption=document.createElement('div');caption.className=PILL+' pc-caption';caption.setAttribute('aria-live','polite');
   caption.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:5;height:38px;font-size:14px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .6s;white-space:nowrap';
-  caption.textContent='';document.body.appendChild(caption);
+  caption.textContent='';HOST.appendChild(caption);
   function go(m){st.mode=m;st.mt=0}
   // ---------- the forest run: endless, faster over time, best score kept on the device ----------
   let best=0;try{best=parseInt(localStorage.getItem('puli-best')||'0',10)||0}catch(e){}
-  const hud=document.createElement('div');hud.className='pill';hud.setAttribute('aria-live','off');
+  const hud=document.createElement('div');hud.className=PILL+' pc-hud';hud.setAttribute('aria-live','off');
   hud.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));z-index:5;height:38px;font-size:14px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap;font-variant-numeric:tabular-nums';
-  document.body.appendChild(hud);
+  HOST.appendChild(hud);
   const pad=document.createElement('div');pad.setAttribute('aria-hidden','true');
-  pad.style.cssText='position:fixed;inset:0;z-index:4;touch-action:none;display:none;-webkit-user-select:none;user-select:none';document.body.appendChild(pad);
-  const back=document.createElement('button');back.className='pill';back.type='button';back.textContent='Back to the sky';
-  back.style.cssText='position:fixed;left:clamp(16px,4vw,40px);bottom:calc(52px + env(safe-area-inset-bottom,0px));z-index:6;height:36px;font-size:13px;display:none';document.body.appendChild(back);
-  back.addEventListener('click',e=>{e.stopPropagation();const tr=document.querySelector('.track');scrollTo({top:tr?tr.offsetHeight:0,behavior:'smooth'})});
+  pad.style.cssText='position:fixed;inset:0;z-index:4;touch-action:none;display:none;-webkit-user-select:none;user-select:none';HOST.appendChild(pad);
+  const back=document.createElement('button');back.className=PILL+' pc-back';back.type='button';back.textContent=opts.backLabel||'Back to the sky';
+  back.style.cssText='position:fixed;left:clamp(16px,4vw,40px);bottom:calc(52px + env(safe-area-inset-bottom,0px));z-index:6;height:36px;font-size:13px;display:none';HOST.appendChild(back);
+  back.addEventListener('click',e=>{e.stopPropagation();if(opts.onBack)return opts.onBack();const tr=document.querySelector('.track');scrollTo({top:tr?tr.offsetHeight:0,behavior:'smooth'})});
   const inp={jump:false,held:false,slide:false};
   const gameKeys=()=>(st.mode==='landed'||st.mode==='game')&&!document.querySelector('dialog[open]');
   addEventListener('keydown',e=>{if(!gameKeys()||e.target.closest&&e.target.closest('input,textarea'))return;
@@ -1469,8 +1475,8 @@ window.PuliChar=function(gl,mainBuf){
     else if(e.code==='ArrowDown'||e.code==='KeyS'){e.preventDefault();inp.slide=true}});
   addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')inp.held=false});
   const liveWalls=()=>st.g&&!st.g.over?st.g.obs.filter(o=>o.type==='wall'&&!o.cut&&!o.targeted&&o.sx!=null&&o.x>st.g.x+20&&o.x<st.g.x+1300):[];
-  const laserBtn=document.createElement('button');laserBtn.className='pill';laserBtn.type='button';laserBtn.textContent='Fire laser';
-  laserBtn.style.cssText='position:fixed;right:clamp(16px,4vw,40px);bottom:calc(52px + env(safe-area-inset-bottom,0px));z-index:6;height:44px;min-width:120px;font-size:14px;font-weight:600;display:none';document.body.appendChild(laserBtn);
+  const laserBtn=document.createElement('button');laserBtn.className=PILL+' pc-laser';laserBtn.type='button';laserBtn.textContent='Fire laser';
+  laserBtn.style.cssText='position:fixed;right:clamp(16px,4vw,40px);bottom:calc(52px + env(safe-area-inset-bottom,0px));z-index:6;height:44px;min-width:120px;font-size:14px;font-weight:600;display:none';HOST.appendChild(laserBtn);
   laserBtn.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();const ws=liveWalls().sort((a,b)=>a.x-b.x);if(ws[0])shootWall(ws[0])});
   const shootWall=wl=>{if(fire(wl.sx,wl.sy,null,wl))wl.targeted=true};
   addEventListener('keydown',e=>{if(st.mode!=='game'||!(e.code==='KeyF'||e.code==='KeyE'||e.code==='Enter'))return;const ws=liveWalls().sort((a,b)=>a.x-b.x);if(ws[0]){e.preventDefault();shootWall(ws[0])}});
@@ -1478,7 +1484,7 @@ window.PuliChar=function(gl,mainBuf){
   pad.addEventListener('pointerdown',e=>{if(st.mode==='game'){const wl=liveWalls().find(o=>o.sx>-20&&o.sx<innerWidth+20&&Math.abs(o.sx-e.clientX)<Math.max(70,innerWidth*0.12));if(wl){shootWall(wl);return}}tch={y:e.clientY,t:performance.now(),sl:false};inp.jump=true;inp.held=true});
   pad.addEventListener('pointermove',e=>{if(tch&&!tch.sl&&e.clientY-tch.y>36&&performance.now()-tch.t<350){tch.sl=true;inp.slide=true}});
   addEventListener('pointerup',()=>{tch=null;inp.held=false});
-  function newGame(x0){if(st.jet&&st.jet.on&&st.mode==='game'){st.jet.on=false;st.jet.p=null}return{gnd:true,hover:0,dec:[],nextD:x0+500,x0,x:x0,y:0,vy:0,jumps:0,slideT:0,speed:400,t:0,pts:0,lives:1+Math.min(2,Math.floor(bank/5)),inv:0,obs:[],pick:[],nextX:x0+900,over:false,overT:0}}
+  function newGame(x0){if(st.jet&&st.jet.on&&st.mode==='game'){st.jet.on=false;st.jet.p=null}return{gnd:true,hover:0,dec:[],nextD:x0+500,x0,x:x0,y:0,vy:0,jumps:0,slideT:0,speed:400,t:0,pts:0,lives:startLives(),inv:0,obs:[],pick:[],nextX:x0+900,over:false,overT:0}}
   const R2=()=>Math.random();
   function spawn(g){const d=Math.min(1,g.t/240),x=g.nextX,t=g.t,w=[['log',0.26],['rock',0.2],['stump',0.1+0.1*d],['branch',0.1+0.1*d],['bird',0.06+0.12*d],
       ['vine',t>12?0.12:0],['shroom',t>8?0.08:0],['wall',t>18?0.08+0.04*d:0],['boulder',t>24&&!(st.night>0.5)?0.1+0.05*d:0],['owl',t>32?0.06+0.1*d:0],['gap',t>10?0.1:0],['thorns',t>16?0.08:0],['swarm',t>20?0.07:0],['bridge',t>26?0.07:0],['jet',t>30?0.05:0],['shade',t>14&&st.night>0.5?0.14:0]];
@@ -1694,13 +1700,14 @@ window.PuliChar=function(gl,mainBuf){
   addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){st.pointer={x:e.clientX,y:e.clientY};st.lastMove=performance.now()}},{passive:true});
   const overlay=document.createElement('canvas');overlay.setAttribute('aria-hidden','true');
   overlay.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3';
-  document.body.appendChild(overlay);const oc=overlay.getContext('2d');
+  HOST.appendChild(overlay);const oc=overlay.getContext('2d');
   // banked birds carry over to the game at the end of the page
+  const startLives=()=>opts.lives!=null?opts.lives:1+Math.min(2,Math.floor(bank/5));
   let bank=0;try{bank=parseInt(localStorage.getItem('puli-bank')||'0',10)||0}catch(e){}
-  const pill=document.createElement('div');pill.className='pill bankpill';pill.setAttribute('aria-live','polite');
+  const pill=document.createElement('div');pill.className=PILL+' bankpill';pill.setAttribute('aria-live','polite');
   pill.style.cssText='position:fixed;right:clamp(16px,4vw,40px);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:5;height:34px;font-size:13px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .4s';
   const setPill=()=>{pill.innerHTML=bank?`<b style="font-variant-numeric:tabular-nums">${bank}</b>&nbsp;${bank===1?'bird':'birds'} banked for the game`:'Tap a bird. Puli banks it for the game'};
-  setPill();document.body.appendChild(pill);
+  setPill();HOST.appendChild(pill);if(opts.birds===false)pill.style.display='none';
   function fire(tx,ty,bird,wall){if(st.cool>0)return false;st.cool=0.22;st.fireAt={x:tx,y:ty};st.fireBird=bird||null;st.fireWall=wall||null;st.pendingShot=true;st.recoil=1;return true}
   addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('a,button,.card-p,input,textarea,select'))return;
     st.pointer={x:e.clientX,y:e.clientY};st.lastMove=performance.now();if(st.mode!=='sky')return;
@@ -1760,7 +1767,7 @@ window.PuliChar=function(gl,mainBuf){
       let msg='';if(ready)msg=isTouch?'Tap to run. Swipe down to slide':'Press Space to run. Down arrow to slide';
       else if(inGame&&g.over)msg=`Score ${score(g)}. Best ${best}. ${isTouch?'Tap':'Press Space'} to run again`;else if(inGame&&st.paused)msg='Paused. Scroll down to keep running';else if(inGame&&g.hint>0)msg=isTouch?'Vine wall ahead. Tap Fire laser to cut it':'Vine wall ahead. Press F to cut it with the laser';
       if(caption.textContent!==msg)caption.textContent=msg;caption.style.opacity=msg?'1':'0';
-      const lives=inGame?g.lives:1+Math.min(2,Math.floor(bank/5)),hs=inGame?`Score ${score(g)}  ·  Best ${best}  ·  Lives ${Math.max(0,lives)}`:ready?`Best ${best}  ·  Lives ${lives}${bank>=5?' (from your birds)':''}`:'';
+      const lives=inGame?g.lives:startLives(),hs=inGame?`Score ${score(g)}  ·  Best ${best}  ·  Lives ${Math.max(0,lives)}`:ready?`Best ${best}  ·  Lives ${lives}${bank>=5&&opts.lives==null?' (from your birds)':''}`:'';
       if(hud.textContent!==hs)hud.textContent=hs;hud.style.opacity=hs?'1':'0';
       const play=ready||inGame,wallNear=inGame&&!g.over&&!st.paused&&liveWalls().length>0;laserBtn.style.display=wallNear?'inline-flex':'none';if(wallNear)laserBtn.style.opacity=String(0.75+0.25*Math.sin(st.t*10));
       pad.style.display=play?'block':'none';back.style.display=play&&isTouch?'inline-flex':'none'}
@@ -1905,7 +1912,9 @@ window.PuliChar=function(gl,mainBuf){
       if(s.age<0.06){oc.globalAlpha=1-s.age/0.06;oc.fillStyle=css(A[0]);oc.beginPath();oc.arc(s.a.x,s.a.y,6,0,Math.PI*2);oc.fill()}
       oc.globalAlpha=1;oc.globalCompositeOperation='source-over'}
   }
-  return{draw,fire,cover:()=>st.cover,covered:()=>st.cover>=0.995,mode:()=>st.mode,over:()=>!!(st.g&&st.g.over),ready:()=>st.mode==='landed'&&st.mt>0.4};
+  // the redesign: straight into the forest fall, no jetpack (skip: already landed, for reduced motion)
+  function startFall(skip){go(skip?'landed':'fall');st.fp=1;st.gyaw=0.95;st.yaw=0.95;st.jet={on:false,p:null,rest:true};st.jetStage=3;st.fc=null;st.fev=0;st.vines=mkVines();st.g=null;st.shake=0}
+  return{startFall,draw,fire,cover:()=>st.cover,covered:()=>st.cover>=0.995,mode:()=>st.mode,over:()=>!!(st.g&&st.g.over),ready:()=>st.mode==='landed'&&st.mt>0.4};
 };
 </script>
 <script>

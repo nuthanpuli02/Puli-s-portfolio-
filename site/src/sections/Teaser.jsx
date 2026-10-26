@@ -1,48 +1,50 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DodgeField from '../components/reactbits/DodgeField.jsx';
 import FlyingButton from '../components/reactbits/FlyingButton.jsx';
+import { holdScroll } from '../scrollHold.js';
 
-// Section 5: the game teaser. A button that dodges you (on touch screens it hops away when tapped), gives up after a few
-// tries, and once caught grows thrusters and flies off the top of the screen. Puli (the blocky 3D character, behind the
-// HTML, `src/puli/stage.js`) moonwalks in with the scroll and dances; when the button is caught he turns, jumps, the
-// button glides into his hands, and he is carried off the top; then he falls back down, lands face-down and gets up.
-// The page can't scroll from the catch until he is back on his feet.
+// Section 5: the game teaser. A button that dodges you (on touch screens it hops away when tapped); after "Alright,
+// alright" it gives up and glides down to the bottom of the screen as the Play button. Pressing Play makes it grow
+// thrusters and take off. Puli (the blocky 3D character behind the HTML, `src/puli/stage.js`) moonwalks in with the
+// scroll and dances; when Play is pressed he steps under the button, jumps and latches onto its right end as it hovers,
+// is carried up, lets go, and the page follows him down into the forest (section 6), where the game starts.
 const TAUNTS = ['Catch me', 'Nope', 'Alright, alright', 'Play'];
-const POD = 6; // the thruster pods' height at this button size (React Bits: 5px x size factor 1.18)
+const POD = 6;      // the thruster pods' height at this button size (React Bits: 5px x size factor 1.18)
+const PILL_H = 52;  // the button's height (large)
+const FLOOR = 14;   // the Play button rests this far above the bottom of the screen
+const GLIDE_MS = 700;
 
-const holdScroll = on => {
-  const v = on ? 'hidden' : '';
-  document.documentElement.style.overflow = v;
-  document.body.style.overflow = v;
-};
-
-export default function Teaser({ theme }) {
+export default function Teaser({ theme, forestRef, onOpenForest }) {
   const stageRef = useRef(null);
   const fieldRef = useRef(null);
   const canvasRef = useRef(null);
   const flightRef = useRef(null);
-  const puliRef = useRef(null);        // the 3D stage once loaded
-  const caughtRef = useRef(null);      // the button's rectangle when it was caught (viewport px)
-  const glideRef = useRef({ x: 0, y: 0 });
-  const [round, setRound] = useState(0);          // remounts the dodging button for another go
-  const [flight, setFlight] = useState(null);     // where the caught button takes off, in stage coordinates
-  const [glide, setGlide] = useState(null);       // the caught button gliding into Puli's hands
-  const [gone, setGone] = useState(false);
+  const ctrlRef = useRef(null);         // the flying button's launch()
+  const puliRef = useRef(null);         // the 3D stage once loaded
+  const soloRef = useRef(false);        // the button flies without Puli this time
+  const [round, setRound] = useState(0);         // remounts the dodging button for another go
+  const [phase, setPhase] = useState('dodge');   // dodge -> glide -> rest (Play at the bottom) -> flying
+  const [glide, setGlide] = useState(null);      // the dodging button gliding down to where Play rests
+  const [rest, setRest] = useState(null);        // the flying button's box and take-off spot, in stage coordinates
 
-  // the flying button, placed where the caught one now sits
-  const launch = useCallback(() => {
-    const stage = stageRef.current;
-    const rect = caughtRef.current;
-    if (!stage || !rect) return;
-    const s = stage.getBoundingClientRect();
-    const g = glideRef.current;
-    // its box runs from the top of the screen down to where the button sits, so it takes off from that spot and
-    // disappears off the top of the screen
-    const top = -s.top;
-    setFlight({ top, height: rect.bottom + g.y - s.top - top + POD, x: rect.left + g.x + rect.width / 2 - s.left });
+  // into the forest: the forest section opens and plays its own fall; the page stays still until he has landed
+  const goForest = useCallback(smooth => {
+    onOpenForest?.();
+    requestAnimationFrame(() => {
+      document.getElementById('forest')?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+      forestRef?.current?.start();
+    });
+  }, [forestRef, onOpenForest]);
+
+  // back to the start of section 5 (once the forest has taken over, or for another go)
+  const resetRound = useCallback(() => {
+    setPhase('dodge');
+    setGlide(null);
+    setRest(null);
+    setRound(r => r + 1);
   }, []);
 
-  // ---- Puli: loaded once the section is near, drawn only while it is on screen ----
+  // ---- Puli: loaded a few screens early, drawn only while the section is on screen ----
   useEffect(() => {
     const canvas = canvasRef.current;
     const stageEl = stageRef.current;
@@ -60,23 +62,12 @@ export default function Teaser({ theme }) {
           layout: () => ({
             field: fieldRef.current.getBoundingClientRect(),
             stage: stageEl.getBoundingClientRect(),
-            pill: fieldRef.current.querySelector('.dodge-field__pill')?.offsetWidth || 0
+            pill: fieldRef.current.querySelector('.dodge-field__pill')?.offsetWidth || 0,
+            forest: document.getElementById('forest')?.getBoundingClientRect() || null
           }),
-          onGrab: (p, ms) => {
-            const r = caughtRef.current;
-            if (!r) return;
-            const g = { x: p.x - (r.left + r.width / 2), y: p.y - (r.top + r.height / 2) };
-            glideRef.current = g;
-            setGlide({ ...g, ms });
-          },
-          onLaunch: launch,
-          onDone: () => {
-            holdScroll(false);
-            setFlight(null);
-            setGlide(null);
-            setGone(false);
-            glideRef.current = { x: 0, y: 0 };
-            setRound(r => r + 1);
+          onForest: () => {
+            forestRef?.current?.start();
+            resetRound();
           },
           onReady: ok => {
             if (ok) puliRef.current = api;
@@ -85,8 +76,7 @@ export default function Teaser({ theme }) {
         });
       });
     };
-    // load a screen early; draw only while the section is on screen
-    const near = new IntersectionObserver(([e]) => e.isIntersecting && start(), { rootMargin: '100% 0px' });
+    const near = new IntersectionObserver(([e]) => e.isIntersecting && start(), { rootMargin: '300% 0px' });
     const seen = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
       api?.setVisible(visible);
@@ -101,46 +91,70 @@ export default function Teaser({ theme }) {
       puliRef.current = null;
       holdScroll(false);
     };
-  }, [launch]);
+  }, [forestRef, resetRound]);
 
   useEffect(() => {
     puliRef.current?.setTheme(theme === 'dark' ? 'dark' : 'light');
   }, [theme]);
 
-  const onCatch = useCallback(rect => {
-    if (!rect) return;
-    caughtRef.current = rect;
-    glideRef.current = { x: 0, y: 0 };
+  // ---- it gives up (or is caught with the keyboard): down to the bottom of the screen, where it becomes Play ----
+  const toBottom = useCallback(() => {
+    const stage = stageRef.current;
+    const field = fieldRef.current;
+    if (!stage || !field) return;
+    setPhase(p => {
+      if (p !== 'dodge') return p;
+      const s = stage.getBoundingClientRect();
+      const f = field.getBoundingClientRect();
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const top = -s.top; // the flying button's box: from the top of the screen down to its resting spot
+      const floor = s.height - FLOOR;
+      const x = f.left + f.width / 2 - s.left;
+      const restY = floor - POD - PILL_H / 2; // its centre at rest, in stage coordinates
+      // how high it climbs before hovering: to where Puli's jump meets it (or half the screen without him)
+      const P = puliRef.current;
+      const meet = P && P.standFor(s.left + x);
+      const alt = Math.max(120, meet ? s.top + restY - meet.y : s.height * 0.5);
+      // the dodging button always ends up back in the middle of its field, so glide from there
+      setGlide({ x: 0, y: s.top + restY - (f.top + f.height / 2), ms: reduce ? 0 : GLIDE_MS });
+      setTimeout(() => {
+        setRest({ top, height: floor - top, x, alt });
+        setPhase('rest');
+        forestRef?.current?.preload();
+      }, reduce ? 0 : GLIDE_MS);
+      return 'glide';
+    });
+  }, [forestRef]);
+
+  // ---- Play ----
+  const onPlay = useCallback(() => {
+    if (phase !== 'rest' || !rest) return;
+    const s = stageRef.current.getBoundingClientRect();
     const P = puliRef.current;
-    if (P && !P.reduce && P.caught()) {
-      holdScroll(true); // Puli takes it from here: he jumps for it, then the button launches (onLaunch)
+    onOpenForest?.();
+    if (ctrlRef.current && ctrlRef.current.launch()) {
+      setPhase('flying');
+      soloRef.current = !(P && !P.reduce && P.play(s.left + rest.x));
+      if (!soloRef.current) holdScroll(true); // he takes it from here (onForest)
       return;
     }
-    launch();
-  }, [launch]);
+    goForest(false); // reduced motion: no flight, straight to the forest
+    resetRound();
+  }, [phase, rest, goForest, resetRound, onOpenForest]);
 
+  // without Puli (still loading, or didn't load) the button just flies off, and the forest takes over
   const onExit = useCallback(() => {
-    setGone(true);
-    puliRef.current?.gone();
-  }, []);
-
-  // without Puli (still loading, didn't load, or reduced motion): bring the button back for another go
-  useEffect(() => {
-    if (!gone || (puliRef.current && !puliRef.current.reduce)) return undefined;
-    const id = setTimeout(() => {
-      setFlight(null);
-      setGlide(null);
-      setGone(false);
-      setRound(r => r + 1);
-    }, 2600);
-    return () => clearTimeout(id);
-  }, [gone]);
+    if (soloRef.current) {
+      goForest(true);
+      resetRound();
+    }
+  }, [goForest, resetRound]);
 
   const onFrame = useCallback(f => {
     const el = flightRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    puliRef.current?.flyAt(r.left + f.x, r.top + f.y);
+    puliRef.current?.flyAt(r.left + f.x, r.top + f.y, f.phase);
   }, []);
 
   const css = typeof window !== 'undefined' ? getComputedStyle(document.documentElement) : null;
@@ -158,7 +172,7 @@ export default function Teaser({ theme }) {
         </div>
 
         <div className="teaser__field" ref={fieldRef}>
-          {!flight && (
+          {(phase === 'dodge' || phase === 'glide') && (
             <div
               className="teaser__glide"
               style={glide ? {
@@ -173,7 +187,8 @@ export default function Teaser({ theme }) {
                 radius={150}
                 reach={110}
                 stayCaught
-                onCatch={onCatch}
+                onRelent={toBottom}
+                onCatch={toBottom}
                 notice="Tap it. If you can."
                 className="teaser__dodge"
                 style={{ '--df-height': '100%' }}
@@ -182,8 +197,8 @@ export default function Teaser({ theme }) {
           )}
         </div>
 
-        {flight && (
-          <div className="teaser__flight" ref={flightRef} style={{ top: flight.top, height: flight.height }}>
+        {rest && (
+          <div className="teaser__flight" ref={flightRef} style={{ top: rest.top, height: rest.height }}>
             <FlyingButton
               key={round}
               size="large"
@@ -195,11 +210,12 @@ export default function Teaser({ theme }) {
               trigger="click"
               carryCursor={false}
               interactive={false}
-              autoLaunch
               exit
-              altitude={70}
-              hoverTime={0.9}
-              startX={flight.x}
+              altitude={rest.alt}
+              hoverTime={1.6}
+              startX={rest.x}
+              controlRef={ctrlRef}
+              onClick={onPlay}
               onExit={onExit}
               onFrame={onFrame}
               style={{ minHeight: 0 }}
@@ -208,7 +224,6 @@ export default function Teaser({ theme }) {
             </FlyingButton>
           </div>
         )}
-        <p className="teaser__status" aria-live="polite">{gone ? 'Up, up and away.' : ''}</p>
         <p className="teaser__credit">3D character made with <a href="https://www.tripo3d.ai" target="_blank" rel="noreferrer">Tripo</a></p>
       </div>
     </section>

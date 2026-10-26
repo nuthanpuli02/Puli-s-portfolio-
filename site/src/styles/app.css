@@ -289,6 +289,17 @@ html{scroll-behavior:smooth}
 .teaser__credit a{color:inherit}
 .teaser__flight .flying-button{height:100%}
 .teaser__flight .flying-button__craft{font-weight:500}
-/* its floor is the bottom of its box, which cut the smoke off in a straight line: let the smoke thin out above it */
-.teaser__flight .flying-button__smoke{-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 56px);mask-image:linear-gradient(0deg,transparent 0,#000 56px)}
-.teaser__status{position:absolute;left:0;right:0;bottom:24px;margin:0;text-align:center;color:var(--text-soft);font:500 13px/1 var(--font-sans)}
+.teaser__flight .flying-button__craft{pointer-events:auto}
+/* section 6: the forest game (src/puli3d.js) on its own canvas; no height until the Play button opens it. The
+   transform keeps the game's fixed-position buttons and captions inside the section */
+.forest{position:relative;height:100svh;overflow:hidden;transform:translateZ(0);background:var(--bg)}
+.forest[data-open='false']{height:0}
+.forest__canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.forest__pill{display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:999px;
+  border:1px solid var(--card-line);background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--text);
+  font:500 14px/1 var(--font-sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 18px -10px rgba(0,0,0,.35)}
+button.forest__pill{cursor:pointer}
+.forest__pill.bankpill{display:none}
+/* clear of the fixed section badge in the bottom-right corner */
+.forest .pc-laser{bottom:calc(env(safe-area-inset-bottom,0px) + 150px) !important}
+.forest .pc-caption{bottom:calc(env(safe-area-inset-bottom,0px) + 124px) !important;max-width:calc(100vw - 32px);white-space:normal !important;text-align:center;height:auto !important;min-height:38px;line-height:1.3 !important;padding:6px 16px}

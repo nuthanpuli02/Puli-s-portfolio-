@@ -2,7 +2,8 @@
 // Changes for this site (section 5): `exit` makes the button keep climbing off the top of its box after hovering
 // instead of landing, then calls `onExit`; `autoLaunch` takes off as soon as it is placed; `startX` places it (px from
 // the box's left edge) where the dodging button was caught; `interactive={false}` ignores the pointer (no dragging it
-// mid-flight); `onFrame` reports the craft's centre and tilt every frame so Puli can hang from it.
+// mid-flight); `onFrame` reports the craft's centre and tilt every frame so Puli can hang from it; `controlRef` gets
+// `{ launch() }` to take off on demand (it returns false when it can't, e.g. with reduced motion).
 
 import { useEffect, useRef } from 'react';
 import './FlyingButton.css';
@@ -1706,6 +1707,7 @@ function createEngine({ root, canvas, button, cursor, ramp, props }) {
   if (props.current.autoLaunch && !launch() && props.current.onExit) props.current.onExit(); // reduced motion: no flight
 
   return {
+    launch,
     refresh: measure,
     rehome() {
       measure();
@@ -2058,6 +2060,7 @@ export default function FlyingButton({
   startX,
   interactive = true,
   onFrame,
+  controlRef,
   className = '',
   style
 }) {
@@ -2116,7 +2119,9 @@ export default function FlyingButton({
       props: propsRef
     });
     engineRef.current = engine;
+    if (controlRef) controlRef.current = { launch: () => engine.launch() };
     return () => {
+      if (controlRef) controlRef.current = null;
       engineRef.current = null;
       engine.destroy();
     };

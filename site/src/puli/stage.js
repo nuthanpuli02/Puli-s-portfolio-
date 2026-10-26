@@ -1,8 +1,9 @@
 // Section 5's Puli: the blocky 3D character on a see-through canvas behind the HTML button. Ported from the test page
 // Puli approved (tools/texture_bake/blocky/anim/movetest.html): he moonwalks in with the scroll, passing behind the
-// button, cuts into the dance's own moonwalk, turns to face the viewer during its spin; once the button is caught he
-// turns side-on, jumps, hangs from its right end while it flies off the top, then falls back down, lands face-down and
-// gets up.
+// button, cuts into the dance's own moonwalk, turns to face the viewer during its spin. When the visitor presses the
+// Play button (resting at the bottom of the screen) it takes off; he turns side-on, steps under it, jumps and latches
+// onto its right end while it hovers, is carried up, lets go, and falls; the page follows him down into the forest
+// (section 6), which takes over with its own fall.
 //
 // The canvas is fixed to the viewport, so the flight and the fall can use the whole screen. Every frame the camera is
 // placed from the page layout: his feet stand a fixed distance below the button's resting centre, and 1 world unit
@@ -21,6 +22,10 @@ const MW_CUT = 0.40;         // moonwalk time that matches the dance at DANCE_IN
 const DANCE_IN = 7.57;
 const SPIN = [9.2, 10.4];    // the dance's spin: he turns from side-on to facing the viewer during it
 const AUTO_AT = 0.97;        // once this much of the section is in view, the rest of the entrance plays by itself
+const MAX_RATE = 2.5;        // the scroll can speed the moonwalk up to this many times its own pace, never skip it
+const WALK = 0.75;           // his walking speed, units/s
+const GRAV = 7;              // falling, units/s^2 (he is 1 unit tall)
+const FOLLOW = 0.42;         // while he falls the page scrolls to keep him this far down the screen
 const CLEAR = 0.12;          // how far right of the button's edge his hips end up after the entrance, in his heights
 const REACH = 0.34;          // his half-width with his arms at his sides (dance and idle), in his heights
 const NEAR = 1.06;           // the dance's spin also steps him towards the camera, which makes him this much bigger
@@ -38,15 +43,13 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 /**
  * @param {object} o
  * @param {HTMLCanvasElement} o.canvas  fixed, full-viewport, pointer-events:none
- * @param {() => {field: DOMRect, stage: DOMRect, pill: number}} o.layout  the button field and the section's stage, in
- *   viewport px, and the resting button's width (0 while it is gone)
+ * @param {() => {field: DOMRect, stage: DOMRect, pill: number, forest: DOMRect|null}} o.layout  the button field, the
+ *   section's stage and the forest section, in viewport px, and the resting button's width (0 while it is gone)
  * @param {'light'|'dark'} o.theme
- * @param {(p: {x: number, y: number}, ms: number) => void} o.onGrab  where (viewport px) the button should glide to
- * @param {() => void} o.onLaunch  he is holding it: time for it to take off
- * @param {() => void} o.onDone    he has landed and got up
+ * @param {() => void} o.onForest  he has fallen into the forest: the forest section takes over from here
  * @param {(ok: boolean) => void} o.onReady
  */
-export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDone, onReady }) {
+export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const R = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   R.outputColorSpace = THREE.SRGBColorSpace;
@@ -96,7 +99,7 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
   let DANCE_RUN = 0.75;     // how far the dance's moonwalk carries his hips (measured at load)
 
   // layout, refreshed every frame (scrolling moves everything together)
-  const V = { pillHalf: 0, w: 1, h: 1, px: 300, feetY: 0, camY: 0, d: 5, bx: 0, cut: 0, lead: 3.45, q: 0 };
+  const V = { forestTop: null, pillHalf: 0, w: 1, h: 1, px: 300, feetY: 0, camY: 0, d: 5, bx: 0, cut: 0, lead: 3.45, q: 0 };
 
   // the move state
   let S = { phase: 'none' };
@@ -118,7 +121,7 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
     puli.position.x += p0.x - p1.x;
     puli.position.z += p0.z - p1.z;
   };
-  const play = (name, fade = 0.25, once = false) => {
+  const playClip = (name, fade = 0.25, once = false) => {
     const a = mixer.clipAction(clips[name]);
     a.reset();
     a.setLoop(LOOP.has(name) && !once ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
@@ -149,7 +152,8 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
       R.setSize(w, h, false);
       cam.aspect = w / h;
     }
-    const { field, stage, pill } = layout();
+    const { field, stage, pill, forest } = layout();
+    V.forestTop = forest ? forest.top - c.top : null;
     if (!V.pillHalf && pill) V.pillHalf = pill / 2; // the first label's width, so he doesn't shift as the labels change
     const half = V.pillHalf || 70;
     const bcx = field.left + field.width / 2 - c.left;
@@ -182,23 +186,28 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
     cur = null;
     puli.rotation.y = SIDE;
     puli.position.set(0, 0, 0);
+    puli.visible = true;
     if (reduce) {
       // no moonwalk or dance: he simply stands to the right of the button, facing the viewer
       puli.rotation.y = 0;
-      play('idle', 0);
+      playClip('idle', 0);
       measure();
       puli.position.x = V.cut + DANCE_RUN;
       S = { phase: 'idle' };
       return;
     }
-    play('moonwalk', 0);
+    playClip('moonwalk', 0);
     S = { phase: 'enter', r: V.lead, auto: false };
   };
 
   const enter = dt => {
+    // the scroll sets where he should be, but he only ever moonwalks there (at most MAX_RATE times his pace), so a
+    // fast scroll or a late-loading model never makes him pop up mid-screen
+    if (V.q >= AUTO_AT) S.auto = true;
     if (!S.auto) {
-      S.r = V.lead * (1 - clamp((V.q - 0.25) / (AUTO_AT - 0.25), 0, 1));
-      if (V.q >= AUTO_AT) S.auto = true;
+      const want = V.lead * (1 - clamp((V.q - 0.25) / (AUTO_AT - 0.25), 0, 1));
+      const k = dt * MAX_RATE;
+      S.r = want < S.r ? Math.max(want, S.r - k) : Math.min(want, S.r + k);
     } else S.r = Math.max(0, S.r - dt);
     const dur = clips.moonwalk.duration;
     puli.position.x = V.cut - MW_SPEED * S.r;
@@ -207,36 +216,39 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
       cur.time = MW_CUT;
       mixer.update(0);
       keepHips(() => {
-        play('dance', 0, true).time = DANCE_IN;
+        playClip('dance', 0, true).time = DANCE_IN;
       });
       S = { phase: 'dance' };
     }
     return S.phase === 'dance' ? dt : 0; // the scroll drives the moonwalk's clock, not the frame time
   };
 
-  // ---- the catch: called by the section when the visitor catches the button ----
-  const caught = () => {
+  // where he has to stand so that his hands meet a button at screen x `bx` at the top of his jump, and the screen y of
+  // the button's centre at that moment
+  const standFor = bx => {
+    const reach = GRAB_HANDS.clone().applyEuler(new THREE.Euler(0, SIDE, 0)).add(BTN_GRIP);
+    return { x: toWorld(bx, 0).x - reach.x, y: toScreen(new THREE.Vector3(0, reach.y, reach.z)).y };
+  };
+
+  // ---- Play: called by the section when the visitor presses the Play button (it takes off from screen x `bx`) ----
+  let craft = null;     // the flying button's centre (viewport px) and its phase, reported every frame while it flies
+  const flyAt = (x, y, phase) => {
+    craft = { x, y, phase };
+  };
+  const play = bx => {
     if (!puli || S.phase === 'none' || S.busy) return false;
     if (S.phase === 'enter') {
-      // caught before he arrived: skip to where the entrance ends
+      // pressed before he arrived: skip to where the entrance ends
       mixer.stopAllAction();
       cur = null;
       puli.rotation.y = 0;
-      play('idle', 0);
+      playClip('idle', 0);
       puli.position.set(V.cut + DANCE_RUN, 0, 0);
       mixer.update(0);
-    } else if (cur && cur.getClip() !== clips.idle) keepHips(() => play('idle', 0.3));
-    S = { phase: 'call', t: 0, rot0: puli.rotation.y, busy: true };
+    } else if (cur && cur.getClip() !== clips.idle) keepHips(() => playClip('idle', 0.3));
+    craft = null;
+    S = { phase: 'call', t: 0, rot0: puli.rotation.y, standX: standFor(bx).x, walking: false, busy: true };
     return true;
-  };
-
-  let craft = null;     // the flying button's centre (viewport px), reported every frame while it flies
-  const flyAt = (x, y) => {
-    craft = { x, y };
-  };
-  let exited = false;
-  const gone = () => {
-    exited = true;
   };
 
   const step = dt => {
@@ -251,79 +263,73 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
         });
       }
       if (t >= clips.dance.duration - 0.05) {
-        keepHips(() => play('idle', 0.4));
+        keepHips(() => playClip('idle', 0.4));
         S = { phase: 'idle' };
       }
     } else if (T.phase === 'call') {
-      // he turns side-on, towards the button, then jumps for it
+      // he turns side-on, towards the button, and steps to where his jump will meet it
       const u = Math.min(1, T.t / 0.6);
       keepHips(() => {
         puli.rotation.y = T.rot0 + (SIDE - T.rot0) * smooth(u);
       });
-      if (T.t > 0.9) {
-        keepHips(() => play('grab', 0.2, true));
-        const target = GRAB_HANDS.clone().applyEuler(puli.rotation).add(puli.position).add(BTN_GRIP);
-        onGrab(toScreen(target), 950);
+      const dx = T.standX - puli.position.x;
+      if (Math.abs(dx) > 0.03 && u > 0.4) {
+        if (!T.walking) {
+          playClip('walk', 0.2);
+          T.walking = true;
+        }
+        puli.position.x += Math.sign(dx) * Math.min(Math.abs(dx), WALK * dt);
+      } else if (u >= 1) {
+        if (T.walking) playClip('idle', 0.25);
+        S = { phase: 'ready', t: 0, busy: true };
+      }
+    } else if (T.phase === 'ready') {
+      // he jumps as the button reaches the top of its climb and hovers
+      if (craft && craft.phase === 'hover') {
+        keepHips(() => playClip('grab', 0.15, true));
         S = { phase: 'grab', t: 0, busy: true };
       }
     } else if (T.phase === 'grab') {
-      if (T.t > 1.15) {
-        play('hang', 0.25);
-        craft = null;
-        exited = false;
-        onLaunch();
-        S = { phase: 'fly', t: 0, busy: true, vy: 0 };
+      const dur = clips.grab.duration;
+      if (craft && T.t > dur * 0.6) {
+        // the last part of the jump: his hands home in on the button's right end
+        const h = handsWorld();
+        const want = toWorld(craft.x, craft.y, h.z + BTN_GRIP.z).sub(BTN_GRIP);
+        const k = 1 - Math.exp(-dt * 14);
+        puli.position.x += (want.x - h.x) * k;
+        puli.position.y += (want.y - h.y) * k;
+      }
+      if (T.t >= dur) {
+        playClip('hang', 0.25);
+        S = { phase: 'fly', t: 0, busy: true };
       }
     } else if (T.phase === 'fly') {
       // his hands stay on the right end of the flying button
-      if (craft && !exited) {
+      if (craft) {
         const h = handsWorld();
         const want = toWorld(craft.x, craft.y, h.z + BTN_GRIP.z).sub(BTN_GRIP);
-        const dy = want.y - h.y;
-        if (dt > 0) T.vy = T.vy * 0.8 + (dy / dt) * 0.2;
         puli.position.x += want.x - h.x;
-        puli.position.y += dy;
+        puli.position.y += want.y - h.y;
       }
-      if (exited) {
-        // the button has left the screen: he keeps going until he is out of sight too
-        if (T.t2 === undefined) T.t2 = 0;
-        T.t2 += dt;
-        puli.position.y += Math.max(T.vy, 2.5) * dt;
-        const top = V.camY + V.h / 2 / V.px;
-        if (puli.position.y > top + 0.1 || T.t2 > 4) {
-          S = { phase: 'pause', t: 0, busy: true };
-        }
-      }
-    } else if (T.phase === 'pause') {
-      if (T.t > 0.8) {
-        // drop back in from the top, facing the viewer
+      // carried up until he is high on the screen, then he lets go
+      const hy = toScreen(hipsWorld()).y;
+      if ((craft && craft.phase === 'exit' && hy < V.h * 0.3) || T.t > 8) {
         keepHips(() => {
           puli.rotation.y = 0;
         });
-        play('fallloop', 0.2);
-        // back onto his own spot beside the button (the button returns to the middle for another go)
-        puli.position.x = V.cut + DANCE_RUN;
-        puli.position.z = 0;
-        S = { phase: 'drop', t: 0, busy: true, y0: V.camY + V.h / 2 / V.px + 0.15 };
+        playClip('fallloop', 0.2);
+        S = { phase: 'drop', t: 0, busy: true, vy: 0.6 };
       }
     } else if (T.phase === 'drop') {
-      const u = Math.min(1, T.t / 1.3);
-      puli.position.y = T.y0 * (1 - u * u);
-      if (u >= 1) {
-        puli.position.y = 0;
-        play('fall', 0.1, true);
-        S = { phase: 'land', t: 0, busy: true };
-      }
-    } else if (T.phase === 'land') {
-      if (T.t > 1.6) {
-        keepHips(() => play('getup', 0.2, true));
-        S = { phase: 'up', t: 0, busy: true };
-      }
-    } else if (T.phase === 'up') {
-      if (T.t > 5.1) {
-        keepHips(() => play('idle', 0.5));
-        S = { phase: 'idle' };
-        onDone();
+      // falling; the page follows him down into the forest
+      T.vy = Math.max(T.vy - GRAV * dt, -6.5);
+      puli.position.y += T.vy * dt;
+      const hy = toScreen(hipsWorld()).y;
+      if (hy > V.h * FOLLOW) window.scrollTo({ top: window.scrollY + (hy - V.h * FOLLOW), behavior: 'instant' });
+      if (V.forestTop === null || V.forestTop <= 1 || T.t > 6) {
+        puli.visible = false;
+        S = { phase: 'gone' };
+        onForest();
       }
     }
   };
@@ -344,7 +350,7 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
       mixer.update(mdt);
       const hw = hipsWorld();
       const lift = Math.max(0, hw.y - 0.46);
-      shadow.visible = true;
+      shadow.visible = S.phase !== 'drop' && S.phase !== 'gone';
       shadow.position.set(hw.x, 0.001, hw.z);
       shadow.scale.setScalar(1 / (1 + lift));
       shadow.material.opacity = shadowA / (1 + lift * 2);
@@ -407,7 +413,7 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
 
   // ?puli-debug: inspect the layout and the move state from the console (headless tests)
   if (/[?&]puli-debug/.test(location.search)) {
-    window.__puli = { V, get S() { return S; }, get puli() { return puli; }, hipsWorld: () => hipsWorld(), toScreen };
+    window.__puliStage = { V, get S() { return S; }, get puli() { return puli; }, hipsWorld: () => hipsWorld(), toScreen };
   }
 
   return {
@@ -416,9 +422,9 @@ export function createPuliStage({ canvas, layout, theme, onGrab, onLaunch, onDon
       setTheme(t);
       kick();
     },
-    caught,
+    play,
     flyAt,
-    gone,
+    standFor: bx => (GRAB_HANDS ? standFor(bx) : null),
     get reduce() {
       return reduce;
     },

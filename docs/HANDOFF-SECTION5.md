@@ -4,6 +4,14 @@ Written 2026-10-25 for a new Claude Code session. Read `CLAUDE.md`, then `docs/W
 "Section 5" open item), then this file. Talk to Puli in simple, step-by-step terms; he wants blunt feedback and tests on
 his Redmi Note 14 Pro 5G (Brave, portrait) first.
 
+## Progress (2026-10-26)
+
+Puli's phone test changed the sequence (see the Log in WORKLOG for details): the button glides to the bottom of the
+screen as Play after "Alright, alright"; Play launches it; Puli steps under it, jumps and latches on as it hovers, is
+carried up, lets go, and the page follows his fall into **section 6** (`site/src/sections/Forest.jsx`), which runs the
+old forest fall and runner game from `src/puli3d.js` with voxel Puli. Steps 4-6 of the plan below are superseded by
+this. Next: the blocky model in the forest fall and the game.
+
 ## Progress (2026-10-25, second session)
 
 Steps 1-5 and 7 of the plan below are done, and step 6 up to the landing: `site/src/puli/stage.js` (the three.js stage,
