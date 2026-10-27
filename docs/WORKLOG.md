@@ -19,7 +19,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
   - Built and live: section 5 copy + DodgeField button (touch hops, one label per dodge: Catch me -> Nope -> Alright, alright -> Play, back to the middle when it gives up) that turns into a FlyingButton and leaves through the top (`site/src/sections/Teaser.jsx`). Waiting for Puli's verdict on the dodging difficulty and take-off speed on his Redmi. Temporary: the button comes back 2.6 s after leaving.
   - Puli is in, v2 after his phone test (2026-10-26, see Log): enters from off-screen left, Play rests at the bottom, he latches on mid-air, lets go and falls into section 6 (the forest and runner game from the old page). Waiting for his verdict on his phone.
   - Blocky Puli now also in the forest fall and the game (2026-10-26). Puli has a small change in mind for the fall to the ground (he'll describe it after testing).
-  - Next (agreed 2026-10-27, not started): the green-grid landing and a rebuilt forest and game, reusing the blossom tree's parts. Plan: `docs/PLAN-FOREST.md`; start with Phase 1 (look test). Decided 2026-10-27: objects built in code, no downloaded models; no laser (slide under / jump over instead); textures in `site/src/assets/forest/`; Phase 1 look test built (2026-10-27), waiting for Puli's verdict.
+  - Next (agreed 2026-10-27, not started): the green-grid landing and a rebuilt forest and game, reusing the blossom tree's parts. Plan: `docs/PLAN-FOREST.md`; start with Phase 1 (look test). Decided 2026-10-27: objects built in code, no downloaded models; no laser (slide under / jump over instead); textures in `site/src/assets/forest/`; Phase 1 look test done; after Puli's feedback a moss forest prototype with the two-shockwave landing (2026-10-27, `tools/forest-moss/`), waiting for his verdict and tweak numbers.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -34,6 +34,19 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-27: moss forest prototype (old forest rebuilt + two-shockwave landing)
+- Puli's feedback on the Phase 1 look test: the grid should not draw in during the fall; it should come from the impact. He wanted the old main page's moss forest (huge trees, lots of moss), grass and bushes, and fog that thickens slowly instead of popping in.
+- Agreed with Puli: drop the old fall's canopy and vine bounces (straight fall in the dark); moss a bit shorter than the old one (raise it later if it looks thin); waves about 2.5 s and 3 s; ankle-high grass; keep the white flowers and pollen.
+- Prototype: https://claude.ai/artifact/FhFo666HWFQ3qdyBznDp2V (source `tools/forest-moss/index.html`, needs `tex/*.webp` from `site/src/assets/forest/` and `puli.wasm` = the quantized model next to it).
+  - The old forest's layout scaled to Puli = 1 unit and framed for a portrait phone: two giant trunks by the landing spot, the big diagonal branch, the long arch behind, a low root arch, two thin crossing branches, mid-distance trunks, the log, hanging vines, mounds, rocks, far trunks and arches as fog silhouettes.
+  - Moss shells like the old `MOSS` shader: all mossy surfaces merged into one mesh drawn as instances (layer = `gl_InstanceID`), strands cut by a 3D cell pattern, thick on tops and sides, bare underneath; a solid moss skin as layer 0; night glow patches. Bark/rock textures underneath.
+  - Instanced grass blades (9k phone, 18k desktop, wind in the shader), leaf-card bushes, the old fern rosettes (frond texture drawn on a canvas), white flower points on moss tops, pollen by day, fireflies by night.
+  - Landing: black screen, he falls in (`fallloop`), lands (`fall`); shockwave 1 (`uW1`, a 3D radius from the landing spot, so it sweeps the floor and then climbs the trees) draws everything as the green grid; outside it nothing is drawn. At `getup` shockwave 2 (`uW2`) brings back textures, moss and grass, while the fog density and the sky brighten from 0 with it.
+  - Tweak sheet: moss length (0.055), moss layers (8 phone / 14 desktop), grass height (0.09) and amount, fog, wave 1 and wave 2 durations.
+- Fixed on the way: the tube builder's triangles faced inwards (bark looked fine from inside, moss shells were culled).
+- Checked headless at 393x852 and 960x540: day, night, the whole landing.
+- Waiting for Puli's verdict and his tweak numbers; then Phase 2 (into the site).
 
 ### 2026-10-27: Phase 1 look test (new forest + green-grid landing)
 - Private test page: https://claude.ai/artifact/7GGczVCSmcaJ9cxwGj28GT (source `tools/forest-look/index.html`; textures as `tex/*.webp`, Puli as `puli.wasm` = the quantized model, because artifacts only serve standard file types).
