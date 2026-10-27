@@ -19,7 +19,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
   - Built and live: section 5 copy + DodgeField button (touch hops, one label per dodge: Catch me -> Nope -> Alright, alright -> Play, back to the middle when it gives up) that turns into a FlyingButton and leaves through the top (`site/src/sections/Teaser.jsx`). Waiting for Puli's verdict on the dodging difficulty and take-off speed on his Redmi. Temporary: the button comes back 2.6 s after leaving.
   - Puli is in, v2 after his phone test (2026-10-26, see Log): enters from off-screen left, Play rests at the bottom, he latches on mid-air, lets go and falls into section 6 (the forest and runner game from the old page). Waiting for his verdict on his phone.
   - Blocky Puli now also in the forest fall and the game (2026-10-26). Puli has a small change in mind for the fall to the ground (he'll describe it after testing).
-  - Next (agreed 2026-10-27, not started): the green-grid landing and a rebuilt forest and game, reusing the blossom tree's parts. Plan: `docs/PLAN-FOREST.md`; start with Phase 1 (look test). Decided 2026-10-27: objects built in code, no downloaded models; no laser (slide under / jump over instead); Puli is downloading the textures (list in PLAN-FOREST.md).
+  - Next (agreed 2026-10-27, not started): the green-grid landing and a rebuilt forest and game, reusing the blossom tree's parts. Plan: `docs/PLAN-FOREST.md`; start with Phase 1 (look test). Decided 2026-10-27: objects built in code, no downloaded models; no laser (slide under / jump over instead); textures in `site/src/assets/forest/`; Phase 1 look test built (2026-10-27), waiting for Puli's verdict.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -34,6 +34,13 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-27: Phase 1 look test (new forest + green-grid landing)
+- Private test page: https://claude.ai/artifact/7GGczVCSmcaJ9cxwGj28GT (source `tools/forest-look/index.html`; textures as `tex/*.webp`, Puli as `puli.wasm` = the quantized model, because artifacts only serve standard file types).
+- Built in code, three.js 0.169.0: three trees grown with the blossom tree's rule ported to 3D (5 steps per branch bending 10% towards up with randomness, forks in two at ±0.55 rad, 62% length/width; tall trunk, buttress roots, crown of limbs), tapered round branches, instanced leaf cards drawn on a canvas with wind sway in the vertex shader, falling leaves, a hanging and a sagging vine, a mossy log, mossy and bare rocks, bumpy ground, a mud patch where he lands. Day (soft green haze, sun shadows) and night (moonlight, fireflies).
+- Green grid: one `onBeforeCompile` patch on every forest material (triplanar world-space lines, #00FF41 on black); it draws in from the top down as he falls (`uBuild`), he lands face-down (`fall`), a shockwave ring spreads from the landing spot (`uWave`) and the textures take over behind it while he gets up. Puli is never gridded.
+- Checked headless at 393x852: day, night, the whole landing sequence.
+- Waiting for Puli's verdict on his phone. Then Phase 2 (the real fall in the site).
 
 ### 2026-10-27: forest textures in the repo
 - Puli downloaded the Poly Haven sets (1K): bark_brown_02 (plain and mossy trunks, his choice; bark_willow didn't look right), tree_bark_03 (his pick), forest_leaves_02, forrest_ground_01, mossy_rock, rock_boulder_dry, brown_mud_leaves_01.
