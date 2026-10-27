@@ -35,6 +35,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-27: forest textures in the repo
+- Puli downloaded the Poly Haven sets (1K): bark_brown_02 (plain and mossy trunks, his choice; bark_willow didn't look right), tree_bark_03 (his pick), forest_leaves_02, forrest_ground_01, mossy_rock, rock_boulder_dry, brown_mud_leaves_01.
+- Converted on his computer to WebP: colour, normal (GL), and one `_orm` map per set (red = AO, green = roughness). 21 files, 6.3 MB, in `site/src/assets/forest/` (README there). Not used by the site yet.
+- Decided earlier today: objects built in code, no downloaded models; no laser (slide under instead).
+- Next: Phase 1 of `docs/PLAN-FOREST.md`, the look test.
+
 ### 2026-10-27: plan for the new forest and the green-grid landing (nothing built)
 - Puli wants the fall into the forest to "load like the Matrix": black screen, the scene drawn as a neon green grid on black, only Puli fully textured, and a shockwave from his landing that turns the grid into the real forest while he gets up; the same green on black by day and night. He also wants the forest and the game rebuilt with realistic textures and cleaner objects, reusing the section 3 blossom tree's parts (branch-growth rule as 3D trees, flower clumps as leaves, falling petals as green leaves, sway, flat tree for the background, bokeh as fireflies).
 - Checked: the Anatomy kit only draws flat isometric SVG pictures, so it can't build 3D objects; Poly Haven and other asset sites are still blocked here (Puli downloads textures).

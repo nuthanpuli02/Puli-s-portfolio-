@@ -73,4 +73,5 @@ textures); reduced motion = a short fade instead of the grid sequence.
    "Puli portfolio cloud images/forest textures" on his computer; list sent in chat 2026-10-27 (bark, mossy bark or
    moss, forest floor with leaves, mossy rock, plain rock, muddy ground). Names were given from memory (Poly Haven is
    blocked here): he picks the closest match if one doesn't exist. Leaves are drawn in code (leaf cards), no texture.
-   Next: stage them from his computer, convert to WebP, add to `site/src/assets/forest/`, then Phase 1.
+   Done 2026-10-27: 7 sets in `site/src/assets/forest/` (see its README; 6.3 MB, load only with the forest). Puli
+   swapped bark_willow for tree_bark_03 and uses bark_brown_02 for both plain and mossy trunks. Next: Phase 1.
