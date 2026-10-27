@@ -1,4 +1,7 @@
-# Handoff: section 5 (game teaser), continue from here
+# Handoff: section 5 (game teaser)
+
+> Section 5 is finished (2026-10-26). For what comes next (the new forest, the green-grid landing and the game), read
+> `docs/PLAN-FOREST.md` instead; this file is kept as the record of how section 5 was built.
 
 Written 2026-10-25 for a new Claude Code session. Read `CLAUDE.md`, then `docs/WORKLOG.md` (top of Log and the
 "Section 5" open item), then this file. Talk to Puli in simple, step-by-step terms; he wants blunt feedback and tests on
