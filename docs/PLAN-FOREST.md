@@ -63,11 +63,14 @@ ferns, mushrooms, amber-eyed owls). Then remove the old forest from v2 (`src/pul
 **Phase 4: phone pass**: smoothness on phone sizes; a lighter setting for slow phones (fewer leaves/moss, smaller
 textures); reduced motion = a short fade instead of the grid sequence.
 
-## Still to decide with Puli
+## Decided with Puli (2026-10-27, second talk)
 
-1. Objects: built in code (the blossom tree's parts, plus trunks, roots, vines, rocks, logs, stumps) dressed in Poly Haven
-   textures, plus a few scanned models only where it matters. (Proposed; he hasn't confirmed.)
-2. **Vine walls**: the old game has vine walls cut with the laser from Puli's watch. Keep a laser on the new Puli (gold by
-   day, purple at night), or replace the walls with something to slide under or jump over?
-3. Texture downloads: send him the exact Poly Haven list (about 6-8 sets: bark, moss, forest floor, rock, leaves; 1K for
-   phones, converted to WebP) at the start of Phase 1.
+1. **Objects: all built in code** (blossom-tree parts, trunks, roots, vines, rocks, logs, stumps) and dressed in Poly Haven
+   textures. **No downloaded models in the game** (Puli: too heavy).
+2. **No laser.** The vine walls go; in their place, low obstacles he **slides under** (hanging vines/low branches) and
+   things to jump over. Remove the laser button and the laser from the new game.
+3. **Textures:** Puli downloads them (1K, JPG: colour, normal GL, roughness, AO where offered) into
+   "Puli portfolio cloud images/forest textures" on his computer; list sent in chat 2026-10-27 (bark, mossy bark or
+   moss, forest floor with leaves, mossy rock, plain rock, muddy ground). Names were given from memory (Poly Haven is
+   blocked here): he picks the closest match if one doesn't exist. Leaves are drawn in code (leaf cards), no texture.
+   Next: stage them from his computer, convert to WebP, add to `site/src/assets/forest/`, then Phase 1.
