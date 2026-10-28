@@ -35,6 +35,12 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-28: moss prototype, more flowers in colours
+- Puli asked for more flowers in different colours. About 3.4x as many (spawn chance 0.035 -> 0.12 per moss-top vertex), in one-colour patches of about 1.1 units like wildflowers: white 50%, yellow 20%, pink 17%, violet 13% (15% of dots mix colours). Still one draw call (vertex colours).
+- They now sit just above the moss, and on the ground up among the grass (the taller 0.18 grass hid them). Dot size 0.05 -> 0.06.
+- Night: a second, additive copy of the same dots (size 0.12, 30%) makes them glow.
+- Prototype version 6 (same link).
+
 ### 2026-10-28: moss prototype, Puli approves the moss
 - Puli: "Perfect!" on the two grids + clumps + distance smoothing. New defaults from him: moss layers 6 (4 felt too few), moss length 0.090. Other numbers unchanged (grass 0.18 at 50%, fog 0.8x, both shockwaves 3.5 s, layer shift 0.5).
 - Prototype version 5 (same link).
