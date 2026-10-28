@@ -390,6 +390,30 @@ export function createForest({ onLoad } = {}) {
   Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:50});sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.03;world.add(sun,sun.target);
   const LOOK={day:{sky:'#bcd1aa',fog:'#a6bb95',fogD:0.045,hemiSky:'#dfeccc',hemiGround:'#4a3a24',hemiI:1.1,sunC:'#fff0d2',sunI:2.6,exp:1.0,night:0,sunP:[6,14,7]},
               night:{sky:'#06110d',fog:'#0b1813',fogD:0.075,hemiSky:'#5f82a8',hemiGround:'#0d160f',hemiI:0.55,sunC:'#a9c2f0',sunI:0.8,exp:1.2,night:1,sunP:[-5,14,6]}};
+  // ---------- the fall through the dark: dust specks, and a faint floor glow and shadow under him ----------
+  const SPECK_N=PHONE?260:420, sp=new Float32Array(SPECK_N*3);
+  const speckGeo=new THREE.BufferGeometry();speckGeo.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  const speckMat=new THREE.PointsMaterial({color:'#b9c4b8',size:0.045,map:DOT,transparent:true,opacity:0.7,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});
+  const specks=new THREE.Points(speckGeo,speckMat);specks.frustumCulled=false;specks.visible=false;world.add(specks);
+  const floorMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{uP:{value:new THREE.Vector2()},uH:{value:10},uK:{value:1}},
+    vertexShader:`varying vec2 vXZ;void main(){vec4 w=modelMatrix*vec4(position,1.0);vXZ=w.xz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`uniform vec2 uP;uniform float uH,uK;varying vec2 vXZ;
+      void main(){ float d=length(vXZ-uP), near=1.0-clamp(uH/8.0,0.0,1.0);
+        float glow=exp(-pow(d/(0.7+uH*0.35),2.0))*(0.05+0.2*near*near);          // light gathering under him
+        glow*=1.0-0.9*near*exp(-pow(d/(0.28+uH*0.06),2.0));                        // his shadow in the middle
+        glow+=0.012*exp(-pow(d/9.0,2.0));                                           // a faint sheen: a floor is there
+        gl_FragColor=vec4(vec3(0.62,0.68,0.64)*glow*uK,1.0); }`});
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=0.004;floor.renderOrder=2;floor.visible=false;world.add(floor);
+  const FX={impact:false,t0:-1,last:-1};
+  function setFall({on=true,top,x,z,h,impact}={}){
+    if(!on){specks.visible=floor.visible=false;FX.impact=false;return}
+    if(top!==undefined){for(let i=0;i<SPECK_N;i++)sp.set([LAND.x+(rnd()-.5)*9,rnd()*top,LAND.z+(rnd()-.5)*9-1],i*3);
+      speckGeo.attributes.position.needsUpdate=true;specks.visible=floor.visible=true;FX.impact=false;FX.t0=-1;floorMat.uniforms.uK.value=1;speckMat.opacity=0.7}
+    if(x!==undefined)floorMat.uniforms.uP.value.set(x,z);
+    if(h!==undefined)floorMat.uniforms.uH.value=Math.max(0,h);
+    if(impact)FX.impact=true;
+  }
   const fog=new THREE.FogExp2('#a6bb95',0);
   let theme='day',exposure=1;
   function applyLook(){const L=LOOK[theme];hemi.color.set(L.hemiSky);hemi.groundColor.set(L.hemiGround);hemi.intensity=L.hemiI;
@@ -408,6 +432,7 @@ export function createForest({ onLoad } = {}) {
     LAND,
     casters,
     get exposure() { return exposure; },
+    setFall,
     setTheme(t) { theme = t === 'dark' || t === 'night' ? 'night' : 'day'; applyLook(); },
     // the landing: seq on/off, the two radii, and how thick the air is (0..1, rises with shockwave 2)
     setWaves({ seq, w1 = 0, w2 = 0, k = 1 }) { G.uSeq.value = seq ? 1 : 0; G.uW1.value = w1; G.uW2.value = w2; fogK = k; G.uCenter.value.copy(LAND); },
@@ -423,6 +448,15 @@ export function createForest({ onLoad } = {}) {
         for (let i = 0; i < a.length; i += 3) { a[i] = b[i] + Math.sin(time * 0.3 + i) * 0.4; a[i + 1] = b[i + 1] + Math.sin(time * 0.5 + i * 1.3) * 0.25; a[i + 2] = b[i + 2] + Math.cos(time * 0.27 + i * 0.7) * 0.4; }
         P.geometry.attributes.position.needsUpdate = true; }
       fireflies.material.opacity = 0.6 + 0.4 * Math.sin(time * 2.6);
+      // the fall's specks drift up a little; after touchdown they and the floor glow fade out
+      const dt = FX.last < 0 ? 0 : Math.min(0.1, time - FX.last); FX.last = time;
+      if (specks.visible) {
+        for (let i = 1; i < sp.length; i += 3) sp[i] += 0.25 * dt;
+        speckGeo.attributes.position.needsUpdate = true;
+        if (FX.impact) { if (FX.t0 < 0) FX.t0 = time; const k = 1 - (time - FX.t0) / 0.6;
+          floorMat.uniforms.uK.value = Math.max(0, k); speckMat.opacity = 0.7 * Math.max(0, k);
+          if (k <= 0) setFall({ on: false }); }
+      }
       // the hidden forest casts no shadow on him in the dark
       const shade = G.uSeq.value < 0.5 || G.uW2.value > 0; for (const c of casters) c.castShadow = shade;
     },

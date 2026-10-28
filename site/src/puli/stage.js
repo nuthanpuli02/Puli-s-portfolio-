@@ -355,7 +355,6 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   let FS = null;                        // the forest sequence: null = not in the forest
   const fcam = new THREE.PerspectiveCamera(54, 1, 0.05, 200);
   const FALL_V = 6.5;                   // his falling speed in the forest (as at the end of the drop), units/s
-  const FALL_Y = 9;                     // how high above the ground the fall picks up once the forest is ready
   const IMPACT = 0.18, UP = 1.5, IDLE = 6.7; // after touching down: shockwave 1, getting up, standing (s)
   const _a = new THREE.Vector3();
   const loadForest = () => forestP || (forestP = import('../forest/world.js').then(m => new Promise(res => {
@@ -407,12 +406,13 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       return;
     }
     playClip('fallloop', 0);
-    puli.position.set(0, FALL_Y + 20, 0.3);   // high up until the forest is ready (only he is drawn meanwhile)
+    puli.position.set(0, 60, 0.3);   // high up until the forest is ready (only he is drawn meanwhile)
     mixer.update(0);
-    FS = { phase: 'void', t: 0, sx: sp.x, sy: sp.y, px: V.px, b: 0 };
+    FS = { phase: 'void', t: 0, sx: sp.x, sy: sp.y, px: V.px };
   };
   const leaveForest = () => {
     FS = null;
+    forest?.setFall({ on: false });
     showWorld(false);
     puli.traverse(o => {
       if (o.isMesh) o.castShadow = false;
@@ -438,29 +438,8 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       }
       return;
     }
-    if (T.phase === 'void' || T.phase === 'fall') {
-      puli.position.y -= FALL_V * dt;
-      if (T.phase === 'void' && forest && T.t > 0.25) {
-        // the forest is ready: from here he falls the last stretch onto the landing spot
-        showWorld(true);
-        forest.setWaves({ seq: true, w1: 0, w2: 0, k: 0 });
-        puli.position.set(forest.LAND.x, FALL_Y, forest.LAND.z);
-        T.phase = 'fall';
-        T.tf = 0;
-      }
-      if (T.phase === 'fall') {
-        T.tf += dt;
-        T.b = smooth(clamp(1 - (puli.position.y - forest.LAND.y) / FALL_Y, 0, 1));
-        if (puli.position.y <= forest.LAND.y) {
-          puli.position.y = forest.LAND.y;
-          playClip('fall', 0.06, true);
-          T.phase = 'land';
-          T.tl = 0;
-        }
-      }
-      return;
-    }
-    if (T.phase === 'land') {
+    if (T.phase !== 'land') return;   // the fall itself is moved by fallStep (it needs the view's size)
+    {
       T.tl += dt;
       const W = forest.WAVES, tl = T.tl;
       const u1 = clamp((tl - IMPACT) / W.w1, 0, 1);
@@ -477,15 +456,24 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       if (u1 >= 1 && u2 >= 1 && T.idle) landed();
     }
   };
-  // the camera: it keeps the landing view's direction and follows him, holding him where and how big he was on screen
-  // in section 5, and slides that spot and size over to where he will lie in the landing view as he nears the ground
-  // (so it ends exactly on the landing view when he touches down)
+  // ---- the fall through the dark (Puli's choreography, 2026-10-28) ----
+  // drop:  the camera holds still in the landing view's direction; he falls at his section 5 size towards the bottom of
+  //        the screen
+  // tilt:  just before he leaves it, the camera stays put but turns to look down at him; he falls away and shrinks
+  // rush:  once he is about his forest size, the camera dives after him, levelling out on the way, into the landing view
+  // final: it stops there; he falls the last stretch into the frame and onto the floor
+  // Dust specks in the dark show the motion; a faint floor glow and shadow grow under him as he nears it.
+  const RUSH = 0.9, FINAL = 0.55, TILT_AY = -0.6;
   const _q = new THREE.Quaternion();
+  const _q2 = new THREE.Quaternion();
   const _f = new THREE.Vector3();
   const _r = new THREE.Vector3();
   const _u = new THREE.Vector3();
-  const _h = new THREE.Vector3();
-  const forestCamera = rect => {
+  const _o = new THREE.Vector3();
+  const _m4 = new THREE.Matrix4();
+  const FWD = new THREE.Vector3(0, 0, -1);
+  const UPV = new THREE.Vector3(0, 1, 0);
+  const landView = rect => {
     const asp = rect.width / Math.max(1, rect.height);
     const land = forest ? forest.camFor(asp) : { fov: 54, target: new THREE.Vector3(0, 1.45, -0.6), pos: new THREE.Vector3(0, 1.2, 7) };
     fcam.fov = land.fov;
@@ -494,31 +482,109 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     fcam.lookAt(land.target);
     fcam.updateProjectionMatrix();
     fcam.updateMatrixWorld(true);
-    if (FS.phase !== 'void' && FS.phase !== 'fall') return;
-    const ty = Math.tan(fcam.fov / 2 * Math.PI / 180);
-    _q.copy(fcam.quaternion);
-    _f.set(0, 0, -1).applyQuaternion(_q);
-    _r.set(1, 0, 0).applyQuaternion(_q);
-    _u.set(0, 1, 0).applyQuaternion(_q);
-    const H = hipsWorld();
-    // where he started: spot (-1..1) and depth that gives his section 5 size
-    const ax0 = (FS.sx / rect.width) * 2 - 1, ay0 = 1 - (FS.sy / rect.height) * 2;
-    const z0 = rect.height / (2 * ty * FS.px);
-    // where he will lie: his hips at the landing spot, seen from the landing view
-    _h.copy(H);
-    _h.y += (forest ? forest.LAND.y : 0) - puli.position.y;
-    const rel = _h.clone().sub(land.pos);
-    const z1 = rel.dot(_f);
-    const ax1 = rel.dot(_r) / (z1 * ty * asp), ay1 = rel.dot(_u) / (z1 * ty);
-    const b = FS.phase === 'fall' ? FS.b : 0;
-    const zd = z0 + (z1 - z0) * b, ax = ax0 + (ax1 - ax0) * b, ay = ay0 + (ay1 - ay0) * b;
-    fcam.position.copy(H).addScaledVector(_f, -zd).addScaledVector(_r, -ax * zd * ty * asp).addScaledVector(_u, -ay * zd * ty);
-    fcam.updateMatrixWorld(true);
+    return { land, asp, ty: Math.tan(land.fov / 2 * Math.PI / 180), q: fcam.quaternion.clone() };
   };
-  const renderForestView = () => {
+  // the camera turned so that the hips sit at screen spot (ax, ay) (-1..1), seen from `pos`
+  const aimAt = (pos, hp, ax, ay, ty, asp, out) => {
+    _m4.lookAt(pos, hp, UPV);
+    out.setFromRotationMatrix(_m4);
+    _o.set(ax * ty * asp, ay * ty, -1).normalize();
+    return out.multiply(_q2.setFromUnitVectors(_o, FWD));
+  };
+  const fallStep = (dt, rect) => {
+    const T = FS;
+    const L = landView(rect);
+    const { land, asp, ty } = L;
+    const H = rect.height;
+    if (T.phase === 'void') {
+      // the forest is still loading: he falls on with the camera, at his size and spot
+      puli.position.y -= FALL_V * dt;
+      const hp = hipsWorld();
+      _f.set(0, 0, -1).applyQuaternion(L.q);
+      _r.set(1, 0, 0).applyQuaternion(L.q);
+      _u.set(0, 1, 0).applyQuaternion(L.q);
+      const d0 = H / (2 * ty * T.px), ax = (T.sx / rect.width) * 2 - 1, ay = 1 - (T.sy / H) * 2;
+      fcam.position.copy(hp).addScaledVector(_f, -d0).addScaledVector(_r, -ax * d0 * ty * asp).addScaledVector(_u, -ay * d0 * ty);
+      fcam.updateMatrixWorld(true);
+      if (forest && T.t > 0.25) {
+        // ready: work out the whole fall so it ends on the landing view just as he reaches the floor
+        showWorld(true);
+        forest.setWaves({ seq: true, w1: 0, w2: 0, k: 0 });
+        const off = hp.y - puli.position.y;              // his hips above his feet in the falling pose
+        T.landH = forest.LAND.y + off;
+        const rel = new THREE.Vector3(forest.LAND.x, T.landH, forest.LAND.z).sub(land.pos);
+        const z1 = rel.dot(_f);                          // how far the hips will be from the landing view
+        const px1 = H / (2 * ty * z1);                   // his size there, in px
+        T.d0 = d0;
+        T.dRush = d0 * Math.max(1.3, T.px / px1);        // the camera rushes once he is this far away
+        const hTilt = Math.sqrt(T.dRush * T.dRush - d0 * d0);
+        const hDrop = Math.max(0.3, ((1 - TILT_AY) / 2 * H - T.sy) / T.px);
+        const top = T.landH + hDrop + hTilt + FALL_V * (RUSH + FINAL);
+        puli.position.set(forest.LAND.x, top - off, forest.LAND.z);
+        const hp2 = hipsWorld();
+        T.C0 = hp2.clone().addScaledVector(_f, -d0).addScaledVector(_r, -ax * d0 * ty * asp).addScaledVector(_u, -ay * d0 * ty);
+        T.ax = ax;
+        T.v = FALL_V;
+        forest.setFall({ on: true, top: top + 3 });
+        T.phase = 'drop';
+      }
+      return;
+    }
+    puli.position.y -= T.v * dt;
+    const hp = hipsWorld();
+    forest.setFall({ on: true, x: hp.x, z: hp.z, h: hp.y - T.landH });
+    if (T.phase === 'drop') {
+      fcam.position.copy(T.C0);
+      fcam.quaternion.copy(L.q);
+      fcam.updateMatrixWorld(true);
+      _o.copy(hp).project(fcam);
+      if (_o.y <= TILT_AY) {
+        T.phase = 'tilt';
+        T.tt = 0;
+        T.ax = clamp(_o.x, -0.8, 0.8);
+      }
+    } else if (T.phase === 'tilt') {
+      T.tt += dt;
+      const k = smooth(clamp(T.tt / 0.7, 0, 1));
+      T.axNow = T.ax * (1 - k);
+      T.ayNow = TILT_AY + (-0.3 - TILT_AY) * k;
+      fcam.position.copy(T.C0);
+      aimAt(T.C0, hp, T.axNow, T.ayNow, ty, asp, fcam.quaternion);
+      if (hp.distanceTo(T.C0) >= T.dRush) {
+        T.phase = 'rush';
+        T.tr = 0;
+        // fall at whatever speed brings him into the landing view on time
+        T.v = clamp((hp.y - T.landH - FALL_V * FINAL) / RUSH, 3, 14);
+      }
+    } else if (T.phase === 'rush') {
+      T.tr += dt;
+      const u = clamp(T.tr / RUSH, 0, 1), e = smooth(u);
+      fcam.position.copy(T.C0).lerp(land.pos, e);
+      aimAt(fcam.position, hp, T.axNow * (1 - e), T.ayNow * (1 - e), ty, asp, _q);
+      fcam.quaternion.copy(_q).slerp(L.q, smooth(clamp(u * 1.15, 0, 1)));
+      if (u >= 1) {
+        T.phase = 'final';
+        T.v = FALL_V;
+      }
+    } else {
+      fcam.position.copy(land.pos);
+      fcam.quaternion.copy(L.q);
+    }
+    fcam.updateMatrixWorld(true);
+    if (hp.y <= T.landH) {
+      // touchdown
+      puli.position.y = forest.LAND.y;
+      playClip('fall', 0.06, true);
+      forest.setFall({ on: true, x: hp.x, z: hp.z, h: 0, impact: true });
+      T.phase = 'land';
+      T.tl = 0;
+    }
+  };
+  const renderForestView = dt => {
     const c = canvas.getBoundingClientRect();
     const rect = forestRect();
-    forestCamera(rect);
+    if (FS.phase === 'land' || FS.phase === 'done' || FS.phase === 'wait-skip') landView(rect);
+    else fallStep(dt, rect);
     R.setScissorTest(false);
     R.setViewport(0, 0, c.width, c.height);
     R.clear();
@@ -547,7 +613,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
         forestStep(dt);
         mixer.update(dt);
         if (forest) forest.update(now / 1000);
-        renderForestView();
+        renderForestView(dt);
         if (forestVis || FS.phase !== 'done') raf = requestAnimationFrame(frame);
         else last = 0;
         return;
@@ -629,7 +695,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
 
   // ?puli-debug: inspect the layout and the move state from the console (headless tests)
   if (/[?&]puli-debug/.test(location.search)) {
-    window.__puliStage = { V, get S() { return S; }, get puli() { return puli; }, get FS() { return FS; }, get forest() { return forest; }, startForest, get cur() { return cur; }, hipsWorld: () => hipsWorld(), toScreen,
+    window.__puliStage = { V, get fcam() { return fcam; }, get S() { return S; }, get puli() { return puli; }, get FS() { return FS; }, get forest() { return forest; }, startForest, get cur() { return cur; }, hipsWorld: () => hipsWorld(), toScreen,
       // a clip's hips and feet heights over time, on a throwaway mixer (for timing moves against the game)
       sample: (name, n = 40) => {
         const m = new THREE.AnimationMixer(puli);
