@@ -2,7 +2,7 @@
 // Charcoal by day and Moss by night, chosen 2026-10-23. Nothing here runs unless the address asks for it.
 //
 // Preview without changing any code: add ?day=<id>&night=<id> (or ?palette=<id> for both) to the address,
-// e.g. /v2/?day=sand&night=charcoal. To switch for real, copy a palette's values into tokens.css.
+// e.g. /?day=sand&night=charcoal. To switch for real, copy a palette's values into tokens.css.
 
 export const PALETTES = [
   {

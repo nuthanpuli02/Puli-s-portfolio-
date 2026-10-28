@@ -2,7 +2,7 @@
 
 Read `CLAUDE.md` and `docs/WORKLOG.md` first. Nothing below is built yet; Puli asked to pause here and continue later.
 Talk to Puli in plain, step-by-step terms; he tests on his Redmi Note 14 Pro 5G (Brave, portrait). Merge every change into
-`main` straight away so he can test it at https://nuthanpuli02.github.io/Puli-s-portfolio-/v2/.
+`main` straight away so he can test it at https://nuthanpuli02.github.io/Puli-s-portfolio-/.
 
 ## Where things stand
 

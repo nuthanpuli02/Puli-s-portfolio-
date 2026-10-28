@@ -28,4 +28,4 @@ export function useTheme() {
 }
 
 // the contact page is a separate page and takes the theme in its address
-export const contactHref = theme => `../contact.html?theme=${theme === 'dark' ? 'night' : 'day'}`;
+export const contactHref = theme => `./contact.html?theme=${theme === 'dark' ? 'night' : 'day'}`;
