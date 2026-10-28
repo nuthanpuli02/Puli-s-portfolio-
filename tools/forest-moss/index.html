@@ -80,10 +80,11 @@ function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15
 const rnd=mulberry32(23);
 
 // ---------- settings (the tweak sheet) ----------
-const SET={mossLen:0.055,shells:PHONE?8:14,grassH:0.09,grass:1,fog:1,w1:2.5,w2:3};
+const SET={mossLen:0.075,shells:8,curl:0.5,grassH:0.18,grass:0.5,fog:0.8,w1:3.5,w2:3.5};   // Puli's numbers (2026-10-28)
 const ROWS=[
   ['mossLen','Moss length',0.02,0.16,0.005,v=>v.toFixed(3)],
   ['shells','Moss layers',4,20,1,v=>v],
+  ['curl','Moss curl',0,1,0.05,v=>v.toFixed(2)],
   ['grassH','Grass height',0.04,0.22,0.005,v=>v.toFixed(3)],
   ['grass','Grass amount',0.1,1,0.05,v=>Math.round(v*100)+'%'],
   ['fog','Fog',0,2.5,0.05,v=>v.toFixed(2)+'×'],
@@ -99,7 +100,7 @@ const G={
   uFogD:{value:0},uFogC:{value:new THREE.Color()},uNight:{value:0},
   uSunDir:{value:new THREE.Vector3(0.4,0.8,0.35).normalize()},uSunC:{value:new THREE.Color()},
   uSkyC:{value:new THREE.Color()},uGndC:{value:new THREE.Color()},
-  uMossLen:{value:SET.mossLen},uShells:{value:SET.shells},uGrassH:{value:SET.grassH},
+  uMossLen:{value:SET.mossLen},uShells:{value:SET.shells},uCurl:{value:SET.curl},uGrassH:{value:SET.grassH},
 };
 const WAVE_GLSL=`
 uniform float uSeq,uW1,uW2;uniform vec3 uCenter;
@@ -270,7 +271,7 @@ const mossMat=new THREE.ShaderMaterial({
       p.y-=len*0.35*lev*lev;                                   // strands droop a little
       p.x+=sin(uTime*1.3+position.z*1.7+position.x*1.3)*len*0.15*lev*lev;
       vec4 wp=modelMatrix*vec4(p,1.0); vWP=wp.xyz; gl_Position=projectionMatrix*viewMatrix*wp; }`,
-  fragmentShader:`uniform float uShells,uFogD,uNight,uTime;uniform vec3 uFogC,uSunDir,uSunC,uSkyC,uGndC;varying vec3 vBase,vWP,vN;varying float vLev,vMoss;
+  fragmentShader:`uniform float uShells,uCurl,uFogD,uNight,uTime;uniform vec3 uFogC,uSunDir,uSunC,uSkyC,uGndC;varying vec3 vBase,vWP,vN;varying float vLev,vMoss;
     ${WAVE_GLSL}${NOISE}
     void main(){
       vec3 N=normalize(vN);
@@ -287,7 +288,16 @@ const mossMat=new THREE.ShaderMaterial({
         float h=h31(cell); hgt=(0.45+0.55*h)*(0.55+0.6*mid)*cov;
         if(vLev>hgt) discard;
         float r=1.0-vLev/hgt;
-        if(camD<14.0 && length(f-jit*0.4)>0.62*r+0.06) discard;   // strands up close, a soft pile further away
+        // curl: on every layer the strand's dot takes a small step in its own random direction, leaning on its previous
+        // step, so each strand wanders like a curly hair and neighbouring strands no longer line up in rows
+        vec3 walk=vec3(0.0), dir=normalize(vec3(h31(cell+1.7),h31(cell+8.3),h31(cell+4.1))-0.5+1e-3);
+        int li=int(vLev*uShells+0.5);
+        for(int i=1;i<=20;i++){ if(i>li) break;
+          vec3 rd=vec3(h31(cell+float(i)*1.37+0.5),h31(cell+float(i)*2.11+9.0),h31(cell+float(i)*0.73+3.0))-0.5;
+          dir=normalize(mix(dir,normalize(rd+1e-3),0.45)); walk+=dir*uCurl*0.07; }
+        walk-=N*dot(walk,N);                                      // stay along the surface
+        if(length(walk)>0.4) walk*=0.4/length(walk);              // keep the dot inside its own box
+        if(camD<14.0 && length(f-jit*0.4-walk)>0.62*r+0.06) discard;   // strands up close, a soft pile further away
         if(camD>=14.0 && vLev>hgt*0.6) discard;
       }
       float k=clamp(vLev/max(hgt,0.01),0.0,1.0);
@@ -461,7 +471,7 @@ $('tweak').onclick=()=>openSheet(!sheet.classList.contains('open'));$('close').o
 for(const [k,label,min,max,step,fmt] of ROWS){const row=document.createElement('div');row.className='row';
   row.innerHTML=`<label for="s-${k}">${label}</label><output id="o-${k}">${fmt(SET[k])}</output><input id="s-${k}" type="range" min="${min}" max="${max}" step="${step}" value="${SET[k]}">`;
   $('rows').append(row);row.querySelector('input').oninput=e=>{SET[k]=+e.target.value;$('o-'+k).textContent=fmt(SET[k]);applySet()}}
-function applySet(){G.uMossLen.value=SET.mossLen;G.uShells.value=SET.shells;moss.count=SET.shells+1;G.uGrassH.value=SET.grassH;
+function applySet(){G.uMossLen.value=SET.mossLen;G.uShells.value=SET.shells;G.uCurl.value=SET.curl;moss.count=SET.shells+1;G.uGrassH.value=SET.grassH;
   grass.geometry.instanceCount=Math.round(GRASS_MAX*SET.grass)}
 applySet();
 
