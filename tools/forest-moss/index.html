@@ -80,7 +80,7 @@ function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15
 const rnd=mulberry32(23);
 
 // ---------- settings (the tweak sheet) ----------
-const SET={mossLen:0.075,shells:8,curl:0.5,grassH:0.18,grass:0.5,fog:0.8,w1:3.5,w2:3.5};   // Puli's numbers (2026-10-28)
+const SET={mossLen:0.09,shells:6,curl:0.5,grassH:0.18,grass:0.5,fog:0.8,w1:3.5,w2:3.5};   // Puli's numbers (2026-10-28)
 const ROWS=[
   ['mossLen','Moss length',0.02,0.16,0.005,v=>v.toFixed(3)],
   ['shells','Moss layers',4,20,1,v=>v],

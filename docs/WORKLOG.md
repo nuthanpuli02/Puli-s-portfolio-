@@ -19,7 +19,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
   - Built and live: section 5 copy + DodgeField button (touch hops, one label per dodge: Catch me -> Nope -> Alright, alright -> Play, back to the middle when it gives up) that turns into a FlyingButton and leaves through the top (`site/src/sections/Teaser.jsx`). Waiting for Puli's verdict on the dodging difficulty and take-off speed on his Redmi. Temporary: the button comes back 2.6 s after leaving.
   - Puli is in, v2 after his phone test (2026-10-26, see Log): enters from off-screen left, Play rests at the bottom, he latches on mid-air, lets go and falls into section 6 (the forest and runner game from the old page). Waiting for his verdict on his phone.
   - Blocky Puli now also in the forest fall and the game (2026-10-26). Puli has a small change in mind for the fall to the ground (he'll describe it after testing).
-  - Next (agreed 2026-10-27, not started): the green-grid landing and a rebuilt forest and game, reusing the blossom tree's parts. Plan: `docs/PLAN-FOREST.md`; start with Phase 1 (look test). Decided 2026-10-27: objects built in code, no downloaded models; no laser (slide under / jump over instead); textures in `site/src/assets/forest/`; Phase 1 look test done; after Puli's feedback a moss forest prototype with the two-shockwave landing (2026-10-27, `tools/forest-moss/`); his tweak numbers added and the curl replaced by a per-layer shift, then two crooked grids, clumps and distance smoothing against the grid lines (2026-10-28), waiting for his verdict.
+  - Next (agreed 2026-10-27, not started): the green-grid landing and a rebuilt forest and game, reusing the blossom tree's parts. Plan: `docs/PLAN-FOREST.md`; start with Phase 1 (look test). Decided 2026-10-27: objects built in code, no downloaded models; no laser (slide under / jump over instead); textures in `site/src/assets/forest/`; Phase 1 look test done; after Puli's feedback a moss forest prototype with the two-shockwave landing (2026-10-27, `tools/forest-moss/`); his tweak numbers added and the curl replaced by a per-layer shift, then two crooked grids, clumps and distance smoothing against the grid lines (2026-10-28); Puli approved the moss (6 layers, length 0.090). Next: Phase 2, the fall and landing in the site.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief (see Log); waiting for his verdict. Copy to be rewritten in the final review. Section 3 starts at the end of its sideways pan; Puli will describe what he wants there.
 - **Redesign (v2), 2026-10-22:** follow `docs/REDESIGN.md`. Decisions so far are in its "Decisions" section (palette sets, hero from his demo, 3 lives, sideways-scrolling My work). Waiting for: palette mapping confirmed, and the demo's two hero photos saved into his "test port" folder. The Kailash/cloud items below are superseded by the redesign.
@@ -34,6 +34,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages is on (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . Every push to main updates it. A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-28: moss prototype, Puli approves the moss
+- Puli: "Perfect!" on the two grids + clumps + distance smoothing. New defaults from him: moss layers 6 (4 felt too few), moss length 0.090. Other numbers unchanged (grass 0.18 at 50%, fog 0.8x, both shockwaves 3.5 s, layer shift 0.5).
+- Prototype version 5 (same link).
 
 ### 2026-10-28: moss prototype, no more grid lines (two crooked grids, clumps, distance smoothing)
 - Puli: still saw lines with the layer shift alone. Added the three fixes he picked (the layer shift stays, "Layer shift" slider):
