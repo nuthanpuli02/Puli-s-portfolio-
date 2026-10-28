@@ -35,6 +35,11 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-28: forest loads early and its shaders are prepared in the background
+- Puli: still not one continuous fall: a black screen for 2-3 s after he leaves the screen. Not reproducible headless; likely causes on the phone: the forest only started loading (6 MB of textures) when Play came to rest, and the first forest frame compiled all its shaders (moss, grass, shadows, fog, tone mapping) in one go.
+- Now the stage starts loading the forest 1 s after Puli's model is ready (while the visitor plays with the button), and once loaded compiles the forest's shaders and Puli's forest variants with `compileAsync` on a temporary scene (ACES, forest fog and lights), before marking the forest ready.
+- `?puli-debug` now shows a small readout bottom-left: each phase with its time since the first, and every gap of more than 250 ms without a frame (with the phase it happened in). Puli can screenshot it on his phone if the pause is still there.
+
 ### 2026-10-28: the fall into the forest, Puli's choreography
 - Puli on his phone: the landing, shockwaves and texture load are good, but the fall into the dark wasn't smooth (the camera didn't seem to follow him; in an all-black void a following camera looks like he's hanging still, then he shrank and slid to the landing spot in ~1.5 s).
 - His choreography, now in `fallStep` in `src/puli/stage.js`: **drop** (camera holds still in the landing view's direction, he falls at his section 5 size towards the bottom of the screen) -> **tilt** (at 80% down the screen the camera stays put but turns to look down at him; he falls away and shrinks) -> **rush** (once he is about his forest size, `dRush` = start distance x section-5 size / landing size, the camera dives after him in 0.9 s, levelling out into the landing view; his speed is set so he arrives on time) -> **final** (camera still in the landing view, he falls the last 0.55 s into frame and onto the floor). The start height is worked out from all of that when the forest is ready. Before the forest has loaded he falls on with the camera as before (`void`).

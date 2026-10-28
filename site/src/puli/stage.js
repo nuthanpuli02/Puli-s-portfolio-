@@ -362,9 +362,28 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     const done = () => setTimeout(() => res(f), 0);
     f = m.createForest({ onLoad: done });
     f.WAVES = m.WAVES;
-  }).then(f => {
+  }).then(async f => {
     if (dead) return null;
     f.setTheme(curTheme);
+    // prepare the forest's shaders (and his, under the forest's lights, fog and tone mapping) now, in the background,
+    // so the phone doesn't freeze when the forest first shows
+    try {
+      const tmp = new THREE.Scene();
+      tmp.fog = f.fog;
+      tmp.add(f.group);
+      fcam.aspect = V.w / V.h;
+      fcam.updateProjectionMatrix();
+      const tm = R.toneMapping;
+      R.toneMapping = THREE.ACESFilmicToneMapping;
+      const jobs = [R.compileAsync(tmp, fcam)];
+      if (puli) jobs.push(R.compileAsync(puli, fcam, tmp));
+      R.toneMapping = tm;
+      await Promise.all(jobs);
+      tmp.remove(f.group);
+    } catch (e) {
+      // not supported: they are prepared on first use instead
+    }
+    if (dead) return null;
     forest = f;
     return f;
   })).catch(() => null));
@@ -601,10 +620,33 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   let raf = 0;
   let visible = false;
   let last = 0;
+  // ?puli-debug: a small readout of the phases with their times, to see where a pause happens on a phone
+  let dbgEl = null, dbgLast = '', dbgLog = [], dbgT0 = 0;
+  const debugLine = (now, gap) => {
+    if (!dbgEl) {
+      dbgEl = document.createElement('pre');
+      dbgEl.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;margin:0;padding:6px 8px;background:rgba(0,0,0,.7);color:#7f7;font:11px/1.35 monospace;pointer-events:none;border-radius:6px';
+      document.body.append(dbgEl);
+    }
+    const ph = (FS ? 'forest:' + FS.phase : S.phase) + (forest ? '' : ' (forest loading)');
+    if (ph !== dbgLast) {
+      if (!dbgT0) dbgT0 = now;
+      dbgLog.push(((now - dbgT0) / 1000).toFixed(2) + 's ' + ph);
+      dbgLog = dbgLog.slice(-10);
+      dbgLast = ph;
+    }
+    if (gap > 250) {
+      dbgLog.push('  ! ' + Math.round(gap) + ' ms without a frame (' + ph + ')');
+      dbgLog = dbgLog.slice(-10);
+    }
+    dbgEl.textContent = dbgLog.join('\n');
+  };
   const frame = now => {
     raf = 0;
+    const gap = last ? now - last : 0;
     const dt = DEBUG && window.__stageDt !== undefined ? window.__stageDt : last ? Math.min((now - last) / 1000, 0.05) : 0;
     last = now;
+    if (DEBUG) debugLine(now, gap);
     if (FS) {
       // in the forest; once only section 5 is on screen again (and he has landed), he starts over there
       if (visible && !forestVis && FS.phase === 'done') leaveForest();
@@ -690,6 +732,8 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     measure();
     resetEntrance();
     onReady?.(true);
+    // load the forest early, while the visitor is still playing with the button
+    setTimeout(() => loadForest(), 1000);
     kick();
   }, undefined, () => onReady?.(false));
 
