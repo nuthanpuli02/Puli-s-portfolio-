@@ -35,6 +35,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-28: moss prototype, flowers load in with shockwave 2
+- Puli: the flowers popped in after the textures. Flowers (and their night glow), pollen and fireflies now get the same reveal as everything else: a small `onBeforeCompile` patch on their PointsMaterials (`waveDots`) discards dots outside shockwave 2's radius during the landing. The old "show them once the wave is 60% out" switch is gone.
+- Prototype version 7 (same link).
+
 ### 2026-10-28: moss prototype, more flowers in colours
 - Puli asked for more flowers in different colours. About 3.4x as many (spawn chance 0.035 -> 0.12 per moss-top vertex), in one-colour patches of about 1.1 units like wildflowers: white 50%, yellow 20%, pink 17%, violet 13% (15% of dots mix colours). Still one draw call (vertex colours).
 - They now sit just above the moss, and on the ground up among the grass (the taller 0.18 grass hid them). Dot size 0.05 -> 0.06.

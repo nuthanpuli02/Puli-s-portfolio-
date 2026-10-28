@@ -433,8 +433,17 @@ function drift(n,col,size,spread){const p=[];for(let i=0;i<n;i++)p.push((rnd()-.
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
   const pts=new THREE.Points(g,new THREE.PointsMaterial({color:col,size,map:DOT,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
   pts.userData.base=p.slice();scene.add(pts);return pts}
+// dots appear only where shockwave 2 has passed, like everything else
+function waveDots(m){m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,G);
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;uniform float uSeq,uW2;uniform vec3 uCenter;')
+      .replace('void main() {','void main() {\n  if(uSeq>0.5&&distance(vWP,uCenter)>uW2) discard;')};
+  m.customProgramCacheKey=()=>'dots';return m}
+waveDots(flowers.material);waveDots(flowers.userData.glow.material);
 const pollen=drift(160,'#fff6d8',0.035,[14,6,10]);
 const fireflies=drift(70,'#d9ff7a',0.09,[12,3.5,9]);
+waveDots(pollen.material);waveDots(fireflies.material);
 
 // ---------- light, day and night ----------
 const hemi=new THREE.HemisphereLight(0xffffff,0x3a2c1c,1);scene.add(hemi);
@@ -509,9 +518,8 @@ function frame(){
   if(seq)runLanding(dt);
   const L=LOOK[theme],fd=L.fogD*SET.fog*fogK;scene.fog.density=fd;G.uFogD.value=fd;
   skyMat.color.set(L.sky).multiplyScalar(seq?fogK:1);
-  const settled=!seq||G.uW2.value>W2MAX*0.6;
   const shade=!seq||G.uW2.value>0;for(const c of casters)c.castShadow=shade;   // the hidden forest casts no shadow on him in the dark
-  flowers.visible=settled;flowers.userData.glow.visible=settled&&theme==='night';pollen.visible=settled&&theme==='day';fireflies.visible=settled&&theme==='night';
+  flowers.userData.glow.visible=theme==='night';pollen.visible=theme==='day';fireflies.visible=theme==='night';
   for(const P of [pollen,fireflies])if(P.visible){const a=P.geometry.attributes.position.array,b=P.userData.base;
     for(let i=0;i<a.length;i+=3){a[i]=b[i]+Math.sin(now*0.3+i)*0.4;a[i+1]=b[i+1]+Math.sin(now*0.5+i*1.3)*0.25;a[i+2]=b[i+2]+Math.cos(now*0.27+i*0.7)*0.4}
     P.geometry.attributes.position.needsUpdate=true}
