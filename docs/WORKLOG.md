@@ -13,7 +13,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Loading screen (next, agreed 2026-10-28):** Puli's choice: a glass ball (React Bits Crystalized Ball, electric rim/strands/sparks replaced by a glass look: fresnel edge, soft highlight, tint; glowing dust inside follows the finger) in the centre, React Bits Count Up showing real loading progress bottom right, in the theme colours. Exit on the Scroll Expand idea: at 100% the hero shows through the ball; scrolling (and probably tapping) grows the round window to full screen while the hero zooms from 1.35x to 1x. Still to answer: scroll only or tap too; hero visible in the ball at 100% or only once the dive starts. Build as a test page first. Fewer particles on phones (15k is too many). Load what the first sections and Puli need; the forest keeps loading in the background.
+- **Loading screen: demo live at `/?loader` (2026-10-28), waiting for Puli's verdict; then wire it in for everyone.** Original brief: Puli's choice: a glass ball (React Bits Crystalized Ball, electric rim/strands/sparks replaced by a glass look: fresnel edge, soft highlight, tint; glowing dust inside follows the finger) in the centre, React Bits Count Up showing real loading progress bottom right, in the theme colours. Exit on the Scroll Expand idea: at 100% the hero shows through the ball; scrolling (and probably tapping) grows the round window to full screen while the hero zooms from 1.35x to 1x. Still to answer: scroll only or tap too; hero visible in the ball at 100% or only once the dive starts. Build as a test page first. Fewer particles on phones (15k is too many). Load what the first sections and Puli need; the forest keeps loading in the background.
 - **Forest and game** (`docs/PLAN-FOREST.md`): Phases 1-2 done and live; the fall into the dark follows Puli's choreography, the black pause on his phone (address bar) and the loading hitches fixed 2026-10-28; waiting for his next phone test. Next: Phase 3, the runner game in the new forest (port the rules from `src/puli3d.js`, then delete that file), then Phase 4 (phone pass, reduced motion).
 - **Section 5** (game teaser): done and approved.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
@@ -24,6 +24,15 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . The new site is at the root since 2026-10-28 (`/v2/` redirects). A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-28: loading screen demo (glass ball + count up + dive into the hero)
+- Puli's design: React Bits Crystalized Ball in the centre, made to look like glass instead of its crackling electric rim; React Bits Count Up bottom right; both in the theme colours; scroll and tap to enter; when loading is done the ball pops outwards (an "I'm ready" bounce, not a burst) and glows brighter; the hero shows inside the ball and you dive in from there (the Scroll Expand idea). Demo first, not wired in for normal visitors.
+- Built: `site/src/components/Loader.jsx` + styles at the end of `app.css`, shown only with `?loader` (`?loader=slow` pretends a ~10 s load so the ball can be played with). Copied `CountUp.jsx` (unchanged) and `CrystalizedBall.jsx` (changes in its header: `strands` may be 0, no arcs on tap with `sparks` 0, new `clear` prop fades dust and haze); new dependency `ogl` 1.0.11.
+  - Ball: 3,500 dust particles on phones, 9,000 on desktop, in the accent colour; the glass is CSS over the canvas (fresnel edge, highlight and window reflection top left, accent light gathered at the bottom, soft floor shadow; light and dark variants).
+  - Loading: fetches every image and model of the site except the forest's textures (byte progress where the server sends sizes) and waits for the fonts and at least 2.4 s; the forest textures are fetched afterwards. Count Up rolls to each new value.
+  - Ready: pop (scale 1 -> 1.08 -> 1) then a slow breath, brighter accent glow, "Tap or scroll to enter"; the dust fades and a round hole opens in the cover inside the glass, showing the hero zoomed 1.35x.
+  - Dive: wheel or swipe (1.1 screens for the whole way; past a third it finishes by itself), or a tap on the ball (1.3 s), or Enter/Space/arrow down: the hole grows from the ball to the screen's corners, the ball grows with it and fades, the hero zooms to 1x, then the loader removes itself and scrolling is released at the top. Reduced motion: a fade.
+- Checked headless at 393x852 day and night (slow mode screenshot of the ball, ready state, half dive, done).
 
 ### 2026-10-28: clean-up: the old site removed, the new site at the root
 - Puli asked to remove everything unnecessary so future work has only up-to-date context. With his choices:
