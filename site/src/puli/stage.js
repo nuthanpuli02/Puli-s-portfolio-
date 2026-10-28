@@ -3,9 +3,8 @@
 // button, cuts into the dance's own moonwalk, turns to face the viewer during its spin. When the visitor presses the
 // Play button (resting at the bottom of the screen) it takes off; he turns side-on, steps under it, jumps and latches
 // onto its right end while it hovers, is carried off the top of the screen, slips off up there and falls back in; the
-// page follows him down into the forest (section 6). There the forest code (src/puli3d.js) runs the fall, the landing
-// and the game, and reports every frame where he is and what he is doing; `renderForest` draws him there, with the
-// forest's camera, in place of the old voxel Puli.
+// page follows him down into the forest (section 6). There, in this same scene, he falls on through the dark into the
+// new forest (src/forest/world.js): the green-grid landing with its two shockwaves (see "the forest" below).
 //
 // The canvas is fixed to the viewport, so the flight and the fall can use the whole screen. Every frame the camera is
 // placed from the page layout: his feet stand a fixed distance below the button's resting centre, and 1 world unit
@@ -14,6 +13,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import modelUrl from '../assets/puli/puli.glb?url';
+import { shared } from './shared.js';
 
 const LOOP = new Set(['idle', 'walk', 'moonwalk', 'dance', 'hang', 'fallloop', 'run']);
 const FOV = 30;
@@ -55,6 +55,8 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const R = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   R.outputColorSpace = THREE.SRGBColorSpace;
+  R.shadowMap.enabled = true;   // only the forest's sun casts shadows
+  R.shadowMap.type = THREE.PCFSoftShadowMap;
   const scene = new THREE.Scene();
   const hemi = new THREE.HemisphereLight();
   const sun = new THREE.DirectionalLight();
@@ -91,6 +93,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   setTheme(theme);
 
   const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const DEBUG = /[?&]puli-debug/.test(location.search);
   let puli = null;
   let mixer = null;
   let clips = {};
@@ -336,159 +339,196 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       const hy = toScreen(hipsWorld()).y;
       if (hy > V.h * FOLLOW) window.scrollTo({ top: window.scrollY + (hy - V.h * FOLLOW), behavior: 'instant' });
       if (V.forestTop === null || V.forestTop <= 1 || T.t > 6) {
-        puli.visible = false;
-        S = { phase: 'gone' };
+        startForest();
         onForest();
       }
     }
   };
 
-  // ---- the forest (section 6): the forest code moves the camera and the character, this draws him ----
-  const holder = new THREE.Group();     // in the forest he hangs off this: placed and turned like the old voxel Puli
-  scene.add(holder);
-  const FOREST_LIGHT = {
-    day: { sky: 0xc4ceb4, ground: 0x2f3824, hemi: 1.7, sun: 0xfff1d6, sunI: 2.0, dir: [0.3, 0.9, 0.25] },
-    night: { sky: 0x3b4c63, ground: 0x0b1411, hemi: 1.1, sun: 0x8c9bd8, sunI: 1.1, dir: [-0.3, 0.8, 0.4] }
-  };
-  let forestOn = false;
+  // ---- the forest (section 6): the new forest (src/forest/world.js), drawn in this same scene ----
+  // He carries on falling at the size and spot he had on screen, in the dark; the camera pulls back to the landing view as
+  // he nears the ground; he lands face-down and shockwave 1 draws the forest as a green grid; as he gets up shockwave 2
+  // brings in the textures and the fog; then he stands there (the game comes back in Phase 3).
+  let forest = null;
+  let forestP = null;
   let forestVis = false;
-  let K = 87;                           // his size in forest units (the voxel rig's hips stand 40 high)
-  const F = { clip: null, mode: null, off: new THREE.Vector3(), air: false, vy0: 780, pvy: 0, land: 0 };
-  // the Running Jump clip (0.9 s): he pushes off at 0.06 s, is in the air until he lands at 0.60 s, then runs on
-  const RJ = { off: 0.06, down: 0.6 };
-  const _m = new THREE.Matrix4();
-  const _p = new THREE.Matrix4();
-  const _v = new THREE.Vector3();
-  const enterForest = () => {
-    forestOn = true;
+  let FS = null;                        // the forest sequence: null = not in the forest
+  const fcam = new THREE.PerspectiveCamera(54, 1, 0.05, 200);
+  const FALL_V = 6.5;                   // his falling speed in the forest (as at the end of the drop), units/s
+  const FALL_Y = 9;                     // how high above the ground the fall picks up once the forest is ready
+  const IMPACT = 0.18, UP = 1.5, IDLE = 6.7; // after touching down: shockwave 1, getting up, standing (s)
+  const _a = new THREE.Vector3();
+  const loadForest = () => forestP || (forestP = import('../forest/world.js').then(m => new Promise(res => {
+    let f = null;
+    const done = () => setTimeout(() => res(f), 0);
+    f = m.createForest({ onLoad: done });
+    f.WAVES = m.WAVES;
+  }).then(f => {
+    if (dead) return null;
+    f.setTheme(curTheme);
+    forest = f;
+    return f;
+  })).catch(() => null));
+  const forestRect = () => {
+    const el = document.getElementById('forest');
+    return el ? el.getBoundingClientRect() : canvas.getBoundingClientRect();
+  };
+  const showWorld = on => {
+    hemi.visible = sun.visible = !on;  // in the forest its own lights light him
+    if (on) {
+      scene.add(forest.group);
+      scene.fog = forest.fog;
+      R.toneMapping = THREE.ACESFilmicToneMapping;
+      R.toneMappingExposure = forest.exposure;
+    } else {
+      if (forest) scene.remove(forest.group);
+      scene.fog = null;
+      R.toneMapping = THREE.NoToneMapping;
+      R.toneMappingExposure = 1;
+    }
+  };
+  // he has fallen down to the forest section (or, skip: show it with him already standing there)
+  const startForest = (skip = false) => {
+    if (!puli || FS) return;
+    loadForest();
+    const sp = toScreen(hipsWorld());
+    shadow.visible = false;
+    puli.traverse(o => {
+      if (o.isMesh) o.castShadow = true;
+    });
     mixer.stopAllAction();
     cur = null;
-    F.clip = null;
-    F.mode = null;
-    holder.add(puli);
-    puli.rotation.set(0, 0, 0);
-    puli.scale.setScalar(K);
-    shadow.visible = false;
-    cam.matrixWorldAutoUpdate = false;
-    cam.matrixAutoUpdate = false;
+    puli.rotation.set(0, -0.45, 0);
+    puli.visible = true;
     S = { phase: 'forest' };
+    if (skip || reduce) {
+      FS = { phase: 'wait-skip', t: 0 };
+      playClip('idle', 0);
+      return;
+    }
+    playClip('fallloop', 0);
+    puli.position.set(0, FALL_Y + 20, 0.3);   // high up until the forest is ready (only he is drawn meanwhile)
+    mixer.update(0);
+    FS = { phase: 'void', t: 0, sx: sp.x, sy: sp.y, px: V.px, b: 0 };
   };
   const leaveForest = () => {
-    forestOn = false;
-    scene.add(puli);
-    puli.scale.setScalar(1);
+    FS = null;
+    showWorld(false);
+    puli.traverse(o => {
+      if (o.isMesh) o.castShadow = false;
+    });
+    puli.rotation.set(0, 0, 0);
     puli.position.set(0, 0, 0);
-    cam.matrixWorldAutoUpdate = true;
-    cam.matrixAutoUpdate = true;
     setTheme(curTheme);
     resetEntrance();
   };
-  // which of his animations matches what the forest is doing, and whether his hips are pinned to its point
-  // (falling, hanging, jumping, sliding) or his feet stand on the ground (landing, getting up, idle, running)
-  const forestClip = st => {
-    const g = st.g;
-    if (st.mode === 'fall') return [st.kind === 'hold' ? 'hang' : 'fallloop', true];
-    if (st.mode === 'impact') return ['fall', false];
-    if (st.mode === 'getup') return ['getup', false];
-    if (st.mode === 'game' && g) {
-      if (g.over) return ['fall', false];
-      if (g.hover > 0 || !g.gnd) return ['runjump', true];
-      if (F.land > 0) return ['runjump', false];
-      if (g.slideT > 0) return ['slide', true];
-      return ['run', false];
-    }
-    return ['idle', false];
+  const landed = () => {
+    FS.phase = 'done';
+    forest.setWaves({ seq: false });
+    shared.onForestLanded?.();
   };
-  const renderForest = (st, rect, dt) => {
-    if (!puli || dead) return false;
-    if (!forestOn) enterForest();
-    measure();
-    const L = FOREST_LIGHT[st.night > 0.5 ? 'night' : 'day'];
-    hemi.color.set(L.sky);
-    hemi.groundColor.set(L.ground);
-    hemi.intensity = L.hemi;
-    sun.color.set(L.sun);
-    sun.intensity = L.sunI;
-    sun.position.set(...L.dir);
-    // jumps in the run: note the take-off speed (a second jump in the air starts the clip again) and the landing
-    const g0 = st.g;
-    if (st.mode === 'game' && g0) {
-      if (!g0.gnd) {
-        if (!F.air || g0.vy > F.pvy + 60) F.vy0 = Math.max(g0.vy, 300);
-        F.air = true;
-        F.land = 0;
-      } else if (F.air) {
-        F.air = false;
-        F.land = clips.runjump.duration - RJ.down;
-      } else F.land = Math.max(0, F.land - dt);
-      F.pvy = g0.vy;
-    } else {
-      F.air = false;
-      F.land = 0;
-    }
-    const [name, pinned] = forestClip(st);
-    const moved = F.mode !== st.mode;
-    F.mode = st.mode;
-    if (name !== F.clip) {
-      const p0 = F.clip ? hipsWorld() : null;
-      const once = name === 'fall' || name === 'getup' || name === 'slide';
-      playClip(name, name === 'fall' || name === 'getup' ? 0.12 : 0.2, once);
-      F.clip = name;
-      if (st.mode === 'impact' || (st.mode === 'game' && moved)) F.off.set(0, 0, 0);
-      else if (p0 && !pinned) {
-        // from the landing into getting up into idle: keep his hips where they were
-        mixer.update(0);
-        holder.updateMatrixWorld(true);
-        const p1 = hipsWorld();
-        F.off.x += p0.x - p1.x;
-        F.off.z += p0.z - p1.z;
+  const forestStep = dt => {
+    const T = FS;
+    T.t += dt;
+    if (T.phase === 'wait-skip') {
+      if (forest) {
+        showWorld(true);
+        puli.position.copy(forest.LAND);
+        landed();
       }
+      return;
     }
-    if (name === 'runjump') {
-      // the run's physics moves him up and down; the clip follows the jump from take-off to landing (by how far his
-      // upward speed has turned into downward speed), then plays its landing stride before he runs on
-      const g = st.g;
-      cur.paused = true;
-      if (g && g.hover > 0) cur.time = 0.33;
-      else if (F.air) cur.time = RJ.off + (RJ.down - RJ.off) * clamp(0.5 * (1 - g.vy / F.vy0), 0, 1);
-      else cur.time = clips.runjump.duration - F.land;
+    if (T.phase === 'void' || T.phase === 'fall') {
+      puli.position.y -= FALL_V * dt;
+      if (T.phase === 'void' && forest && T.t > 0.25) {
+        // the forest is ready: from here he falls the last stretch onto the landing spot
+        showWorld(true);
+        forest.setWaves({ seq: true, w1: 0, w2: 0, k: 0 });
+        puli.position.set(forest.LAND.x, FALL_Y, forest.LAND.z);
+        T.phase = 'fall';
+        T.tf = 0;
+      }
+      if (T.phase === 'fall') {
+        T.tf += dt;
+        T.b = smooth(clamp(1 - (puli.position.y - forest.LAND.y) / FALL_Y, 0, 1));
+        if (puli.position.y <= forest.LAND.y) {
+          puli.position.y = forest.LAND.y;
+          playClip('fall', 0.06, true);
+          T.phase = 'land';
+          T.tl = 0;
+        }
+      }
+      return;
     }
-    // the mixer's clock must always run: blending from one animation into the next is timed on it (the paused jump
-    // clip itself doesn't move on; its frame is set above)
-    mixer.update(dt);
-    // place him like the voxel rig: turned about his hips (pinned), or standing at the forest's point (feet down)
-    _m.makeRotationZ(st.roll || 0).multiply(_p.makeRotationY(st.yaw || 0)).multiply(_p.makeRotationX(st.lean || 0));
-    if (pinned && st.world) {
-      holder.position.fromArray(st.world);
-      holder.quaternion.setFromRotationMatrix(_m);
-      puli.position.set(0, 0, 0);
-      holder.updateMatrixWorld(true);
-      const hl = puli.worldToLocal(hips.getWorldPosition(_v));
-      puli.position.copy(hl).multiplyScalar(-K);
-    } else {
-      const g = st.g;
-      const w = st.world || [0, 0, 0];
-      holder.position.set((st.mode === 'game' && g ? g.x : w[0]) + F.off.x, st.mode === 'game' && g && g.gnd ? g.y : 0, w[2] + F.off.z);
-      holder.rotation.set(0, st.yaw || 0, 0);
-      puli.position.set(0, 0, 0);
+    if (T.phase === 'land') {
+      T.tl += dt;
+      const W = forest.WAVES, tl = T.tl;
+      const u1 = clamp((tl - IMPACT) / W.w1, 0, 1);
+      const u2 = clamp((tl - UP - 0.35) / W.w2, 0, 1);
+      forest.setWaves({ seq: true, w1: u1 > 0 ? W.w1Max * (1 - Math.pow(1 - u1, 2.4)) : 0, w2: u2 > 0 ? W.w2Max * Math.pow(u2, 1.45) : 0, k: smooth(u2) });
+      if (tl > UP && !T.up) {
+        T.up = true;
+        playClip('getup', 0.25, true);
+      }
+      if (tl > IDLE && !T.idle) {
+        T.idle = true;
+        keepHips(() => playClip('idle', 0.5));
+      }
+      if (u1 >= 1 && u2 >= 1 && T.idle) landed();
     }
-    puli.visible = !st.hidden;
-    // the forest's camera, squeezed into where the forest section sits on this full-screen canvas
+  };
+  // the camera: it keeps the landing view's direction and follows him, holding him where and how big he was on screen
+  // in section 5, and slides that spot and size over to where he will lie in the landing view as he nears the ground
+  // (so it ends exactly on the landing view when he touches down)
+  const _q = new THREE.Quaternion();
+  const _f = new THREE.Vector3();
+  const _r = new THREE.Vector3();
+  const _u = new THREE.Vector3();
+  const _h = new THREE.Vector3();
+  const forestCamera = rect => {
+    const asp = rect.width / Math.max(1, rect.height);
+    const land = forest ? forest.camFor(asp) : { fov: 54, target: new THREE.Vector3(0, 1.45, -0.6), pos: new THREE.Vector3(0, 1.2, 7) };
+    fcam.fov = land.fov;
+    fcam.aspect = asp;
+    fcam.position.copy(land.pos);
+    fcam.lookAt(land.target);
+    fcam.updateProjectionMatrix();
+    fcam.updateMatrixWorld(true);
+    if (FS.phase !== 'void' && FS.phase !== 'fall') return;
+    const ty = Math.tan(fcam.fov / 2 * Math.PI / 180);
+    _q.copy(fcam.quaternion);
+    _f.set(0, 0, -1).applyQuaternion(_q);
+    _r.set(1, 0, 0).applyQuaternion(_q);
+    _u.set(0, 1, 0).applyQuaternion(_q);
+    const H = hipsWorld();
+    // where he started: spot (-1..1) and depth that gives his section 5 size
+    const ax0 = (FS.sx / rect.width) * 2 - 1, ay0 = 1 - (FS.sy / rect.height) * 2;
+    const z0 = rect.height / (2 * ty * FS.px);
+    // where he will lie: his hips at the landing spot, seen from the landing view
+    _h.copy(H);
+    _h.y += (forest ? forest.LAND.y : 0) - puli.position.y;
+    const rel = _h.clone().sub(land.pos);
+    const z1 = rel.dot(_f);
+    const ax1 = rel.dot(_r) / (z1 * ty * asp), ay1 = rel.dot(_u) / (z1 * ty);
+    const b = FS.phase === 'fall' ? FS.b : 0;
+    const zd = z0 + (z1 - z0) * b, ax = ax0 + (ax1 - ax0) * b, ay = ay0 + (ay1 - ay0) * b;
+    fcam.position.copy(H).addScaledVector(_f, -zd).addScaledVector(_r, -ax * zd * ty * asp).addScaledVector(_u, -ay * zd * ty);
+    fcam.updateMatrixWorld(true);
+  };
+  const renderForestView = () => {
     const c = canvas.getBoundingClientRect();
-    cam.matrixWorldInverse.fromArray(st.V);
-    cam.matrixWorld.copy(cam.matrixWorldInverse).invert();
-    _p.set(rect.width / c.width, 0, 0, ((rect.left + rect.width / 2) - (c.left + c.width / 2)) / c.width * 2,
-      0, rect.height / c.height, 0, -((rect.top + rect.height / 2) - (c.top + c.height / 2)) / c.height * 2,
-      0, 0, 1, 0, 0, 0, 0, 1);
-    cam.projectionMatrix.copy(_p.multiply(_m.fromArray(st.P)));
-    cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    const rect = forestRect();
+    forestCamera(rect);
     R.setScissorTest(false);
+    R.setViewport(0, 0, c.width, c.height);
     R.clear();
-    R.setScissor(rect.left - c.left, c.bottom - rect.bottom, rect.width, rect.height);
+    const x = rect.left - c.left, y = c.bottom - rect.bottom;
+    R.setViewport(x, y, rect.width, rect.height);
+    R.setScissor(x, y, rect.width, rect.height);
     R.setScissorTest(true);
-    R.render(scene, cam);
+    R.render(scene, fcam);
     R.setScissorTest(false);
-    return true;
+    R.setViewport(0, 0, c.width, c.height);
   };
 
   // ---- the loop: runs while the section is on screen, or while he is in the middle of the sequence ----
@@ -497,22 +537,33 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   let last = 0;
   const frame = now => {
     raf = 0;
-    if (forestOn) {
-      // the forest draws him; once only section 5 is on screen again, he starts over here
-      if (visible && !forestVis) leaveForest();
+    const dt = DEBUG && window.__stageDt !== undefined ? window.__stageDt : last ? Math.min((now - last) / 1000, 0.05) : 0;
+    last = now;
+    if (FS) {
+      // in the forest; once only section 5 is on screen again (and he has landed), he starts over there
+      if (visible && !forestVis && FS.phase === 'done') leaveForest();
       else {
-        last = 0;
+        measure();
+        forestStep(dt);
+        mixer.update(dt);
+        if (forest) forest.update(now / 1000);
+        renderForestView();
+        if (forestVis || FS.phase !== 'done') raf = requestAnimationFrame(frame);
+        else last = 0;
         return;
       }
     }
-    const dt = last ? Math.min((now - last) / 1000, 0.05) : 0;
-    last = now;
     measure();
     if (puli) {
       let mdt = dt;
       if (S.phase === 'enter') mdt = enter(dt);
       else step(dt);
       mixer.update(mdt);
+      if (FS) {
+        // he has just dropped into the forest (step() started it)
+        kick();
+        return;
+      }
       const hw = hipsWorld();
       const lift = Math.max(0, hw.y - 0.46);
       shadow.visible = S.phase !== 'drop' && S.phase !== 'gone';
@@ -530,7 +581,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const setVisible = v => {
     visible = v;
     // scrolled right away (and not mid-sequence): the entrance plays again next time
-    if (!v && !S.busy && puli && !forestOn) resetEntrance();
+    if (!v && !S.busy && puli && !FS) resetEntrance();
     if (v) kick();
   };
 
@@ -570,13 +621,6 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       puli.rotation.y = 0;
     }
     mixer = new THREE.AnimationMixer(puli);
-    {
-      const a = mixer.clipAction(clips.idle);
-      a.play();
-      mixer.update(0);
-      K = 40 / Math.max(0.2, hipsWorld().y); // the voxel rig's hips stand 40 forest units high
-      a.stop();
-    }
     measure();
     resetEntrance();
     onReady?.(true);
@@ -585,7 +629,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
 
   // ?puli-debug: inspect the layout and the move state from the console (headless tests)
   if (/[?&]puli-debug/.test(location.search)) {
-    window.__puliStage = { V, get S() { return S; }, get puli() { return puli; }, get F() { return F; }, get cur() { return cur; }, hipsWorld: () => hipsWorld(), toScreen,
+    window.__puliStage = { V, get S() { return S; }, get puli() { return puli; }, get FS() { return FS; }, get forest() { return forest; }, startForest, get cur() { return cur; }, hipsWorld: () => hipsWorld(), toScreen,
       // a clip's hips and feet heights over time, on a throwaway mixer (for timing moves against the game)
       sample: (name, n = 40) => {
         const m = new THREE.AnimationMixer(puli);
@@ -598,7 +642,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
           a.time = clips[name].duration * i / n;
           m.update(0);
           puli.updateMatrixWorld(true);
-          out.push([+a.time.toFixed(3), +hips.getWorldPosition(_v).y.toFixed(3), +lf.getWorldPosition(_v).y.toFixed(3), +rf.getWorldPosition(_v).y.toFixed(3)]);
+          out.push([+a.time.toFixed(3), +hips.getWorldPosition(_a).y.toFixed(3), +lf.getWorldPosition(_a).y.toFixed(3), +rf.getWorldPosition(_a).y.toFixed(3)]);
         }
         a.stop();
         m.uncacheRoot(puli);
@@ -610,16 +654,24 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     setVisible,
     setTheme: t => {
       curTheme = t;
-      if (!forestOn) setTheme(t);
+      if (!FS) setTheme(t);
+      forest?.setTheme(t);
+      if (FS && forest && FS.phase !== 'void' && FS.phase !== 'wait-skip') R.toneMappingExposure = forest.exposure;
       kick();
     },
-    renderForest,
     setForestVisible: v => {
       forestVis = v;
       kick();
     },
-    // how long the forest should let his landing and his getting up last (his own animations)
-    forestTimes: () => (puli ? { impact: 1.6, getup: 5.1 } : null),
+    // the forest: load it early (when Play comes to rest), or show it with him already standing there (reduced motion)
+    preloadForest: () => loadForest(),
+    showForest: () => {
+      startForest(true);
+      kick();
+    },
+    get inForest() {
+      return !!FS;
+    },
     play,
     flyAt,
     standFor: bx => (GRAB_HANDS ? standFor(bx) : null),

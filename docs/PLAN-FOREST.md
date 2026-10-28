@@ -1,4 +1,4 @@
-# Plan: the new forest, the green-grid landing, the game (agreed 2026-10-27, not started)
+# Plan: the new forest, the green-grid landing, the game (agreed 2026-10-27; Phases 1 and 2 done 2026-10-28)
 
 Read `CLAUDE.md` and `docs/WORKLOG.md` first. Nothing below is built yet; Puli asked to pause here and continue later.
 Talk to Puli in plain, step-by-step terms; he tests on his Redmi Note 14 Pro 5G (Brave, portrait). Merge every change into
@@ -47,7 +47,7 @@ Notes from the discussion:
 - the same patch in the green grid look, with the shockwave reveal spreading from one point;
 - Puli checks it on his phone; agree the look before building everything.
 
-**Phase 2: the new forest and the fall with the grid**, in three.js inside the stage's scene (one WebGL canvas instead of
+**Phase 2 (done 2026-10-28, see below and the WORKLOG): the new forest and the fall with the grid**, in three.js inside the stage's scene (one WebGL canvas instead of
 two, real depth between Puli and leaves/vines, PBR materials, the grid as one material patch on every forest material via
 `onBeforeCompile`):
 - same layout and fall as now (canopy; two vines that stretch and snap; two branches; last vine; face-down), ported from
@@ -75,3 +75,14 @@ textures); reduced motion = a short fade instead of the grid sequence.
    blocked here): he picks the closest match if one doesn't exist. Leaves are drawn in code (leaf cards), no texture.
    Done 2026-10-27: 7 sets in `site/src/assets/forest/` (see its README; 6.3 MB, load only with the forest). Puli
    swapped bark_willow for tree_bark_03 and uses bark_brown_02 for both plain and mossy trunks. Next: Phase 1.
+
+## Changed with Puli (2026-10-27/28, after the Phase 1 look test)
+
+- The grid does not draw in during the fall. **Black screen, he falls straight in (no canopy, vines or branches); the
+  impact sends shockwave 1, which spreads across the floor and climbs the trees, drawing everything as the green grid;
+  as he gets up, shockwave 2 comes from beneath him and brings in the textures, and the fog thickens with it.**
+- The forest is **the old page's moss forest** (its layout and its moss shells), rebuilt in three.js, plus grass, bushes,
+  ferns, flowers in four colours. No blossom-tree trees after all. Prototype with sliders: `tools/forest-moss/`.
+- Puli's numbers: moss length 0.090, 6 layers, layer shift 0.5, grass 0.18 at 50%, fog 0.8x, both shockwaves 3.5 s.
+- Phase 2 went live **without a game** (Puli's choice): after he gets up he stands there and a "Back up" button shows.
+  Phase 3 brings the runner back in the new forest.
