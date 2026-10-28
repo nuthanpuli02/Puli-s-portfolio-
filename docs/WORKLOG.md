@@ -25,6 +25,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-28: smaller ball, fewer particles, lighter galaxy
+- Puli: the ball should be ~50% smaller on phones and ~40% smaller on desktop, and the site lags a bit. Ball diameter now min(84% width, 50% height, 440 px) x 0.5 on phones / x 0.6 otherwise; dust 1,500 particles on phones (was 3,500), 4,000 on desktop (was 9,000); Galaxy 2 layers on phones, 3 on desktop (was 4), resolution 1x on phones (was 1.25x), 1.25x on desktop (was 1.5x).
+- If it still lags: the loading screen's Grid Scan is the next thing to lighten (it is full-screen).
+
 ### 2026-10-28: Galaxy hero; loading screen on Grid Scan, green ball, orange count, the hero enters after the dive
 - Puli's changes: the hero's Waves replaced by React Bits **Galaxy**; the loading screen on React Bits **Grid Scan** (depth 1, to match the forest's shockwave grid) with the glass ball in the middle; the count orange without "%"; when loaded the ball shows the hero's galaxy; on scroll/tap the section opens, the hero title slides in from the top and the ridge and the clouds rise into place from the bottom. His answers: the same dark space by day and night (galaxy and grid), green dust, "branch image" = the ridge.
 - Hero (live for everyone): `Galaxy.jsx` copied unchanged (white stars, mouse repulsion, click warp; dpr 1.25 phone / 1.5). The hero is dark in both themes: its own `--text` is the night text colour and its sky a near-black gradient; while the hero is under the header, `html[data-over-hero]` turns the header text and the menu button light. `Waves.jsx/.css` removed (no longer used).

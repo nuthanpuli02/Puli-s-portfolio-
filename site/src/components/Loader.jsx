@@ -127,7 +127,8 @@ export default function Loader({ theme, onDone }) {
   useEffect(() => {
     const root = rootRef.current;
     const size = () => {
-      const D = Math.min(window.innerWidth * 0.84, window.innerHeight * 0.5, 440);
+      // half the old size on phones, 40% smaller on bigger screens (Puli, 2026-10-28)
+      const D = Math.min(window.innerWidth * 0.84, window.innerHeight * 0.5, 440) * (phone ? 0.5 : 0.6);
       radius.current = D / 2;
       root.style.setProperty('--d', `${D.toFixed(1)}px`);
       apply(dive.current.p);
@@ -351,7 +352,7 @@ export default function Loader({ theme, onDone }) {
             fill={0.5}
             motion="rise"
             particleShape="round"
-            particleCount={phone ? 3500 : 9000}
+            particleCount={phone ? 1500 : 4000}
             hoverStrength={0.8}
             clear={clear}
           />

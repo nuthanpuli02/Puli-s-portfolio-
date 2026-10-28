@@ -120,7 +120,8 @@ export default function Hero({ theme }) {
             repulsionStrength={2}
             clickWarp
             transparent
-            dpr={Math.min(window.devicePixelRatio || 1, phone ? 1.25 : 1.5)}
+            layers={phone ? 2 : 3}
+            dpr={Math.min(window.devicePixelRatio || 1, phone ? 1 : 1.25)}
           />
         </div>
       )}
