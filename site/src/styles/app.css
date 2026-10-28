@@ -295,7 +295,7 @@ html{scroll-behavior:smooth}
 .teaser__flight .flying-button__smoke{-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 48px);mask-image:linear-gradient(0deg,transparent 0,#000 48px)}
 /* section 6: the forest. The 3D stage draws it on its fixed full-screen canvas inside this box; the box itself is black
    so Puli's fall carries on into the dark. No height until the Play button opens it. */
-.forest{position:relative;height:100svh;overflow:hidden;background:#000}
+.forest{position:relative;height:100vh;height:100lvh;overflow:hidden;background:#000}
 .forest[data-open='false']{height:0}
 .forest__back{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 28px);min-height:44px;z-index:2}
 .forest__pill{display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:999px;

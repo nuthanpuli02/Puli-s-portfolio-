@@ -105,7 +105,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   let DANCE_RUN = 0.75;     // how far the dance's moonwalk carries his hips (measured at load)
 
   // layout, refreshed every frame (scrolling moves everything together)
-  const V = { forestTop: null, pillHalf: 0, w: 1, h: 1, px: 300, feetY: 0, camY: 0, d: 5, bx: 0, cut: 0, lead: 3.45, q: 0 };
+  const V = { forestTop: null, forestBottom: null, pillHalf: 0, w: 1, h: 1, px: 300, feetY: 0, camY: 0, d: 5, bx: 0, cut: 0, lead: 3.45, q: 0 };
 
   // the move state
   let S = { phase: 'none' };
@@ -160,6 +160,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     }
     const { field, stage, pill, forest } = layout();
     V.forestTop = forest ? forest.top - c.top : null;
+    V.forestBottom = forest ? forest.bottom - c.top : null;
     if (!V.pillHalf && pill) V.pillHalf = pill / 2; // the first label's width, so he doesn't shift as the labels change
     const half = V.pillHalf || 70;
     const bcx = field.left + field.width / 2 - c.left;
@@ -271,6 +272,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       if (t >= clips.dance.duration - 0.05) {
         keepHips(() => playClip('idle', 0.4));
         S = { phase: 'idle' };
+        loadForest(); // the entrance is over: get the forest ready while the visitor plays with the button
       }
     } else if (T.phase === 'call') {
       // he turns side-on, towards the button, and steps to where his jump will meet it
@@ -338,7 +340,9 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       puli.position.y += T.vy * dt;
       const hy = toScreen(hipsWorld()).y;
       if (hy > V.h * FOLLOW) window.scrollTo({ top: window.scrollY + (hy - V.h * FOLLOW), behavior: 'instant' });
-      if (V.forestTop === null || V.forestTop <= 1 || T.t > 6) {
+      // into the forest once its top reaches the top of the screen, or the page can't scroll further (on phones the
+      // screen can be taller than the section when the address bar hides)
+      if (V.forestTop === null || V.forestTop <= 1 || V.forestBottom <= V.h + 1 || T.t > 6) {
         startForest();
         onForest();
       }
@@ -357,12 +361,17 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const FALL_V = 6.5;                   // his falling speed in the forest (as at the end of the drop), units/s
   const IMPACT = 0.18, UP = 1.5, IDLE = 6.7; // after touching down: shockwave 1, getting up, standing (s)
   const _a = new THREE.Vector3();
-  const loadForest = () => forestP || (forestP = import('../forest/world.js').then(m => new Promise(res => {
-    let f = null;
-    const done = () => setTimeout(() => res(f), 0);
-    f = m.createForest({ onLoad: done });
-    f.WAVES = m.WAVES;
+  const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+  const loadForest = () => forestP || (forestP = import('../forest/world.js').then(async m => {
+    await nextFrame();
+    return new Promise(res => {
+      let f = null;
+      const done = () => setTimeout(() => res(f), 0);
+      f = m.createForest({ onLoad: done });
+      f.WAVES = m.WAVES;
+    });
   }).then(async f => {
+    await nextFrame();
     if (dead) return null;
     f.setTheme(curTheme);
     // prepare the forest's shaders (and his, under the forest's lights, fog and tone mapping) now, in the background,
@@ -380,13 +389,23 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
       R.toneMapping = tm;
       await Promise.all(jobs);
       tmp.remove(f.group);
+      // send its textures to the graphics chip now, one per frame, instead of all at once on the first forest frame
+      const tex = new Set();
+      f.group.traverse(o => {
+        for (const m of [].concat(o.material || [])) for (const v of Object.values(m)) if (v && v.isTexture) tex.add(v);
+      });
+      for (const t of tex) {
+        await nextFrame();
+        if (dead) return null;
+        R.initTexture(t);
+      }
     } catch (e) {
       // not supported: they are prepared on first use instead
     }
     if (dead) return null;
     forest = f;
     return f;
-  })).catch(() => null));
+  }).catch(() => null));
   const forestRect = () => {
     const el = document.getElementById('forest');
     return el ? el.getBoundingClientRect() : canvas.getBoundingClientRect();
@@ -732,8 +751,6 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     measure();
     resetEntrance();
     onReady?.(true);
-    // load the forest early, while the visitor is still playing with the button
-    setTimeout(() => loadForest(), 1000);
     kick();
   }, undefined, () => onReady?.(false));
 

@@ -35,6 +35,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-28: the black pause found (address bar) and the loading hitches spread out
+- Puli's `?puli-debug` screenshot from his Redmi: `drop` at 21.89 s, `forest:void` only at 27.90 s, i.e. the section 5 drop ran into its 6 s safety timeout. Cause: on his phone the screen is taller than the forest section once Brave's address bar hides (100svh section, larger viewport), so the page could never scroll far enough for the forest's top to reach the top of the screen. Fixed twice over: the forest section is now `100lvh`, and the drop also hands over once the page can't scroll further (forest bottom at the screen bottom).
+- His phone also lagged on reaching section 5 (my early forest load from the previous change) and froze 555 ms in `drop` and 930 ms in `rush` (textures uploaded to the GPU on first sight). Now the forest starts loading only when the dance has finished (or when Play comes to rest, or at the fall), the work is spread over frames (build, then shader compile, then one texture upload per frame with `initTexture`).
+
 ### 2026-10-28: forest loads early and its shaders are prepared in the background
 - Puli: still not one continuous fall: a black screen for 2-3 s after he leaves the screen. Not reproducible headless; likely causes on the phone: the forest only started loading (6 MB of textures) when Play came to rest, and the first forest frame compiled all its shaders (moss, grass, shadows, fog, tone mapping) in one go.
 - Now the stage starts loading the forest 1 s after Puli's model is ready (while the visitor plays with the button), and once loaded compiles the forest's shaders and Puli's forest variants with `compileAsync` on a temporary scene (ACES, forest fog and lights), before marking the forest ready.
