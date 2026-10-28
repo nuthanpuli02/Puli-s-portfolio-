@@ -1,19 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import Waves from '../components/reactbits/Waves.jsx';
+import Galaxy from '../components/reactbits/Galaxy.jsx';
+import { intro } from '../intro.js';
 import FoldText from '../components/reactbits/FoldText.jsx';
 
-// Section 1. Layers, back to front: Waves (React Bits, reacts to the cursor) → the bare ridge → the same ridge
-// overgrown, seen through a soft spotlight → "NUTHAN" (React Bits FoldText) →
-// clouds rising from the bottom, which carry the page into section 2.
+// Section 1. Layers, back to front: Galaxy (React Bits; the same dark space by day and by night; stars move away from
+// the pointer, a tap warps) → the bare ridge → the same ridge overgrown, seen through a soft spotlight → "NUTHAN"
+// (React Bits FoldText) → clouds rising from the bottom, which carry the page into section 2.
+// With the loading screen (src/intro.js) the hero waits hidden; when loading is done its galaxy shows inside the glass
+// ball, and when the visitor dives in the title slides down from the top while the ridge and the clouds rise into place.
 export default function Hero({ theme }) {
   const heroRef = useRef(null);
-  const dark = theme === 'dark';
-  // the waves are drawn in WebGL, so they take their colours from the CSS tokens (--ink, --accent) whenever the theme changes
-  const [colours, setColours] = useState({ ink: '31,31,31', accent: '#D21319' });
+  const [phase, setPhase] = useState(intro.phase);
+  useEffect(() => intro.on(setPhase), []);
+  const phone = Math.min(window.innerWidth, window.innerHeight) < 700;
+
+  // the header sits on the dark space while the hero is under it: its text turns light (html[data-over-hero])
   useEffect(() => {
-    const cs = getComputedStyle(document.documentElement);
-    setColours({ ink: cs.getPropertyValue('--ink').trim() || '31,31,31', accent: cs.getPropertyValue('--accent').trim() || '#D21319' });
-  }, [theme]);
+    const hero = heroRef.current;
+    if (!hero) return undefined;
+    const set = () => {
+      const over = hero.getBoundingClientRect().bottom > 90;
+      if (over) document.documentElement.dataset.overHero = '';
+      else delete document.documentElement.dataset.overHero;
+    };
+    set();
+    window.addEventListener('scroll', set, { passive: true });
+    window.addEventListener('resize', set);
+    return () => {
+      window.removeEventListener('scroll', set);
+      window.removeEventListener('resize', set);
+      delete document.documentElement.dataset.overHero;
+    };
+  }, []);
 
   // Spotlight: follows the cursor or finger; with no input it drifts along the ridge on its own.
   // Only two CSS variables change per frame.
@@ -84,18 +102,28 @@ export default function Hero({ theme }) {
   }, []);
 
   return (
-    <section className="hero" id="top" ref={heroRef} aria-labelledby="heroName">
-      <Waves
-        className="hero__waves"
-        lineColor={`rgba(${colours.ink},0.30)`}
-        accentColor={colours.accent}
-        lightMode={!dark}
-        spacing={14}
-        amplitude={28}
-        mouseRadius={190}
-        fade={0.35}
-        dpr={Math.min(window.devicePixelRatio || 1, 1.5)}
-      />
+    <section
+      className={`hero${phase === 'loading' || phase === 'ready' ? ' hero--hold' : ''}${phase === 'entered' ? ' hero--enter' : ''}`}
+      id="top" ref={heroRef} aria-labelledby="heroName"
+    >
+      {phase !== 'loading' && (
+        <div className="hero__galaxy" aria-hidden="true">
+          <Galaxy
+            density={1}
+            glowIntensity={0.3}
+            saturation={0}
+            hueShift={140}
+            twinkleIntensity={0.3}
+            starSpeed={0.5}
+            rotationSpeed={0.1}
+            mouseRepulsion
+            repulsionStrength={2}
+            clickWarp
+            transparent
+            dpr={Math.min(window.devicePixelRatio || 1, phone ? 1.25 : 1.5)}
+          />
+        </div>
+      )}
       {/* the photo's ridge runs off its own frame, so its sides and base melt away instead of ending in a hard edge */}
       <div className="hero__ridges" aria-hidden="true">
         <div className="hero__ridge hero__ridge--stone" />
@@ -104,7 +132,7 @@ export default function Hero({ theme }) {
 
       <div className="hero__title">
         <h1 id="heroName" className="hero__name">
-          <FoldText text="NUTHAN" hinge="top" foldStyle="paper" duration={0.9} stagger={0.07} hoverRefold refoldRadius={160}
+          <FoldText key={phase === 'entered' ? 'in' : 'wait'} text="NUTHAN" hinge="top" foldStyle="paper" duration={0.9} stagger={0.07} hoverRefold refoldRadius={160}
             fontSize="clamp(64px, 12.8vw, 198px)" fontWeight={900} color="var(--text)" />
         </h1>
       </div>

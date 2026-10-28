@@ -71,12 +71,31 @@ html{scroll-behavior:smooth}
 .dn-switch.is-night .dn-switch__stars{opacity:1;transform:none}
 
 /* ===== hero ===== */
-/* layers, back to front: waves · NUTHAN · bare ridge · overgrown ridge (spotlight) · clouds.
-   The name sits behind the ridge, so the peaks overlap the bottom of its letters. */
+/* layers, back to front: galaxy · NUTHAN · bare ridge · overgrown ridge (spotlight) · clouds.
+   The name sits behind the ridge, so the peaks overlap the bottom of its letters. The hero is dark space by day and by
+   night, so its text uses the night colours in both. */
 .hero{position:relative;height:100vh;height:100dvh;min-height:600px;overflow:hidden;isolation:isolate;
-  background:radial-gradient(120% 85% at 50% 0%,var(--bg) 0%,var(--bg) 45%,var(--bg-deep) 100%);
+  --text:#E2E8D6;--hero-sky:#03060A;
+  background:radial-gradient(120% 85% at 50% 0%,#0A1018 0%,var(--hero-sky) 55%,#010203 100%);
   --mx:-999px;--my:-999px;--r:260px}
-.hero__waves{z-index:0;opacity:.9;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 72%,transparent 92%);mask-image:linear-gradient(180deg,#000 0,#000 72%,transparent 92%)}
+.hero__galaxy{position:absolute;inset:0;z-index:0}
+.hero__role{--bg:var(--hero-sky)}
+/* the header and the menu button are light while the dark hero is under them */
+html[data-over-hero] .site-header,html[data-over-hero] .sm-toggle{--text:#E2E8D6}
+
+/* with the loading screen: the hero waits (only the galaxy, once loaded), then the title slides down from the top and
+   the ridge and the clouds rise into place */
+.hero--hold .hero__title,.hero--hold .hero__role,.hero--hold .hero__ridges,.hero--hold .hero__clouds{visibility:hidden;animation:none}
+.hero--hold .hero__ridge{animation:none}
+.hero--enter .hero__title{animation:heroDrop 1.1s cubic-bezier(.2,.9,.25,1) .15s both}
+.hero--enter .hero__role{animation:heroDrop 1.1s cubic-bezier(.2,.9,.25,1) .35s both}
+.hero--enter .hero__ridges{animation:heroRise 1.5s cubic-bezier(.2,.85,.25,1) .05s both}
+.hero--enter .hero__ridge{animation:none}
+.hero--enter .hero__clouds{animation:heroRiseFar 1.9s cubic-bezier(.2,.85,.25,1) .2s both}
+@keyframes heroDrop{from{opacity:0;transform:translateY(-45vh)}to{opacity:1;transform:none}}
+@keyframes heroRise{from{transform:translateY(70vh)}to{transform:none}}
+@keyframes heroRiseFar{from{transform:translateY(80vh)}to{transform:none}}
+@media (prefers-reduced-motion: reduce){.hero--enter .hero__title,.hero--enter .hero__role,.hero--enter .hero__ridges,.hero--enter .hero__clouds{animation:fadeIn .4s both}}
 .hero__ridges{position:absolute;z-index:3;pointer-events:none;left:-2%;top:calc(19% + min(8.1vw, 125px) - 13.5vw);width:104%;aspect-ratio:2688/1520;
   /* the box is exactly the photo, so only its own outer edges melt away; the rock itself stays solid */
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 93%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 93%,transparent 100%)}
@@ -303,15 +322,14 @@ html{scroll-behavior:smooth}
   font:500 14px/1 var(--font-sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 18px -10px rgba(0,0,0,.35)}
 button.forest__pill{cursor:pointer}
 
-/* the loading screen (components/Loader.jsx). Layers: the cover (the page colour, with a round hole that opens inside
+/* the loading screen (components/Loader.jsx). Layers: the cover (black with Grid Scan, with a round hole that opens inside
    the ball when loading is done and grows in the dive), the ball (dust canvas + CSS glass), the hint, the count. */
 .loader{position:fixed;inset:0;z-index:1000;touch-action:none;--d:300px;--grow:1;--dive:0;--clear:0;
+  --text:#E2E8D6;--text-soft:rgba(226,232,214,.72);--glow:#00FF41;--count:#FF8A1F;
   --hole:calc(var(--d) / 2 * .985 * var(--grow) * var(--clear));
-  --glass-edge:rgba(255,255,255,.4);--glass-hi:rgba(255,255,255,.5);--glass-shade:rgba(0,0,0,.28);--ball-shadow:rgba(0,0,0,.28);
+  --glass-edge:rgba(226,232,214,.26);--glass-hi:rgba(236,242,226,.5);--glass-shade:rgba(0,0,0,.5);--ball-shadow:rgba(0,0,0,.55);
   -webkit-user-select:none;user-select:none;cursor:default}
-:root[data-theme='dark'] .loader{--glass-edge:rgba(226,232,214,.26);--glass-hi:rgba(236,242,226,.5);--glass-shade:rgba(0,0,0,.5);--ball-shadow:rgba(0,0,0,.55)}
-@media (prefers-color-scheme: dark){:root:not([data-theme='light']) .loader{--glass-edge:rgba(226,232,214,.26);--glass-hi:rgba(236,242,226,.5);--glass-shade:rgba(0,0,0,.5);--ball-shadow:rgba(0,0,0,.55)}}
-.loader__cover{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 40%,var(--bg) 0,var(--bg-deep) 100%);
+.loader__cover{position:absolute;inset:0;background:#000;
   -webkit-mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--hole) - .5px),#000 calc(var(--hole) + .5px));
   mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--hole) - .5px),#000 calc(var(--hole) + .5px))}
 .loader__ball{position:absolute;left:50%;top:50%;width:var(--d);height:var(--d);
@@ -323,9 +341,9 @@ button.forest__pill{cursor:pointer}
     radial-gradient(ellipse 28% 17% at 33% 21%,var(--glass-hi),transparent 72%),
     radial-gradient(ellipse 9% 6% at 70% 30%,rgba(255,255,255,.35),transparent 80%),
     radial-gradient(circle at 50% 50%,transparent 64%,rgba(255,255,255,.05) 76%,var(--glass-edge) 97%,transparent 100%),
-    radial-gradient(ellipse 58% 26% at 50% 96%,color-mix(in srgb,var(--accent) 34%,transparent),transparent 72%);
+    radial-gradient(ellipse 58% 26% at 50% 96%,color-mix(in srgb,var(--glow) 26%,transparent),transparent 72%);
   box-shadow:inset 0 0 0 1px var(--glass-edge),inset 0 -22px 46px -14px var(--glass-shade),inset 12px 14px 34px -10px rgba(255,255,255,.16),
-    0 0 calc(14px + 26px * var(--clear)) calc(var(--clear) * 2px) color-mix(in srgb,var(--accent) calc(10% + 22% * var(--clear)),transparent)}
+    0 0 calc(14px + 30px * var(--clear)) calc(var(--clear) * 3px) color-mix(in srgb,var(--glow) calc(8% + 24% * var(--clear)),transparent)}
 /* the window reflection: a small curved pane up on the left */
 .loader__glass::before{content:'';position:absolute;left:21%;top:15%;width:19%;height:12%;border-radius:45% 45% 40% 40%;
   background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,.08));transform:rotate(-38deg);filter:blur(1.5px)}
@@ -341,6 +359,6 @@ button.forest__pill{cursor:pointer}
 .loader.is-ready .loader__hint{color:var(--text);animation:loaderHint 2.6s ease-in-out .7s infinite}
 @keyframes loaderHint{0%,100%{opacity:1}50%{opacity:.55}}
 .loader__count{position:absolute;right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
-  font:800 clamp(52px,15vw,128px)/1 var(--font-sans);letter-spacing:-0.05em;color:var(--text)}
+  font:800 clamp(52px,15vw,128px)/1 var(--font-sans);letter-spacing:-0.05em;color:var(--count);text-shadow:0 0 24px rgba(255,138,31,.35)}
 .loader.is-leaving{opacity:0;transition:opacity .35s}
 @media (prefers-reduced-motion: reduce){.loader.is-ready .loader__pop,.loader.is-ready .loader__hint{animation:none}}

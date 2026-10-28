@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import CrystalizedBall from './reactbits/CrystalizedBall.jsx';
 import CountUp from './reactbits/CountUp.jsx';
+import GridScan from './reactbits/GridScan.jsx';
+import { intro } from '../intro.js';
 import { holdScroll } from '../scrollHold.js';
 
-// The loading screen (demo: only with ?loader in the address). A glass ball in the middle (React Bits Crystalized Ball:
-// glowing dust that follows the finger, its electric rim turned off; the glass itself, its edge, highlights and the
-// light it gathers at the bottom, is drawn in CSS on top), the real loading progress counting up bottom right (React
-// Bits Count Up). The site is already there underneath, its first screen (the hero) running.
+// The loading screen (demo: only with ?loader in the address). Dark by day and by night. Behind: React Bits Grid Scan
+// (neon green, depth 1: the same look as the forest's shockwave grid). In the middle a glass ball (React Bits
+// Crystalized Ball: green glowing dust that follows the finger, its electric rim turned off; the glass itself, its
+// edge, highlights and the light it gathers at the bottom, is drawn in CSS on top). Bottom right the real loading
+// progress, in orange, counting up (React Bits Count Up). The site is already there underneath, its hero waiting.
 // When everything has loaded, the ball pops (a short bounce outwards) and glows brighter, its dust settles and the glass
-// clears: the hero shows inside it. Scrolling, or a tap on the ball, then dives in (the Scroll Expand idea): the round
+// clears: the hero's galaxy shows inside it (src/intro.js tells the hero; the title, ridge and clouds come later). Scrolling, or a tap on the ball, then dives in (the Scroll Expand idea): the round
 // window grows from the ball until it covers the screen while the hero zooms from 1.35x to its normal size, the glass
 // stretches and fades. Then the loading screen removes itself and the page scrolls normally from the top.
 // What it waits for: the fonts and every image and model the site uses (the forest's textures excepted: they are far
@@ -109,6 +112,7 @@ export default function Loader({ theme, onDone }) {
       if (dead) return;
       clearInterval(timer);
       setPct(100);
+      intro.set('ready');
       setReady(true);
       // the forest's textures quietly, afterwards
       for (const u of Object.values(LATER)) fetch(u).catch(() => {});
@@ -194,6 +198,7 @@ export default function Loader({ theme, onDone }) {
     cancelAnimationFrame(d.raf);
     place(1);
     holdScroll(false);
+    intro.set('entered');
     setGone(true);
     onDone?.();
   }, [place, onDone]);
@@ -302,9 +307,6 @@ export default function Loader({ theme, onDone }) {
   }, [ready, reduce, apply, finish]);
 
   if (gone) return null;
-  const css = getComputedStyle(document.documentElement);
-  const accent = css.getPropertyValue('--accent').trim() || '#D21319';
-  const light = theme !== 'dark';
   return (
     <div
       ref={rootRef}
@@ -313,15 +315,32 @@ export default function Loader({ theme, onDone }) {
       role="dialog"
       aria-label={ready ? 'Nuthan Puli: tap or scroll to enter' : `Loading, ${pct} percent`}
     >
-      <div className="loader__cover" aria-hidden="true" />
+      <div className="loader__cover" aria-hidden="true">
+        <GridScan
+          linesColor="#0E4A22"
+          scanColor="#00FF41"
+          depth={1}
+          cells={8}
+          lineThickness={1}
+          points
+          reflection={0.35}
+          glow={0.6}
+          scanDuration={2.4}
+          scanDelay={1.2}
+          interactive
+          clickEffect="ping"
+          lightMode={false}
+          dpr={Math.min(window.devicePixelRatio || 1, phone ? 1 : 1.5)}
+        />
+      </div>
       <div className="loader__ball" aria-hidden="true">
         <div className="loader__shadow" />
         <div className="loader__pop">
         <div className="loader__dust">
           <CrystalizedBall
             preset="aurora"
-            color={accent}
-            theme={light ? 'light' : 'dark'}
+            color="#00FF41"
+            theme="dark"
             size={1 / 1.3}
             strands={0}
             crackle={0}
@@ -342,7 +361,7 @@ export default function Loader({ theme, onDone }) {
       </div>
       <div className="loader__hintwrap"><p className="loader__hint">{ready ? 'Tap or scroll to enter' : 'Loading'}</p></div>
       <div className="loader__count" aria-hidden="true">
-        <CountUp to={pct} from={0} duration={0.5} mode="roll" easing="easeOut" trigger="load" suffix="%" />
+        <CountUp to={pct} from={0} duration={0.5} mode="roll" easing="easeOut" trigger="load" />
       </div>
     </div>
   );

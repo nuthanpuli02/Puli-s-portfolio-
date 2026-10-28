@@ -7,9 +7,7 @@ import Forest from './sections/Forest.jsx';
 import { holdScroll } from './scrollHold.js';
 import SectionBadge from './components/SectionBadge.jsx';
 import Loader from './components/Loader.jsx';
-
-// the loading screen is a demo for now: only with ?loader in the address
-const WITH_LOADER = typeof location !== 'undefined' && /[?&]loader/.test(location.search);
+import { WITH_LOADER } from './intro.js';
 import { useTheme } from './theme.js';
 import './palettes.js'; // saved palettes; only used for ?day=/&night= previews
 
