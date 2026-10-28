@@ -262,6 +262,10 @@ float h31(vec3 p){ p=fract(p*0.3183099+0.1); p*=17.0; return fract(p.x*p.y*p.z*(
 float vn3(vec3 x){ vec3 i=floor(x),f=fract(x); f=f*f*(3.0-2.0*f);
   return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
              mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }`;
+// the two moss grids' tilts (odd angles so their rows never line up with each other or with the scene)
+const rotGLSL=(x,y,z)=>{const m=new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(x,y,z)));
+  return 'mat3('+m.elements.map(v=>v.toFixed(5)).join(',')+')'};
+const ROT_A=rotGLSL(0.62,0.41,0.93),ROT_B=rotGLSL(1.17,-0.73,0.35);
 const mossMat=new THREE.ShaderMaterial({
   uniforms:G,
   vertexShader:`attribute float aMoss;uniform float uMossLen,uShells,uTime;varying vec3 vBase,vWP,vN;varying float vLev,vMoss;
@@ -283,18 +287,28 @@ const mossMat=new THREE.ShaderMaterial({
       vec3 cell; float hgt=1.0;
       if(vLev<0.001){ if(cov<0.3) discard; }                  // the solid moss skin
       else{
-        vec3 g=vBase*38.0; cell=floor(g); vec3 f=fract(g)-0.5;
-        vec3 jit=vec3(h31(cell+7.1),h31(cell+3.3),h31(cell+5.9))-0.5;
-        float h=h31(cell); hgt=(0.45+0.55*h)*(0.55+0.6*mid)*cov;
-        if(vLev>hgt) discard;
-        float r=1.0-vLev/hgt;
-        // layer shift: every layer (the whole sheet) is shifted by its own random offset along the surface, the same
-        // for all strands on that layer, so a strand's dots zig-zag from layer to layer
+        // layer shift: every layer (the whole sheet) is shifted by its own random offset along the surface
         float li=floor(vLev*uShells+0.5);
         vec3 walk=(vec3(h31(vec3(li*1.37,2.1,5.3)),h31(vec3(7.7,li*2.11,1.9)),h31(vec3(3.1,4.4,li*0.73)))-0.5)*step(0.5,li)*uCurl*0.8;
-        walk-=N*dot(walk,N);                                      // stay along the surface
-        if(camD<14.0 && length(f-jit*0.4-walk)>0.62*r+0.06) discard;   // strands up close, a soft pile further away
-        if(camD>=14.0 && vLev>hgt*0.6) discard;
+        walk-=N*dot(walk,N);
+        // clumps: the moss grows in little cushions, taller and fuller in some spots, short and thin in others
+        float clump=vn3(vBase*5.0+3.0)*0.7+vn3(vBase*11.0+8.0)*0.3;
+        // smoothing with distance: further away the dots grow until they merge into a soft pile with no gaps
+        float fade=smoothstep(4.0,11.0,camD);
+        // two crooked grids of different sizes, tilted at odd angles: a strand stands wherever either grid has one,
+        // so their rows never line up
+        bool keep=false; float hg=0.0;
+        for(int q=0;q<2;q++){
+          mat3 Rm=q==0?${ROT_A}:${ROT_B}; float sc=q==0?30.0:43.0;
+          vec3 g=Rm*vBase*sc; vec3 c=floor(g), f=fract(g)-0.5;
+          vec3 jit=vec3(h31(c+7.1+float(q)*17.0),h31(c+3.3+float(q)*17.0),h31(c+5.9+float(q)*17.0))-0.5;
+          float h=h31(c+float(q)*31.0), hq=(0.45+0.55*h)*(0.55+0.6*mid)*cov*mix(0.35,1.3,clump);
+          if(vLev>hq) continue;
+          float r=1.0-vLev/hq, rad=(0.5*r+0.06)*mix(0.85,1.2,clump)*mix(1.0,2.3,fade);
+          if(length(f-jit*0.7-Rm*walk)<rad){ keep=true; hg=max(hg,hq); }
+        }
+        if(!keep) discard;
+        hgt=hg;
       }
       float k=clamp(vLev/max(hgt,0.01),0.0,1.0);
       vec3 base=vec3(0.035,0.075,0.025), tip=mix(vec3(0.24,0.40,0.10),vec3(0.46,0.54,0.16),vn3(vBase*1.3+2.0));
