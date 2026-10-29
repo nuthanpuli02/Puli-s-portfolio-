@@ -13,8 +13,8 @@ A React + Vite app in `site/`, built into the repo root and served by GitHub Pag
 https://nuthanpuli02.github.io/Puli-s-portfolio-/ (the old `/v2/` address redirects there). One page that you scroll,
 section by section, plus a separate contact page:
 
-0. **Loading screen** (`components/Loader.jsx`, a demo only with `?loader`, `?loader=slow` for a long load): Grid Scan
-   (neon green, depth 1), a glass ball with green dust (Crystalized Ball + CSS glass), orange Count Up; when loaded the
+0. **Loading screen** (`components/Loader.jsx`, a demo only with `?loader`, `?loader=slow` for a long load): a plain
+   dark background (Grid Scan was tried and removed: too heavy), a glass ball with green dust (Crystalized Ball + CSS glass), orange Count Up; when loaded the
    ball pops and glows and shows the hero's galaxy; scroll/swipe or tap dives in, then the hero's title slides down and
    the ridge and clouds rise (`src/intro.js` coordinates the two).
 1. **Hero** (`site/src/sections/Hero.jsx`): React Bits Galaxy (dark space by day and by night; the header turns light

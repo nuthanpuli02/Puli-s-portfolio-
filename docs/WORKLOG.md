@@ -13,7 +13,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Open items
 
-- **Loading screen: demo live at `/?loader` (2026-10-28; Grid Scan, green ball, orange count, hero entrance after the dive), waiting for Puli's verdict; then wire it in for everyone.** Original brief: Puli's choice: a glass ball (React Bits Crystalized Ball, electric rim/strands/sparks replaced by a glass look: fresnel edge, soft highlight, tint; glowing dust inside follows the finger) in the centre, React Bits Count Up showing real loading progress bottom right, in the theme colours. Exit on the Scroll Expand idea: at 100% the hero shows through the ball; scrolling (and probably tapping) grows the round window to full screen while the hero zooms from 1.35x to 1x. Still to answer: scroll only or tap too; hero visible in the ball at 100% or only once the dive starts. Build as a test page first. Fewer particles on phones (15k is too many). Load what the first sections and Puli need; the forest keeps loading in the background.
+- **Loading screen: demo live at `/?loader` (2026-10-28; green ball, orange count, hero entrance after the dive; Grid Scan removed 2026-10-29 for smoothness), waiting for Puli's verdict; then wire it in for everyone.** Original brief: Puli's choice: a glass ball (React Bits Crystalized Ball, electric rim/strands/sparks replaced by a glass look: fresnel edge, soft highlight, tint; glowing dust inside follows the finger) in the centre, React Bits Count Up showing real loading progress bottom right, in the theme colours. Exit on the Scroll Expand idea: at 100% the hero shows through the ball; scrolling (and probably tapping) grows the round window to full screen while the hero zooms from 1.35x to 1x. Still to answer: scroll only or tap too; hero visible in the ball at 100% or only once the dive starts. Build as a test page first. Fewer particles on phones (15k is too many). Load what the first sections and Puli need; the forest keeps loading in the background.
 - **Forest and game** (`docs/PLAN-FOREST.md`): Phases 1-2 done and live; the fall into the dark follows Puli's choreography, the black pause on his phone (address bar) and the loading hitches fixed 2026-10-28; waiting for his next phone test. Next: Phase 3, the runner game in the new forest (port the rules from `src/puli3d.js`, then delete that file), then Phase 4 (phone pass, reduced motion).
 - **Section 5** (game teaser): done and approved.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
@@ -24,6 +24,9 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . The new site is at the root since 2026-10-28 (`/v2/` redirects). A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-29: Grid Scan removed from the loading screen
+- Puli: remove the Grid Scan, the loading screen must be smooth too. The cover is now a plain dark radial gradient (a faint green tint in the middle, black at the edges); `GridScan.jsx/.css` deleted. The ball, the orange count, the pop and the dive are unchanged.
 
 ### 2026-10-28: smaller ball, fewer particles, lighter galaxy
 - Puli: the ball should be ~50% smaller on phones and ~40% smaller on desktop, and the site lags a bit. Ball diameter now min(84% width, 50% height, 440 px) x 0.5 on phones / x 0.6 otherwise; dust 1,500 particles on phones (was 3,500), 4,000 on desktop (was 9,000); Galaxy 2 layers on phones, 3 on desktop (was 4), resolution 1x on phones (was 1.25x), 1.25x on desktop (was 1.5x).

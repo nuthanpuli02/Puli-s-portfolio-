@@ -322,14 +322,14 @@ html[data-over-hero] .site-header,html[data-over-hero] .sm-toggle{--text:#E2E8D6
   font:500 14px/1 var(--font-sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 18px -10px rgba(0,0,0,.35)}
 button.forest__pill{cursor:pointer}
 
-/* the loading screen (components/Loader.jsx). Layers: the cover (black with Grid Scan, with a round hole that opens inside
+/* the loading screen (components/Loader.jsx). Layers: the cover (plain dark, with a round hole that opens inside
    the ball when loading is done and grows in the dive), the ball (dust canvas + CSS glass), the hint, the count. */
 .loader{position:fixed;inset:0;z-index:1000;touch-action:none;--d:300px;--grow:1;--dive:0;--clear:0;
   --text:#E2E8D6;--text-soft:rgba(226,232,214,.72);--glow:#00FF41;--count:#FF8A1F;
   --hole:calc(var(--d) / 2 * .985 * var(--grow) * var(--clear));
   --glass-edge:rgba(226,232,214,.26);--glass-hi:rgba(236,242,226,.5);--glass-shade:rgba(0,0,0,.5);--ball-shadow:rgba(0,0,0,.55);
   -webkit-user-select:none;user-select:none;cursor:default}
-.loader__cover{position:absolute;inset:0;background:#000;
+.loader__cover{position:absolute;inset:0;background:radial-gradient(70% 55% at 50% 50%,#07110B 0,#020403 70%,#000 100%);
   -webkit-mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--hole) - .5px),#000 calc(var(--hole) + .5px));
   mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--hole) - .5px),#000 calc(var(--hole) + .5px))}
 .loader__ball{position:absolute;left:50%;top:50%;width:var(--d);height:var(--d);

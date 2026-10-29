@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import CrystalizedBall from './reactbits/CrystalizedBall.jsx';
 import CountUp from './reactbits/CountUp.jsx';
-import GridScan from './reactbits/GridScan.jsx';
 import { intro } from '../intro.js';
 import { holdScroll } from '../scrollHold.js';
 
-// The loading screen (demo: only with ?loader in the address). Dark by day and by night. Behind: React Bits Grid Scan
-// (neon green, depth 1: the same look as the forest's shockwave grid). In the middle a glass ball (React Bits
+// The loading screen (demo: only with ?loader in the address). Dark by day and by night, a plain dark background (the
+// Grid Scan background was removed for smoothness, 2026-10-29). In the middle a glass ball (React Bits
 // Crystalized Ball: green glowing dust that follows the finger, its electric rim turned off; the glass itself, its
 // edge, highlights and the light it gathers at the bottom, is drawn in CSS on top). Bottom right the real loading
 // progress, in orange, counting up (React Bits Count Up). The site is already there underneath, its hero waiting.
@@ -316,24 +315,7 @@ export default function Loader({ theme, onDone }) {
       role="dialog"
       aria-label={ready ? 'Nuthan Puli: tap or scroll to enter' : `Loading, ${pct} percent`}
     >
-      <div className="loader__cover" aria-hidden="true">
-        <GridScan
-          linesColor="#0E4A22"
-          scanColor="#00FF41"
-          depth={1}
-          cells={8}
-          lineThickness={1}
-          points
-          reflection={0.35}
-          glow={0.6}
-          scanDuration={2.4}
-          scanDelay={1.2}
-          interactive
-          clickEffect="ping"
-          lightMode={false}
-          dpr={Math.min(window.devicePixelRatio || 1, phone ? 1 : 1.5)}
-        />
-      </div>
+      <div className="loader__cover" aria-hidden="true" />
       <div className="loader__ball" aria-hidden="true">
         <div className="loader__shadow" />
         <div className="loader__pop">
