@@ -33,7 +33,8 @@ section by section, plus a separate contact page:
 6. **Forest** (`Forest.jsx` + `src/forest/world.js`, drawn by the same stage): he falls on through the dark (camera
    holds, tilts down as he falls away, then rushes after him into the landing view), lands face-down on a black floor,
    shockwave 1 draws the moss forest as a neon green grid, shockwave 2 (as he gets up) brings in the textures and the
-   fog. Then he stands there with a "Back up" button. The runner game comes back in Phase 3 of `docs/PLAN-FOREST.md`.
+   fog. Then "Tap to run": the endless runner (`src/forest/game.js`, the old game's rules; the forest goes on in reused
+   12-unit pieces).
 
 The contact page is a photographic jungle with real depth, a hummingbird by day and a glowing betta fish by night.
 
@@ -47,7 +48,7 @@ The contact page is a photographic jungle with real depth, a hummingbird by day 
 | `contact.html` | The built contact page | Never edit by hand; build it from the source |
 | `src/contact.src.html` | Contact page source, with `__IMPORTMAP__`, `__FISH_YAW__` and `__BIRD_YAW__` placeholders | Edit this, then `python3 tools/build_contact.py` (writes `contact.html`); `python3 tools/build_contact.py local` writes `contact.test.html` that loads three.js from `./node_modules` for offline tests |
 | `assets/` | Contact-page assets: forest photos and depth maps, glTF models and textures | Model buffers are named `.wasm` and glTF files `.json` only so that static hosts serve them; they are ordinary glTF data |
-| `src/puli3d.js` | The old site's forest runner game (voxel Puli, moss forest, fall, game). Not used by the site; kept only as the reference for Phase 3 (porting its game rules) | Read only; delete after Phase 3 |
+| `src/puli3d.js` | The old site's forest runner game (voxel Puli, moss forest, fall, game). Not used by the site; its rules are ported to `site/src/forest/game.js` | Delete once Puli approves the new game |
 | `tools/` | `build_contact.py`; `gen_cloudbank.py` (section 2's cloud bank image); `forest-moss/` (the forest prototype with tweak sliders Puli tuned), `forest-look/` (the first look test); `texture_bake/` (rebuilds Puli's 3D model from the raw files on his PC; see its README) | |
 | `docs/` | `WORKLOG.md` (shared memory), `PLAN-FOREST.md` (forest and game phases), `REDESIGN.md` (the redesign's original plan and decisions), `PALETTES.md` | |
 

@@ -363,17 +363,21 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const _a = new THREE.Vector3();
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   const loadForest = () => forestP || (forestP = import('../forest/world.js').then(async m => {
+    const gm = await import('../forest/game.js');
     await nextFrame();
     return new Promise(res => {
       let f = null;
       const done = () => setTimeout(() => res(f), 0);
       f = m.createForest({ onLoad: done });
       f.WAVES = m.WAVES;
+      f.makeGame = () => gm.createGame(f);
     });
   }).then(async f => {
     await nextFrame();
     if (dead) return null;
     f.setTheme(curTheme);
+    f.game = f.makeGame();   // the runner (its obstacles are built now, so they are compiled with the rest)
+    await nextFrame();
     // prepare the forest's shaders (and his, under the forest's lights, fog and tone mapping) now, in the background,
     // so the phone doesn't freeze when the forest first shows
     try {
@@ -451,6 +455,10 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const leaveForest = () => {
     FS = null;
     forest?.setFall({ on: false });
+    forest?.game?.stop();
+    forest?.endRun();
+    forest?.setRunFog(1);
+    for (const a of mixer._actions) a.timeScale = 1;
     showWorld(false);
     puli.traverse(o => {
       if (o.isMesh) o.castShadow = false;
@@ -464,6 +472,90 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     FS.phase = 'done';
     forest.setWaves({ seq: false });
     shared.onForestLanded?.();
+    runEmit();
+  };
+
+  // ---- the run (Phase 3, src/forest/game.js): once he is up, a tap (or Space) starts it ----
+  // He turns to run right; the camera moves from the landing view to the old game's side view (sized so he stays in
+  // view on a portrait phone, him a quarter of the way in from the left). His clips follow the run: run (faster as the
+  // run speeds up), the Running Jump scrubbed by his vertical speed in the air then its landing stride, slide, and the
+  // face-down fall when the run is over. He blinks while he can't be hurt.
+  const RJ = { off: 0.06, down: 0.6 };   // the Running Jump clip: push-off and touchdown times
+  const RUN = { blend: 0, vy0: 780, air: false, land: 0, clip: null, cam: null, turn: 0, rot0: 0, look: 6, emitT: 0 };
+  const gameInfo = () => {
+    const game = forest?.game, g = game?.g;
+    return { ready: !!FS && FS.phase === 'done', running: !!FS && FS.phase === 'run' && !!g && !g.over, over: !!(FS && FS.phase === 'run' && g && g.over),
+      score: game ? game.score() : 0, best: game ? game.best : 0, lives: g ? g.lives : 3 };
+  };
+  const runEmit = () => shared.onGame?.(gameInfo());
+  const startRun = () => {
+    if (!forest?.game) return;
+    forest.game.start(puli.position.x);
+    forest.setRunFog(0.5);
+    FS.phase = 'run';
+    Object.assign(RUN, { blend: 0, air: false, land: 0, clip: null, cam: null, turn: 0, rot0: puli.rotation.y, emitT: 0 });
+    runEmit();
+  };
+  const runStep = (dt, time) => {
+    const game = forest.game, g = game.g;
+    const ev = game.step(dt, RUN.look, time);
+    RUN.turn = Math.min(1, RUN.turn + dt / 0.35);
+    puli.rotation.y = RUN.rot0 + (Math.PI / 2 - RUN.rot0) * smooth(RUN.turn);
+    if (ev.includes('restart')) RUN.clip = null;
+    if (!g.over) {
+      if (!g.gnd) {
+        if (!RUN.air || ev.includes('jump2') || ev.includes('bounce')) RUN.vy0 = Math.max(g.vy, 300);
+        RUN.air = true;
+        RUN.land = 0;
+      } else if (RUN.air) {
+        RUN.air = false;
+        RUN.land = clips.runjump.duration - RJ.down;
+      } else RUN.land = Math.max(0, RUN.land - dt);
+    }
+    const name = g.over ? 'fall' : !g.gnd || RUN.land > 0 ? 'runjump' : g.slideT > 0 ? 'slide' : 'run';
+    if (name !== RUN.clip || (name === 'runjump' && (ev.includes('jump2') || ev.includes('bounce')) && RUN.air)) {
+      const once = name === 'fall' || name === 'slide';
+      playClip(name, name === 'fall' ? 0.12 : 0.12, once).timeScale = 1;
+      RUN.clip = name;
+    }
+    if (name === 'runjump') {
+      cur.paused = true;
+      cur.time = RUN.air ? RJ.off + (RJ.down - RJ.off) * clamp(0.5 * (1 - g.vy / RUN.vy0), 0, 1) : clips.runjump.duration - RUN.land;
+    } else if (name === 'run') cur.timeScale = clamp(g.speed / 330, 1.1, 2.4);
+    const p = game.pos();
+    puli.position.set(p.x, g.over ? 0 : p.y, forest.LAND.z);
+    puli.visible = !(g.inv > 0 && !g.over && Math.floor(time * 14) % 2 === 0);
+    forest.follow(p.x);
+    RUN.emitT -= dt;
+    if (RUN.emitT <= 0 || ev.length) {
+      RUN.emitT = 0.2;
+      runEmit();
+    }
+  };
+  const _gp = new THREE.Vector3();
+  const _gt = new THREE.Vector3();
+  const runCamera = (rect, dt) => {
+    const L = landView(rect);
+    const port = L.asp < 0.8, fov = port ? 40 : 32, t = Math.tan(fov / 2 * Math.PI / 180);
+    const dist = port ? 3.0 / (t * L.asp) : 8.75, hw = dist * t * L.asp;
+    RUN.look = hw * 1.5;
+    const p = forest.game.pos() || { x: puli.position.x, y: 0 };
+    const cy = 1.75 + (dist - 8.75) * 0.14 + Math.max(0, p.y - 1.375) * 0.7;
+    const want = { x: p.x + hw * 0.5, y: cy, z: forest.LAND.z + dist, pitch: -Math.max(0.07, Math.atan2(cy - 1.125, dist)), fov };
+    if (!RUN.cam) RUN.cam = { ...want };
+    const k = 1 - Math.exp(-dt * 5);
+    for (const q of ['x', 'y', 'z', 'pitch', 'fov']) RUN.cam[q] += (want[q] - RUN.cam[q]) * k;
+    RUN.cam.x = Math.min(RUN.cam.x, p.x + hw * 0.6);
+    RUN.blend = Math.min(1, RUN.blend + dt / 1.1);
+    const b = smooth(RUN.blend);
+    _gp.set(RUN.cam.x, RUN.cam.y, RUN.cam.z);
+    _gt.set(RUN.cam.x, RUN.cam.y + Math.tan(RUN.cam.pitch) * dist, forest.LAND.z);
+    fcam.position.copy(L.land.pos).lerp(_gp, b);
+    fcam.lookAt(_a.copy(L.land.target).lerp(_gt, b));
+    fcam.fov = L.land.fov + (RUN.cam.fov - L.land.fov) * b;
+    fcam.updateProjectionMatrix();
+    fcam.updateMatrixWorld(true);
+    forest.runTo(fcam.position.x);
   };
   const forestStep = dt => {
     const T = FS;
@@ -474,6 +566,10 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
         puli.position.copy(forest.LAND);
         landed();
       }
+      return;
+    }
+    if (T.phase === 'run') {
+      if (forestVis) runStep(dt, T.t);
       return;
     }
     if (T.phase !== 'land') return;   // the fall itself is moved by fallStep (it needs the view's size)
@@ -621,7 +717,8 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
   const renderForestView = dt => {
     const c = canvas.getBoundingClientRect();
     const rect = forestRect();
-    if (FS.phase === 'land' || FS.phase === 'done' || FS.phase === 'wait-skip') landView(rect);
+    if (FS.phase === 'run') runCamera(rect, dt);
+    else if (FS.phase === 'land' || FS.phase === 'done' || FS.phase === 'wait-skip') landView(rect);
     else fallStep(dt, rect);
     R.setScissorTest(false);
     R.setViewport(0, 0, c.width, c.height);
@@ -668,14 +765,14 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     if (DEBUG) debugLine(now, gap);
     if (FS) {
       // in the forest; once only section 5 is on screen again (and he has landed), he starts over there
-      if (visible && !forestVis && FS.phase === 'done') leaveForest();
+      if (visible && !forestVis && (FS.phase === 'done' || FS.phase === 'run')) leaveForest();
       else {
         measure();
         forestStep(dt);
         mixer.update(dt);
         if (forest) forest.update(now / 1000);
         renderForestView(dt);
-        if (forestVis || FS.phase !== 'done') raf = requestAnimationFrame(frame);
+        if (forestVis || (FS.phase !== 'done' && FS.phase !== 'run')) raf = requestAnimationFrame(frame);
         else last = 0;
         return;
       }
@@ -792,6 +889,23 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     },
     // the forest: load it early (when Play comes to rest), or show it with him already standing there (reduced motion)
     preloadForest: () => loadForest(),
+    // the run's controls (the forest section passes taps, swipes and keys on): press = tap / Space down, release = let
+    // go (a held jump goes higher), slide = swipe down / arrow down
+    gamePress: () => {
+      if (!FS) return;
+      if (FS.phase === 'done') startRun();
+      else if (FS.phase === 'run' && forest?.game) {
+        forest.game.input.jump = true;
+        forest.game.input.held = true;
+      }
+    },
+    gameRelease: () => {
+      if (forest?.game) forest.game.input.held = false;
+    },
+    gameSlide: () => {
+      if (FS?.phase === 'run' && forest?.game) forest.game.input.slide = true;
+    },
+    gameInfo: () => gameInfo(),
     showForest: () => {
       startForest(true);
       kick();

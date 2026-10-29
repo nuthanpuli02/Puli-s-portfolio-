@@ -317,6 +317,17 @@ html[data-over-hero] .site-header,html[data-over-hero] .sm-toggle{--text:#E2E8D6
 .forest{position:relative;height:100vh;height:100lvh;overflow:hidden;background:#000}
 .forest[data-open='false']{height:0}
 .forest__back{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 28px);min-height:44px;z-index:2}
+/* the run: no page scrolling from touches on it (the Back up button takes you away); score and lives at the top, the
+   caption above the bottom, Back up in the bottom-left corner, clear of the section badge */
+.forest.is-playing{touch-action:none;-webkit-user-select:none;user-select:none}
+.forest.is-playing .forest__back{left:var(--gutter);transform:none}
+.forest__hud{position:absolute;z-index:2;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + var(--header-h) + 8px);
+  height:38px;gap:14px;font-variant-numeric:tabular-nums;font-weight:600;pointer-events:none;white-space:nowrap}
+.forest__lives{color:#E8361F;letter-spacing:.08em}
+.forest__lost{opacity:.25}
+.forest__best{font-weight:500;opacity:.75}
+.forest__caption{position:absolute;z-index:2;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 92px);margin:0;
+  min-height:38px;max-width:calc(100vw - 32px);text-align:center;white-space:normal;line-height:1.3;padding:6px 16px;pointer-events:none}
 .forest__pill{display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:999px;
   border:1px solid var(--card-line);background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--text);
   font:500 14px/1 var(--font-sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 18px -10px rgba(0,0,0,.35)}

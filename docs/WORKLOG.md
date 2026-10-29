@@ -14,7 +14,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 ## Open items
 
 - **Loading screen:** live for everyone since 2026-10-29 (`?noloader` skips it).
-- **Forest and game** (`docs/PLAN-FOREST.md`): Phases 1-2 done and live; the fall into the dark follows Puli's choreography, the black pause on his phone (address bar) and the loading hitches fixed 2026-10-28; waiting for his next phone test. Next: Phase 3, the runner game in the new forest (port the rules from `src/puli3d.js`, then delete that file), then Phase 4 (phone pass, reduced motion).
+- **Forest and game** (`docs/PLAN-FOREST.md`): Phases 1-3 done and live (the game 2026-10-29); waiting for Puli's verdict on the game on his phone (difficulty, camera size, smoothness). Then delete `src/puli3d.js`, and Phase 4 (phone pass, lighter setting for slow phones, reduced motion).
 - **Section 5** (game teaser): done and approved.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief; waiting for his verdict. Copy to be rewritten in the final review.
@@ -24,6 +24,15 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . The new site is at the root since 2026-10-28 (`/v2/` redirects). A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-29: Phase 3, the runner game in the new forest (live)
+- Agreed with Puli: the old game's rules and obstacles, minus the birds/moths, the laser and its vine walls (vine curtains to slide under instead) and the jetpack pickup. Nothing added.
+- `site/src/forest/game.js` (new): `newGame`/`spawn`/`stepGame`/`hurt`/`groundAt` ported from `src/puli3d.js` in the old units (Puli 80 tall, `K = 1/80` to the forest's units): speed 400 -> 1000, jump 780 / double jump 700, held jump floats (gravity 1500 instead of 2600 while rising), slide 0.65 s (fast-fall in the air), 3 lives with 1.4 s of blinking, falling into a gap costs a life and puts him past it, score = distance/10 + pollen (10, golden seed 100), best in `puli-best`. Obstacles unlock over time as before: log, rock, stump, low branch, hanging vine (drops and pulls back up), bounce mushroom (+ two stumps), vine curtain, rolling boulder (day only), owl (swoops to head or knee height), gap, thorn bush, firefly swarm (high: slide; low and high: jump between), collapsing log bridge, shadow creature (night only). All built in code from the forest's materials, mossy where it fits; at night an inverted-hull glowing outline, glowing mushroom caps, amber owl eyes. Pits: the ground and the grass are cut out (`uPits` in world.js) over a dark floor and walls.
+- `world.js`: the running lane (z 0.3) is kept clear (the diagonal branch's foot, the log, a bush and two ferns moved back; the front-right mound lower and further forward); the ground repeats every 12 units and is flat along the lane; the forest goes on in 12-unit pieces (3 variants built at load: trunks, a far trunk, sometimes an arch, a mound, rocks in front, background vines, far silhouettes, ground, grass, ferns, flowers), placed ahead and reused (`runTo`); the sun (shadows), the sky and the pollen follow him (`follow`); thinner fog during the run (`setRunFog(0.5)`, the camera is further away).
+- `stage.js`: after he is up, "Tap to run" (Space); he turns right and the camera blends over 1.1 s from the landing view to the old game's side view (portrait: 3 units each side of the view's centre, him a quarter in from the left; wide screens: 8.75 away); clips: run (faster with speed), Running Jump scrubbed by vertical speed then its landing stride, slide, the face-down fall at game over. The run pauses while the forest is off screen; scrolling back up to section 5 ends it.
+- `Forest.jsx`: taps / Space / arrow up jump (held = higher), swipe down / arrow down slides; HUD at the top (score, lives, best), caption ("Tap to run. Swipe down to slide" / "Score N. Best M. Tap to run again"), Back up in the corner. Touches on the run don't scroll the page.
+- Checked headless 393x852: the run with a simple autopilot for 10 s (no errors, scenery keeps coming), day and night, hits and game over.
+- `src/puli3d.js` can be deleted once Puli is happy with the game.
 
 ### 2026-10-29: the loading screen is on for everyone
 - Puli approved the loading screen ("It's good now"). `WITH_LOADER` (`src/intro.js`) is now true unless the address has `?noloader` or `?puli-debug` (so headless tests skip it). `?loader=slow` still stretches the load.

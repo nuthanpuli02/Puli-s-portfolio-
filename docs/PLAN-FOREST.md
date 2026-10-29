@@ -1,4 +1,4 @@
-# Plan: the new forest, the green-grid landing, the game (agreed 2026-10-27; Phases 1 and 2 done 2026-10-28)
+# Plan: the new forest, the green-grid landing, the game (agreed 2026-10-27; Phases 1-2 done 2026-10-28, Phase 3 2026-10-29)
 
 Read `CLAUDE.md` and `docs/WORKLOG.md` first. Nothing below is built yet; Puli asked to pause here and continue later.
 Talk to Puli in plain, step-by-step terms; he tests on his Redmi Note 14 Pro 5G (Brave, portrait). Merge every change into
@@ -55,7 +55,7 @@ two, real depth between Puli and leaves/vines, PBR materials, the grid as one ma
 - black screen → grid builds as he falls → landing shockwave → textures take over while he gets up → "Tap to run";
 - goes live in place of the current fall.
 
-**Phase 3: the game in the new forest**: port the runner's rules unchanged from `src/puli3d.js` (`stepGame`, `spawn`,
+**Phase 3 (done 2026-10-29, see the WORKLOG): the game in the new forest**: port the runner's rules unchanged from `src/puli3d.js` (`stepGame`, `spawn`,
 `newGame`, `hurt`, `groundAt`: speeds, jump/double jump, slide, gaps, logs, rocks, stumps, low branches, owls, pickups,
 3 lives, score, `puli-best`), the HUD/caption/Back up; obstacles rebuilt with the new objects; night mode (glowing moss,
 ferns, mushrooms, amber-eyed owls). Then remove the old forest from v2 (`src/puli3d.js` stays only for the old page).
