@@ -4,7 +4,7 @@ import CountUp from './reactbits/CountUp.jsx';
 import { intro } from '../intro.js';
 import { holdScroll } from '../scrollHold.js';
 
-// The loading screen (demo: only with ?loader in the address). Dark by day and by night, a plain dark background (the
+// The loading screen (everyone sees it; ?noloader skips it, ?loader=slow pretends a slow load). Dark by day and by night, a plain dark background (the
 // Grid Scan background was removed for smoothness, 2026-10-29). In the middle a glass ball (React Bits
 // Crystalized Ball: green glowing dust that follows the finger, its electric rim turned off; the glass itself, its
 // edge, highlights and the light it gathers at the bottom, is drawn in CSS on top). Bottom right the real loading
