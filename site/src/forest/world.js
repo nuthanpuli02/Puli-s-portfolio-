@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-const TEX = Object.fromEntries(Object.entries(import.meta.glob('../assets/forest/{bark,bark2,ground,mossrock,rock}_*.webp', { eager: true, query: '?url', import: 'default' }))
+const TEX = Object.fromEntries(Object.entries(import.meta.glob('../assets/forest/{bark,bark2,ground,mossrock,rock,mud}_*.webp', { eager: true, query: '?url', import: 'default' }))
   .map(([k, v]) => [k.split('/').pop().replace('.webp', ''), v]));
 
 // Puli's numbers from the prototype's tweak sheet (2026-10-28)
@@ -113,6 +113,20 @@ export function createForest({ onLoad } = {}) {
     rock:wave(mat('rock',[1.5,1.5])),
     vine:wave(mat('bark2',[1,0.6],{color:new THREE.Color('#8aa064')})),
   };
+  // the path along the running lane: worn mud and leaves, its edges fading into the ground (an alpha map across it)
+  const trailAlpha=(()=>{const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d'),img=x.createImageData(256,64),r0=mulberry32(5);
+    const wob=[];for(let i=0;i<256;i++)wob.push(0.5+0.5*Math.sin(i/256*Math.PI*2*4+1.3)*0.6+0.4*Math.sin(i/256*Math.PI*2*12+r0()*0.2)*0.4);
+    for(let j=0;j<64;j++)for(let i=0;i<256;i++){const v=j/63,e=Math.min(v,1-v)*2,edge=0.28+0.12*wob[i];
+      let a=Math.min(1,Math.max(0,(e-edge*0.35)/(edge)));a*=0.85+0.15*r0();const k=(j*256+i)*4;img.data[k]=img.data[k+1]=img.data[k+2]=Math.round(a*255);img.data[k+3]=255}
+    x.putImageData(img,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=THREE.RepeatWrapping;return t})();
+  M.trail=wave(mat('mud',[1,1],{alphaMap:trailAlpha,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),{pits:true});
+  // a strip from x0 to x1 along the lane, 1.5 wide, its texture repeating every 3 units (4 times per piece of the run)
+  function trailGeo(x0,x1,ox=0){const P=[],U=[],I=[],nx=Math.round((x1-x0)/0.5),nv=6;
+    for(let j=0;j<=nv;j++)for(let i=0;i<=nx;i++){const x=x0+(x1-x0)*i/nx,v=j/nv,z=0.3+(v-0.5)*1.5;P.push(x-ox,groundY(x,z)+0.012,z);U.push(x/3,v)}
+    for(let j=0;j<nv;j++)for(let i=0;i<nx;i++){const a=j*(nx+1)+i,b=a+nx+1;I.push(a,b,a+1,b,b+1,a+1)}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
+    g.setIndex(I);g.computeVertexNormals();return g}
+  const onTrail=(x,z)=>x>0.6&&Math.abs(z-0.3)<0.55;   // the worn middle of the path: hardly any grass
 
   // ---------- the ground ----------
   const LAND=new THREE.Vector3(0,0,0.3);
@@ -129,6 +143,7 @@ export function createForest({ onLoad } = {}) {
     g.setIndex(I);g.computeVertexNormals();return g}
   const world=new THREE.Group();
   {const m=new THREE.Mesh(groundGeo(-60,9,-60,60),M.ground);m.receiveShadow=true;world.add(m)}
+  {const m=new THREE.Mesh(trailGeo(0.6,9),M.trail);m.receiveShadow=true;m.renderOrder=1;world.add(m)}   // the path starts where he lands
 
   // ---------- shapes ----------
   // a tapered tube along points; ends on the ground flare into roots with buttress ridges. aMoss = how mossy (0..1.3).
@@ -363,7 +378,7 @@ export function createForest({ onLoad } = {}) {
   {const solid=(x,z)=>Math.hypot(x+2.4,z+1.3)<1.2||Math.hypot(x-2.55,z+1.9)<1.1||Math.hypot(x-4.6,z+1.9)<1.2;  // not inside trunks
     // more blades near the landing spot: radius drawn from a falloff, a wider band towards the back
     const g=grassGeo(GRASS_MAX,()=>{const r=Math.pow(rnd(),1.6)*14,a=rnd()*Math.PI*2,x=LAND.x+Math.cos(a)*r*1.3,z=LAND.z+Math.sin(a)*r*0.9-1.2;
-      return z>4.5||x>9||solid(x,z)?null:{x,z}});
+      return z>4.5||x>9||solid(x,z)||(onTrail(x,z)&&rnd()<0.85)?null:{x,z}});
     grass=new THREE.Mesh(g,grassMat);grass.frustumCulled=false;world.add(grass)}
 
   // ---------- flowers, pollen (day), fireflies (night) ----------
@@ -462,6 +477,9 @@ export function createForest({ onLoad } = {}) {
     // a low mound behind the lane, a rock or two in front (low, so the run stays in view)
     put(blob(r()*CHUNK,-0.45,-2.1-r()*1.2,1.4+r()*1.0,0.7+r()*0.4,0.9,{seed:seed+3}),M.mound);
     for(let i=0;i<2;i++){const x=r()*CHUNK,z=1.7+r()*1.6;const g=rockGeo(CHUNK_X0+x,z,0.18+r()*0.18,0.7,seed+20+i);g.translate(-CHUNK_X0,0,0);put(g,i?M.rock:M.mossrock,{moss:!i})}
+    // stones along the path's edges
+    {const st=[];for(let i=0;i<6;i++){const x=r()*CHUNK,z=0.3+(r()<0.5?-1:1)*(0.68+r()*0.25),g=rockGeo(CHUNK_X0+x,z,0.05+r()*0.07,0.6,seed+80+i);g.translate(-CHUNK_X0,0,0);st.push(g)}
+      put(mergeGeometries(st),M.rock,{moss:false})}
     // hanging vines in the background
     for(let k=0;k<2;k++){const x=r()*CHUNK,z=-1.9-r()*2.4,y1=1.4+r()*2.4,pts=[];
       for(let i=0;i<=6;i++){const t=i/6;pts.push([x+Math.sin(t*3+k)*0.25,20-(20-y1)*t,z+Math.cos(t*2+k)*0.2])}
@@ -472,13 +490,15 @@ export function createForest({ onLoad } = {}) {
     const moss=mossOf(mos);
     return {meshes,moss,
       ground:groundGeo(CHUNK_X0,CHUNK_X0+CHUNK,-39.75,20.25,CHUNK_X0),
-      grass:grassGeo(PHONE?1400:2800,()=>({x:CHUNK_X0+r()*CHUNK,z:-5+Math.pow(r(),0.85)*9}),CHUNK_X0),
+      grass:grassGeo(PHONE?1400:2800,()=>{const x=CHUNK_X0+r()*CHUNK,z=-5+Math.pow(r(),0.85)*9;return onTrail(x,z)&&r()<0.85?null:{x,z}},CHUNK_X0),
+      trail:trailGeo(CHUNK_X0,CHUNK_X0+CHUNK,CHUNK_X0),
       fern:fernGeo([[r()*CHUNK,-1.4-r()*0.6],[r()*CHUNK,-1.6-r()*1.2],[r()*CHUNK,2.2+r()*1.2]],(x,z)=>groundY(CHUNK_X0+x,z)),
       flowers:flowerGeo(moss,0.12)}}
   function chunkInstance(v){const g=new THREE.Group();
     for(const {geo,mat,cast} of v.meshes){const m=new THREE.Mesh(geo,mat);m.castShadow=cast;m.receiveShadow=true;if(cast)casters.push(m);g.add(m)}
     g.add(mossMesh(v.moss));
     const gm=new THREE.Mesh(v.ground,M.ground);gm.receiveShadow=true;g.add(gm);
+    const tm=new THREE.Mesh(v.trail,M.trail);tm.receiveShadow=true;tm.renderOrder=1;g.add(tm);
     const gr=new THREE.Mesh(v.grass,grassMat);gr.frustumCulled=false;g.add(gr);
     const fm=new THREE.Mesh(v.fern,fernMat);fm.castShadow=true;fm.receiveShadow=true;g.add(fm);
     flowerPoints(v.flowers,g);return g}

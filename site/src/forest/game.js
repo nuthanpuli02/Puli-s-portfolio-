@@ -14,7 +14,7 @@ const BOX = { thorns: [150, 0, 44], shade: [44, 0, 84], log: [72, 0, 52], rock: 
   owl: [26, -14, 14], vine: [13, 0, 3000], curtain: [26, 50, 3000], boulder: [44, 0, 96] };
 
 export function createGame(forest) {
-  const { M, mossOf, mossMesh, tube, blob, wave, DOT, leafMat, mulberry32 } = forest.kit;
+  const { M, mossOf, mossMesh, tube, blob, wave, DOT, leafMat, fernMat, groundY, mulberry32 } = forest.kit;
   const LANE = forest.LAND.z;
   const R2 = Math.random;
   const group = new THREE.Group();
@@ -320,6 +320,83 @@ export function createGame(forest) {
     swarmGeo.attributes.position.needsUpdate = true;
   }
 
+  // ---------- the frame: ferns and leaves close to the camera along the bottom, a canopy along the top ----------
+  // Placed in the world on fixed slots along x (so they slide past faster than the lane, like real things near the
+  // camera), at depths worked out from the camera each frame: the ferns stand just past where the ground leaves the
+  // bottom of the screen and never reach up to his feet; the canopy hangs into the top edge. Flat cards, no moss.
+  const hsh = (s, k) => { const v = Math.sin(s * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const cardUp = new THREE.PlaneGeometry(1, 1); cardUp.translate(0, 0.5, 0);      // grows up from its foot
+  const cardDown = new THREE.PlaneGeometry(1, 1); cardDown.translate(0, -0.5, 0); // hangs from its top
+  const VINE = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 512; const x = c.getContext('2d');
+    const at = y => 32 + Math.sin(y * 0.03) * 7;
+    x.strokeStyle = '#4a6a2c'; x.lineWidth = 4; x.beginPath(); x.moveTo(at(0), 0); for (let y = 8; y <= 512; y += 8) x.lineTo(at(y), y); x.stroke();
+    for (let y = 18, i = 0; y < 500; y += 24, i++) { const s = i % 2 ? 1 : -1; x.fillStyle = i % 3 ? '#5d8a34' : '#4b7a2a';
+      x.beginPath(); x.ellipse(at(y) + s * 11, y + 4, 11, 5, s * 0.7, 0, Math.PI * 2); x.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+  // a little light of their own, so the cards facing away from the sun don't go black
+  const cardMat = (map, color, test, glow) => wave(new THREE.MeshStandardMaterial({ map, color, alphaTest: test, side: THREE.DoubleSide, roughness: 0.9, emissive: glow, emissiveMap: map, emissiveIntensity: 0.6 }), { sway: 0.03, lineK: 0.3 });
+  const FR = new THREE.Group();
+  group.add(FR);
+  const frameMesh = (geo, mat, max) => { const m = new THREE.InstancedMesh(geo, mat, max); m.count = 0; m.frustumCulled = false; m.setColorAt(0, new THREE.Color(1, 1, 1)); FR.add(m); return m; };
+  const fgFronds = frameMesh(cardUp, cardMat(fernMat.map, '#9cbc78', 0.45, '#3a5a26'), 200);
+  const fgLeaves = frameMesh(cardUp, cardMat(leafMat.map, '#8fae6c', 0.5, '#34521f'), 60);
+  const cnLeaves = frameMesh(cardUp, cardMat(leafMat.map, '#5c7848', 0.5, '#22341a'), 260);
+  const cnVines = frameMesh(cardDown, cardMat(VINE, '#86a46a', 0.5, '#2c4420'), 30);
+  const _fe = new THREE.Euler(), _fc = new THREE.Color();
+  const putCard = (mesh, i, x, y, z, rx, ry, rz, sx, sy, shade) => {
+    _m.compose(_v.set(x, y, z), _q.setFromEuler(_fe.set(rx, ry, rz)), _s.set(sx, sy, 1));
+    mesh.setMatrixAt(i, _m); mesh.setColorAt(i, _fc.setScalar(shade));
+  };
+  // c: the run camera { x, y, z, pitch, fov, asp }; grow (0..1) raises them as the camera settles; null hides them
+  function frame(c, grow = 1) {
+    let nf = 0, nl = 0, nc = 0, nv = 0;
+    if (c && grow > 0.01) {
+      const h = c.fov / 2 * Math.PI / 180, th = Math.tan(h), dist = c.z - LANE;
+      const bot = c.pitch - h, top = c.pitch + h, foot = Math.atan2(-c.y, dist);
+      // the foreground band: from where the ground meets the bottom edge to half again as far
+      const dg = c.y / Math.max(0.05, -Math.tan(bot)), d0 = dg * 1.04, d1 = Math.max(d0 + 0.5, Math.min(dg * 1.5, dist - 1.4));
+      const S = 0.36, half = d1 * th * c.asp + 0.8;
+      for (let s = Math.floor((c.x - half) / S); s <= Math.ceil((c.x + half) / S); s++) {
+        if (hsh(s, 1) < 0.2) continue;
+        const d = d0 + (d1 - d0) * hsh(s, 2), x = (s + hsh(s, 3)) * S, z = c.z - d, y0 = groundY(x, z) - 0.05;
+        const room = c.y + d * Math.tan(foot - 0.06) - y0;   // up to just below his feet on screen
+        const tall = Math.max(0.3, room) * (0.6 + 0.4 * hsh(s, 4)) * grow, shade = 0.7 + 0.3 * hsh(s, 7);
+        if (hsh(s, 5) < 0.72) {   // a fern: fronds fanning out from one root
+          const n = 4 + Math.floor(hsh(s, 6) * 3);
+          for (let i = 0; i < n && nf < 200; i++) {
+            const a = (i / (n - 1) - 0.5) * 1.5 + (hsh(s, 10 + i) - 0.5) * 0.3, len = tall * (0.75 + 0.25 * hsh(s, 20 + i)) / Math.max(0.5, Math.cos(a));
+            putCard(fgFronds, nf++, x, y0, z, 0.25 + 0.3 * hsh(s, 30 + i), (hsh(s, 40 + i) - 0.5) * 0.9, a, len * 0.3, len, shade);
+          }
+        } else {                  // a couple of broad leaves
+          for (let i = 0; i < 2 && nl < 60; i++) {
+            const a = (i - 0.5) * 0.9 + (hsh(s, 50 + i) - 0.5) * 0.4, len = tall * (0.7 + 0.3 * hsh(s, 52 + i));
+            putCard(fgLeaves, nl++, x + (i - 0.5) * 0.1, y0, z, 0.3, (hsh(s, 54 + i) - 0.5) * 1.2, a, len * 0.5, len, shade);
+          }
+        }
+      }
+      // the canopy: clusters of dark leaves hanging into the top edge, a vine now and then
+      const C = 0.5, dc0 = dist * 0.35, dc1 = dist * 0.75, halfC = dc1 * th * c.asp + 1.2;
+      for (let s = Math.floor((c.x - halfC) / C); s <= Math.ceil((c.x + halfC) / C); s++) {
+        const d = dc0 + (dc1 - dc0) * hsh(s, 60), z = c.z - d, x = (s + hsh(s, 61)) * C;
+        const yTop = c.y + d * Math.tan(top), viewH = 2 * d * th;
+        const hang = viewH * (0.05 + 0.09 * hsh(s, 62) * hsh(s, 63) * 2) * grow, shade = 0.5 + 0.5 * hsh(s, 64);
+        for (let i = 0; i < 7 && nc < 260; i++) {
+          const len = viewH * 0.055 * (0.7 + 0.6 * hsh(s, 70 + i));
+          const bottom = yTop - hang * (0.15 + 0.85 * hsh(s, 80 + i));
+          putCard(cnLeaves, nc++, x + (hsh(s, 90 + i) - 0.5) * C * 1.6, bottom + len, z + (hsh(s, 100 + i) - 0.5) * 0.8,
+            (hsh(s, 110 + i) - 0.5) * 0.8, hsh(s, 120 + i) * Math.PI, Math.PI + (hsh(s, 130 + i) - 0.5) * 1.6, len * 0.5, len * grow, shade);
+        }
+        if (hsh(s, 140) < 0.16 && nv < 30) {
+          const len = viewH * (0.12 + 0.22 * hsh(s, 141)) * grow;
+          putCard(cnVines, nv++, x, yTop + viewH * 0.03, z + 0.1, 0, (hsh(s, 142) - 0.5) * 0.6, (hsh(s, 143) - 0.5) * 0.08, len * 0.12, len, 0.7 + 0.3 * hsh(s, 144));
+        }
+      }
+    }
+    for (const [m, n] of [[fgFronds, nf], [fgLeaves, nl], [cnLeaves, nc], [cnVines, nv]]) {
+      m.count = n; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    }
+  }
+
   return {
     group,
     get g() { return g; },
@@ -337,6 +414,8 @@ export function createGame(forest) {
       sync(time);
       return events;
     },
+    // the ferns and canopy around the camera's view (null hides them)
+    frame,
     // where Puli is (forest units)
     pos: () => (g ? { x: g.x * K, y: g.y * K } : null),
   };

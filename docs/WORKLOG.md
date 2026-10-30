@@ -14,7 +14,7 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 ## Open items
 
 - **Loading screen:** live for everyone since 2026-10-29 (`?noloader` skips it).
-- **Forest and game** (`docs/PLAN-FOREST.md`): Phases 1-3 done and live (the game 2026-10-29); waiting for Puli's verdict on the game on his phone (difficulty, camera size, smoothness). Then delete `src/puli3d.js`, and Phase 4 (phone pass, lighter setting for slow phones, reduced motion).
+- **Forest and game** (`docs/PLAN-FOREST.md`): Phases 1-3 done and live (the game 2026-10-29); waiting for Puli's verdict on the game on his phone (difficulty, camera size, smoothness, and the new foreground/canopy/path from 2026-10-30). Then delete `src/puli3d.js`, and Phase 4 (phone pass, lighter setting for slow phones, reduced motion).
 - **Section 5** (game teaser): done and approved.
 - **Section 3 (2026-10-23):** first version live (red tree day and night, DepthCarousel of projects, BlurText title); waiting for Puli's feedback. Project copy to be rewritten in the final review.
 - **Section 2 (inside the clouds), 2026-10-23:** reworked to Puli's brief; waiting for his verdict. Copy to be rewritten in the final review.
@@ -24,6 +24,20 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 - Hosting: GitHub Pages (main, root): https://nuthanpuli02.github.io/Puli-s-portfolio-/ . The new site is at the root since 2026-10-28 (`/v2/` redirects). A custom domain is still to decide.
 
 ## Log
+
+### 2026-10-30: the run framed in: ferns along the bottom, a canopy along the top, a dirt path
+Puli felt the game looked "too open" and picked three fixes:
+- **Foreground** (`game.js`, `frame()`): fern clumps and broad leaves rooted on the ground just past where the ground
+  leaves the bottom of the screen. They sit on fixed slots in the world, so they slide past faster than the lane. Their
+  height is capped so they never reach up to Puli's feet on screen.
+- **Canopy** (same function): clusters of dark leaves hanging into the top edge (5 to 14% of the screen), with a thin
+  vine now and then.
+- Both are flat instanced cards with no moss, placed from the run camera each frame (`stage.js` `runCamera` passes
+  `RUN.cam`). They grow in as the camera settles into the run view, and `leaveForest` hides them.
+- **Path** (`world.js`): a mud strip 1.5 wide along the lane from the landing spot on, edges fading out (canvas alpha
+  map), vanishing over pits. Most of the grass is left off its middle, with small stones along its edges in each piece
+  of the run. The mud textures (already in `assets/forest`) are now loaded.
+- Waiting for Puli's look on the phone: sizes, darkness at night, and whether the canopy gets in the way of high jumps.
 
 ### 2026-10-30: the slide animation plays
 - Puli: the game feels smooth, but the slide animation didn't play. Cause: a swipe down starts with the finger going down, which is a tap, so he first made a small jump; the slide pulled him back down, but on touchdown the jump's landing stride (Running Jump) took priority over the slide for its ~0.3 s, i.e. most of the 0.65 s slide. Now on the ground the slide wins over the landing stride, and a new slide restarts the clip.

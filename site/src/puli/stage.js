@@ -456,6 +456,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     FS = null;
     forest?.setFall({ on: false });
     forest?.game?.stop();
+    forest?.game?.frame(null);
     forest?.endRun();
     forest?.setRunFog(1);
     for (const a of mixer._actions) a.timeScale = 1;
@@ -559,6 +560,7 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
     fcam.updateProjectionMatrix();
     fcam.updateMatrixWorld(true);
     forest.runTo(fcam.position.x);
+    forest.game.frame({ ...RUN.cam, asp: L.asp }, b);   // ferns along the bottom, canopy along the top
   };
   const forestStep = dt => {
     const T = FS;
