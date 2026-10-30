@@ -25,6 +25,10 @@ Read this before working. After a change, add a dated entry at the top of **Log*
 
 ## Log
 
+### 2026-10-30: the slide animation plays
+- Puli: the game feels smooth, but the slide animation didn't play. Cause: a swipe down starts with the finger going down, which is a tap, so he first made a small jump; the slide pulled him back down, but on touchdown the jump's landing stride (Running Jump) took priority over the slide for its ~0.3 s, i.e. most of the 0.65 s slide. Now on the ground the slide wins over the landing stride, and a new slide restarts the clip.
+- Puli also said the game "needs something... it looks too open". Ideas sent to him (foreground layer, canopy overhead, a path, closer camera, ambient life); waiting for his pick.
+
 ### 2026-10-29: Phase 3, the runner game in the new forest (live)
 - Agreed with Puli: the old game's rules and obstacles, minus the birds/moths, the laser and its vine walls (vine curtains to slide under instead) and the jetpack pickup. Nothing added.
 - `site/src/forest/game.js` (new): `newGame`/`spawn`/`stepGame`/`hurt`/`groundAt` ported from `src/puli3d.js` in the old units (Puli 80 tall, `K = 1/80` to the forest's units): speed 400 -> 1000, jump 780 / double jump 700, held jump floats (gravity 1500 instead of 2600 while rising), slide 0.65 s (fast-fall in the air), 3 lives with 1.4 s of blinking, falling into a gap costs a life and puts him past it, score = distance/10 + pollen (10, golden seed 100), best in `puli-best`. Obstacles unlock over time as before: log, rock, stump, low branch, hanging vine (drops and pulls back up), bounce mushroom (+ two stumps), vine curtain, rolling boulder (day only), owl (swoops to head or knee height), gap, thorn bush, firefly swarm (high: slide; low and high: jump between), collapsing log bridge, shadow creature (night only). All built in code from the forest's materials, mossy where it fits; at night an inverted-hull glowing outline, glowing mushroom caps, amber owl eyes. Pits: the ground and the grass are cut out (`uPits` in world.js) over a dark floor and walls.

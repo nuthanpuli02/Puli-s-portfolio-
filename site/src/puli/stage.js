@@ -512,8 +512,11 @@ export function createPuliStage({ canvas, layout, theme, onForest, onReady }) {
         RUN.land = clips.runjump.duration - RJ.down;
       } else RUN.land = Math.max(0, RUN.land - dt);
     }
-    const name = g.over ? 'fall' : !g.gnd || RUN.land > 0 ? 'runjump' : g.slideT > 0 ? 'slide' : 'run';
-    if (name !== RUN.clip || (name === 'runjump' && (ev.includes('jump2') || ev.includes('bounce')) && RUN.air)) {
+    // a swipe down starts with the finger going down, which is a tap (a small jump) first; the slide then pulls him
+    // straight back down, so on the ground the slide wins over the jump's landing stride
+    if (ev.includes('slide')) RUN.land = 0;
+    const name = g.over ? 'fall' : !g.gnd ? 'runjump' : g.slideT > 0 ? 'slide' : RUN.land > 0 ? 'runjump' : 'run';
+    if (name !== RUN.clip || (name === 'runjump' && (ev.includes('jump2') || ev.includes('bounce')) && RUN.air) || (name === 'slide' && ev.includes('slide'))) {
       const once = name === 'fall' || name === 'slide';
       playClip(name, name === 'fall' ? 0.12 : 0.12, once).timeScale = 1;
       RUN.clip = name;
